@@ -40,7 +40,7 @@ class AdminProfileController extends Controller
         return view('admin.profile.index', compact('admin'));
     }
 
-   // Update admin profile
+   //Update admin profile
     
     public function update(Request $request)
     {
