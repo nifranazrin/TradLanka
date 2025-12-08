@@ -71,6 +71,25 @@
         .alert {
             border-radius: 10px;
         }
+
+        /* password toggle styles */
+        .password-wrapper { position: relative; }
+        .password-wrapper .form-control { padding-right: 48px; }
+        .toggle-password-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        .toggle-password-btn:focus { outline: none; box-shadow: 0 0 0 0.15rem rgba(123, 0, 0, 0.12); border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -113,7 +132,12 @@
 
             <div class="mb-3 text-start">
                 <label class="fw-semibold">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                <div class="password-wrapper">
+                    <input id="password" name="password" type="password" class="form-control" placeholder="Enter your password" required>
+                    <button type="button" id="togglePasswordBtn" class="toggle-password-btn" aria-label="Show password" title="Show password">
+                        <i id="togglePasswordIcon" class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -133,5 +157,34 @@
             </p>
         </form>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const pwd = document.getElementById('password');
+        const toggleBtn = document.getElementById('togglePasswordBtn');
+        const icon = document.getElementById('togglePasswordIcon');
+
+        if (!pwd || !toggleBtn || !icon) return;
+
+        toggleBtn.addEventListener('click', function () {
+            const isPwd = pwd.type === 'password';
+            pwd.type = isPwd ? 'text' : 'password';
+
+            if (isPwd) {
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+                toggleBtn.setAttribute('aria-label', 'Hide password');
+                toggleBtn.setAttribute('title', 'Hide password');
+            } else {
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+                toggleBtn.setAttribute('aria-label', 'Show password');
+                toggleBtn.setAttribute('title', 'Show password');
+            }
+
+            pwd.focus();
+        });
+    });
+    </script>
 </body>
 </html>

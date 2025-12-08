@@ -19,6 +19,7 @@
                         <th>ID</th>
                         <th>Image</th>
                         <th>Name</th>
+                        <th>Parent</th> 
                         <th>Description</th>
                         <th>Slug</th>
                         <th>Status</th>
@@ -34,19 +35,32 @@
                                     <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}"
                                         width="50" height="50" class="rounded">
                                 @else
-                                    <span class="text-muted">No image</span>
+                                    <span class="text-muted text-xs">No image</span>
                                 @endif
                             </td>
                             <td class="fw-semibold">{{ $category->name }}</td>
-                            <td>{{ $category->description ?? '—' }}</td>
-                            <td>{{ $category->slug }}</td>
+                            
+                            {{-- Main Category (Green) or Parent Name (Info) --}}
                             <td>
-                                @if ($category->status)
-                                    <span class="badge bg-success">Active</span>
+                                @if($category->parent)
+                                    <span class="badge bg-info text-dark">{{ $category->parent->name }}</span>
                                 @else
-                                    <span class="badge bg-secondary">Inactive</span>
+                                    <span class="badge bg-success">Main Category</span>
                                 @endif
                             </td>
+
+                            <td>{{Str::limit($category->description ?? '—', 30)}}</td>
+                            <td>{{ $category->slug }}</td>
+                            
+                            {{-- Active (Green) or Inactive (Red) --}}
+                            <td>
+                                @if ($category->status == 1)
+                                    <span class="badge bg-success">Active</span>
+                                @else
+                                    <span class="badge bg-danger">Inactive</span>
+                                @endif
+                            </td>
+                            
                             <td>
                                 <a href="{{ route('admin.categories.edit', $category->id) }}"
                                    class="btn btn-sm"
@@ -66,7 +80,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No categories found.</td>
+                            <td colspan="8" class="text-center text-muted py-4">No categories found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -77,7 +91,7 @@
 
 {{-- Modal for Add Category --}}
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg"> {{-- Increased width for better layout --}}
         <div class="modal-content border-0">
             <div class="modal-header text-white" style="background-color: #8a4b2b;">
                 <h5 class="modal-title fw-semibold" id="addCategoryLabel">Add New Category</h5>
@@ -87,34 +101,62 @@
             <form action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
-                    {{-- Name --}}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Name</label>
-                        <input type="text" name="name" class="form-control" placeholder="Enter category name" required>
+                    
+                    <div class="row">
+                        {{-- Name --}}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="Enter category name" 
+                                   value="{{ old('name') }}" required>
+                        </div>
+
+                        {{-- Parent Category Dropdown --}}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Parent Category (Optional)</label>
+                            <select name="parent_id" class="form-select">
+                                <option value="">None (Create as Main Category)</option>
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     {{-- Description --}}
                     <div class="mb-3">
                         <label class="form-label fw-bold">Description</label>
-                        <textarea name="description" class="form-control" placeholder="Short description (optional)" rows="2"></textarea>
+                        <textarea name="description" class="form-control" placeholder="Short description (optional)" rows="2">{{ old('description') }}</textarea>
                     </div>
 
-                    {{-- Image --}}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Image</label>
-                        <input type="file" name="image" class="form-control" accept="image/*" onchange="previewImage(event)">
-                        <img id="imagePreview" class="mt-2 rounded" style="max-width: 100px; display:none;">
+                    <div class="row">
+                        {{-- Main Image (Thumbnail) --}}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Main Image (Thumbnail)</label>
+                            <input type="file" name="image" class="form-control" accept="image/*" onchange="previewImage(event, 'imagePreview')">
+                            <img id="imagePreview" class="mt-2 rounded" style="max-width: 100px; max-height: 100px; object-fit: cover; display:none;">
+                            <small class="text-muted">Used for icons/thumbnails.</small>
+                        </div>
+
+                        {{-- NEW: Banner Image (Page Header) --}}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Banner Image (Page Header)</label>
+                            <input type="file" name="banner_image" class="form-control" accept="image/*" onchange="previewImage(event, 'bannerPreview')">
+                            <img id="bannerPreview" class="mt-2 rounded" style="max-width: 100%; max-height: 100px; object-fit: cover; display:none;">
+                            <small class="text-muted">Used for the top banner.</small>
+                        </div>
                     </div>
 
                     {{-- Status --}}
                     <div class="mb-3">
                         <label class="form-label d-block fw-bold">Status</label>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="status" id="statusActive" value="1" checked>
+                            <input class="form-check-input" type="radio" name="status" id="statusActive" value="1"
+                                   {{ old('status', '1') == '1' ? 'checked' : '' }}>
                             <label class="form-check-label" for="statusActive">Active</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="status" id="statusInactive" value="0">
+                            <input class="form-check-input" type="radio" name="status" id="statusInactive" value="0"
+                                   {{ old('status') === '0' ? 'checked' : '' }}>
                             <label class="form-check-label" for="statusInactive">Inactive</label>
                         </div>
                     </div>
@@ -132,12 +174,14 @@
     </div>
 </div>
 
-{{-- Script for image preview --}}
+{{-- Updated Script for Multiple Image Previews --}}
 <script>
-function previewImage(event) {
-    const preview = document.getElementById('imagePreview');
-    preview.src = URL.createObjectURL(event.target.files[0]);
-    preview.style.display = 'block';
+function previewImage(event, previewId) {
+    const preview = document.getElementById(previewId);
+    if (event.target.files && event.target.files[0]) {
+        preview.src = URL.createObjectURL(event.target.files[0]);
+        preview.style.display = 'block';
+    }
 }
 </script>
 @endsection

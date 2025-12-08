@@ -14,7 +14,21 @@ class Category extends Model
         'slug',
         'description',
         'image',
+        'banner_image', // <--- This allows the banner to be saved
+        'parent_id',
         'status',
-        'sort_order',
+        'sort_order'
     ];
+
+    // Relationship to get children (Subcategories)
+    public function subcategories()
+    {
+        return $this->hasMany(Category::class, 'parent_id');
+    }
+
+    // Relationship to get parent
+    public function parent()
+    {
+        return $this->belongsTo(Category::class, 'parent_id');
+    }
 }

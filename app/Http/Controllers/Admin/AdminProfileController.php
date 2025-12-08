@@ -11,7 +11,7 @@ use App\Models\Staff;
 
 class AdminProfileController extends Controller
 {
-     //Helper: Get currently logged-in admin ID
+     // logged-in admin ID
    
     protected function getAdminId()
     {
@@ -26,7 +26,7 @@ class AdminProfileController extends Controller
         return $id;
     }
 
-     //Show the admin profile page
+     // Show the admin profile page
    
     public function index()
     {

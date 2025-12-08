@@ -5,7 +5,7 @@
 {{-- Sticky Header --}}
 @include('frontend.partials.header')
 
-{{--  Floating Toast Message (added, no design changed) --}}
+{{-- Floating Toast Message --}}
 <div id="cartToast" 
      class="hidden fixed bottom-6 right-6 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 transition-all duration-500 flex items-center space-x-2">
     <i class="fas fa-check-circle text-white text-lg"></i>
@@ -15,59 +15,78 @@
 {{-- Main Content --}}
 <main class="w-full mt-0 pt-0">
 
-    {{-- Hero Banner (Full Width) --}}
+    {{-- Hero Banner --}}
     <div class="w-full mt-0">
         @include('frontend.partials.banner')
     </div>
 
-    {{-- Page Content with Padding --}}
+    {{-- Page Content --}}
     <div class="px-6 lg:px-10">
 
-        {{-- SHOP BY CATEGORY (Dynamic) --}}
-        <section class="mt-10 mb-12">
-            <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-center">Shop by Category</h2>
+              {{-- SHOP BY CATEGORY --}}
+<section class="mt-10 mb-12">
+    <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-center">Shop by Category</h2>
 
-            @if($categories->isEmpty())
-                <p class="text-center text-gray-500">No categories available yet.</p>
-            @else
-                <div class="flex space-x-6 overflow-x-auto pb-4 justify-center">
-                    @foreach ($categories as $category)
-                        <div class="flex-shrink-0 flex flex-col items-center cursor-pointer group">
-                            <div class="w-24 h-24 rounded-full overflow-hidden bg-[#f7f0ef] shadow-md hover:scale-105 transition-transform">
-                                @if ($category->image)
-                                    <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:opacity-90">
-                                @else
-                                    <img src="https://via.placeholder.com/100x100?text={{ urlencode($category->name) }}" alt="{{ $category->name }}" class="w-full h-full object-cover">
-                                @endif
-                            </div>
-                            <p class="mt-2 text-sm font-medium text-gray-700 group-hover:text-[#5b2c2c] transition-colors">
-                                {{ $category->name }}
-                            </p>
+    @if($categories->isEmpty())
+        <p class="text-center text-gray-500">No categories available yet.</p>
+    @else
+        <div class="flex space-x-6 overflow-x-auto pb-4 justify-center">
+            @foreach ($categories as $category)
+                
+                {{-- FIX: Add this check to hide sub-categories --}}
+                @if($category->parent_id === null) 
+
+                    {{-- UPDATED: Use the correct route name 'categories.show' --}}
+<a href="{{ route('categories.show', $category->slug) }}" 
+   class="flex-shrink-0 flex flex-col items-center cursor-pointer group no-underline">
+                        
+                        <div class="w-24 h-24 rounded-full overflow-hidden bg-[#f7f0ef] shadow-md hover:scale-105 transition-transform">
+                            {{-- Image Logic --}}
+                            @if ($category->image)
+                                <img src="{{ asset('storage/' . $category->image) }}" 
+                                     alt="{{ $category->name }}" 
+                                     class="w-full h-full object-cover group-hover:opacity-90">
+                            @else
+                                <img src="https://via.placeholder.com/100x100?text={{ urlencode($category->name) }}" 
+                                     alt="{{ $category->name }}" 
+                                     class="w-full h-full object-cover">
+                            @endif
                         </div>
-                    @endforeach
-                </div>
-            @endif
-        </section>
+                        <p class="mt-2 text-sm font-medium text-gray-700 group-hover:text-[#5b2c2c] transition-colors">
+                            {{ $category->name }}
+                        </p>
+                    </a>
 
-        {{-- BEST SELLERS SECTION --}}
+                @endif {{-- End of FIX --}}
+
+            @endforeach
+        </div>
+    @endif
+</section>
+        
+        {{-- BEST SELLERS --}}
         <section class="mt-12">
             <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-left">Best Sellers</h2>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-6 w-full">
                 @foreach (range(1, 10) as $i)
                     <div class="bg-white shadow-md rounded-lg overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg w-full">
-                        <img src="https://via.placeholder.com/300x200?text=Product+{{ $i }}" alt="Product {{ $i }}" class="w-full h-56 md:h-60 object-cover">
+                        <img src="https://via.placeholder.com/300x200?text=Product+{{ $i }}" 
+                             alt="Product {{ $i }}" 
+                             class="w-full h-56 md:h-60 object-cover">
                         <div class="p-4 text-center">
                             <h3 class="font-semibold text-gray-800 text-base md:text-lg">Product {{ $i }}</h3>
                             <p class="text-[#5b2c2c] font-bold mt-1 text-base">$ {{ 20 + $i }}.00</p>
+
                             <div class="flex justify-center items-center text-yellow-500 mt-1">
                                 @for ($s = 0; $s < 5; $s++)
                                     <i class="fas fa-star text-sm"></i>
                                 @endfor
                                 <span class="text-xs text-gray-500 ml-2">(120)</span>
                             </div>
-                            {{--  Add to Cart Button --}}
+
                             <button 
+                                type="button"
                                 class="addToCartBtn mt-3 bg-[#5b2c2c] text-white px-4 py-1 rounded hover:bg-[#4a2424] text-sm flex items-center justify-center mx-auto"
                                 data-id="{{ $i }}">
                                 <i class="fas fa-cart-plus mr-2"></i> Add to Cart
@@ -78,7 +97,7 @@
             </div>
         </section>
 
-        {{--  NEW ARRIVALS SECTION (Dynamic Products from Sellers) --}}
+        {{-- NEW ARRIVALS --}}
         <section class="mt-16 mb-12">
             <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-left">New Arrivals</h2>
 
@@ -88,20 +107,30 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-6 w-full">
                     @foreach ($products as $product)
                         <div class="bg-white shadow-md rounded-lg overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg w-full">
-                            <img src="{{ $product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/300x200?text=No+Image' }}"
-                                 alt="{{ $product->name }}" class="w-full h-56 md:h-60 object-cover">
+
+                            <a href="{{ route('product.show', $product->slug) }}" class="block group">
+    <img src="{{ $product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/300x200?text=No+Image' }}"
+         alt="{{ $product->name }}"
+         class="w-full h-56 md:h-60 object-cover group-hover:opacity-90 transition">
+
+    <div class="p-4 text-center">
+        <h3 class="font-semibold text-gray-800 text-base md:text-lg">{{ $product->name }}</h3>
+        <p class="text-[#5b2c2c] font-bold mt-1 text-base">Rs {{ number_format($product->price, 2) }}</p>
+
+        <div class="flex justify-center items-center text-yellow-500 mt-1">
+            @for ($s = 0; $s < 5; $s++)
+                <i class="fas fa-star text-sm"></i>
+            @endfor
+            <span class="text-xs text-gray-500 ml-2">(98)</span>
+        </div>
+    </div>
+</a>
+
+
                             <div class="p-4 text-center">
-                                <h3 class="font-semibold text-gray-800 text-base md:text-lg">{{ $product->name }}</h3>
-                                <p class="text-[#5b2c2c] font-bold mt-1 text-base">Rs {{ number_format($product->price, 2) }}</p>
-                                <div class="flex justify-center items-center text-yellow-500 mt-1">
-                                    @for ($s = 0; $s < 5; $s++)
-                                        <i class="fas fa-star text-sm"></i>
-                                    @endfor
-                                    <span class="text-xs text-gray-500 ml-2">(98)</span>
-                                </div>
-                                {{--  AJAX Add to Cart Button --}}
                                 <button 
-                                    class="addToCartBtn mt-3 bg-[#5b2c2c] text-white px-4 py-1 rounded hover:bg-[#4a2424] text-sm flex items-center justify-center mx-auto"
+                                    type="button"
+                                    class="addToCartBtn bg-[#5b2c2c] text-white px-4 py-1 rounded hover:bg-[#4a2424] text-sm flex items-center justify-center mx-auto"
                                     data-id="{{ $product->id }}">
                                     <i class="fas fa-cart-plus mr-2"></i> Add to Cart
                                 </button>
@@ -122,7 +151,8 @@
                         <p class="text-green-700 font-medium">Ceylon’s Pride!</p>
                         <h3 class="text-2xl font-extrabold text-gray-800">Tea</h3>
                     </div>
-                    <img src="https://via.placeholder.com/100x100?text=Tea" alt="Tea" class="w-24 h-24 object-contain">
+                    <img src="https://via.placeholder.com/100x100?text=Tea" 
+                         class="w-24 h-24 object-contain">
                 </div>
 
                 <div class="flex items-center justify-between bg-orange-50 rounded-2xl p-6 shadow-sm hover:shadow-lg transition">
@@ -130,7 +160,8 @@
                         <p class="text-orange-600 font-medium">Taste of Tradition!</p>
                         <h3 class="text-2xl font-extrabold text-gray-800">Spices</h3>
                     </div>
-                    <img src="https://via.placeholder.com/100x100?text=Spices" alt="Spices" class="w-24 h-24 object-contain">
+                    <img src="https://via.placeholder.com/100x100?text=Spices" 
+                         class="w-24 h-24 object-contain">
                 </div>
 
                 <div class="flex items-center justify-between bg-yellow-50 rounded-2xl p-6 shadow-sm hover:shadow-lg transition">
@@ -138,7 +169,8 @@
                         <p class="text-yellow-600 font-medium">Crafted with Heritage!</p>
                         <h3 class="text-2xl font-extrabold text-gray-800">Handicrafts</h3>
                     </div>
-                    <img src="https://via.placeholder.com/100x100?text=Handicraft" alt="Handicrafts" class="w-24 h-24 object-contain">
+                    <img src="https://via.placeholder.com/100x100?text=Handicraft" 
+                         class="w-24 h-24 object-contain">
                 </div>
             </div>
         </section>
@@ -162,12 +194,15 @@
                 <div id="recommendSlider" class="flex space-x-6 animate-scroll will-change-transform">
                     @foreach (range(1, 10) as $i)
                         <div class="min-w-[220px] bg-white rounded-lg shadow-md overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg">
-                            <img src="https://via.placeholder.com/300x200?text=AI+Rec+{{ $i }}" alt="Recommended Product {{ $i }}" class="w-full h-36 object-cover">
+                            <img src="https://via.placeholder.com/300x200?text=AI+Rec+{{ $i }}" 
+                                 class="w-full h-36 object-cover">
+
                             <div class="p-4 text-center">
                                 <h3 class="font-semibold text-gray-800 text-sm">Recommended Product {{ $i }}</h3>
                                 <p class="text-[#5b2c2c] font-bold mt-1">Rs {{ 10 + $i }}.00</p>
-                                {{--  AJAX Add to Cart Button --}}
+
                                 <button 
+                                    type="button"
                                     class="addToCartBtn mt-2 bg-[#5b2c2c] text-white px-3 py-1 rounded text-xs hover:bg-[#4a2424]"
                                     data-id="{{ $i }}">
                                     <i class="fas fa-cart-plus mr-1"></i> Add to Cart
@@ -193,28 +228,32 @@
     </div>
 </main>
 
-{{-- Floating Action Buttons (Chatbot + WhatsApp) --}}
+{{-- Floating Action Buttons --}}
 <div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3 z-50">
-    {{-- Chatbot --}}
     <a href="#" id="chatbotBtn" class="bg-[#5b2c2c] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
         <i class="fas fa-robot text-xl"></i>
     </a>
 
-    {{-- WhatsApp --}}
-    <a href="https://wa.me/94771234567" target="_blank" class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
+    <a href="https://wa.me/94771234567" target="_blank" 
+       class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
         <i class="fab fa-whatsapp text-2xl"></i>
     </a>
 </div>
 
-{{--  Add to Cart AJAX Script --}}
+{{-- ADD TO CART AJAX --}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
     const buttons = document.querySelectorAll('.addToCartBtn');
     const toast = document.getElementById('cartToast');
     const toastMessage = document.getElementById('toastMessage');
 
     buttons.forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(event) {
+
+            event.preventDefault();
+            event.stopPropagation();
+
             const productId = this.dataset.id;
 
             fetch("{{ route('cart.add') }}", {
@@ -222,12 +261,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     "X-CSRF-TOKEN": "{{ csrf_token() }}",
                     "Content-Type": "application/json",
+                    "Accept": "application/json"
                 },
                 body: JSON.stringify({ product_id: productId })
             })
             .then(res => res.json())
             .then(data => {
-                toastMessage.textContent = data.message;
+                toastMessage.textContent = data.message ?? 'Added to cart!';
                 toast.classList.remove('hidden');
                 setTimeout(() => toast.classList.add('hidden'), 2500);
             })

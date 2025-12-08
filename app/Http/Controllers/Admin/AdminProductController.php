@@ -11,14 +11,28 @@ class AdminProductController extends Controller
     // Display all products with their sellers.
     public function index()
     {
-        $products = Product::with('seller')->latest()->get();
+        // UPDATE: Fetch products with smart sorting
+        // 1. Priority to 'pending' and 'reapproval_pending' (Case = 1)
+        // 2. Everything else is secondary (Case = 0)
+        // 3. Sort by updated_at desc to show newest changes first
+        
+        $products = Product::with(['seller', 'images'])
+            ->orderByRaw("CASE 
+                WHEN status IN ('pending', 'reapproval_pending') THEN 1 
+                ELSE 0 
+            END DESC")
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
         return view('admin.products.index', compact('products'));
     }
 
     // Show single product details.
     public function show($id)
     {
-        $product = Product::with('seller')->findOrFail($id);
+        // UPDATE: CRITICAL FIX - Added 'images' here so gallery is available in the view
+        $product = Product::with(['seller', 'images'])->findOrFail($id);
+        
         return view('admin.products.show', compact('product'));
     }
 
@@ -27,7 +41,7 @@ class AdminProductController extends Controller
     {
         $product = Product::findOrFail($id);
 
-        //  Safe improvement: ensure approved items become active and visible on frontend
+        // Safe improvement: ensure approved items become active and visible on frontend
         if ($product->status === 'reapproval_pending') {
             $product->status = 'reapproved';
             $product->is_active = 1;       // make sure product is visible

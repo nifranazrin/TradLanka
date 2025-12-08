@@ -156,6 +156,7 @@
 
                                 {{-- Actions --}}
                                 <td class="text-center">
+                                    {{-- 1. PENDING --}}
                                     @if($req->status === 'pending')
                                         <form action="{{ route('admin.seller.approve', $req->id) }}" method="POST" class="d-inline">
                                             @csrf
@@ -165,6 +166,8 @@
                                             @csrf
                                             <button class="action-btn btn-reject"><i class="bi bi-x-circle me-1"></i> Reject</button>
                                         </form>
+
+                                    {{-- 2. APPROVED or INACTIVE --}}
                                     @elseif(in_array($req->status, ['approved', 'inactive']))
                                         <form action="{{ route('admin.seller.toggleStatus', $req->id) }}" method="POST" class="d-inline toggle-status-form">
                                             @csrf
@@ -175,6 +178,18 @@
                                                 <button type="submit" class="action-btn btn-approve" data-action="activate"><i class="bi bi-toggle-on me-1"></i> Activate</button>
                                             @endif
                                         </form>
+
+                                    {{-- 3. REJECTED --}}
+                                    @elseif($req->status === 'rejected')
+                                        {{-- I removed the 'onsubmit' and added class 'restore-form' --}}
+                                        <form action="{{ route('admin.seller.restore', $req->id) }}" method="POST" class="restore-form">
+                                            @csrf
+                                            <button type="submit" class="action-btn btn-secondary text-white" style="background-color: #6c757d;" title="Restore to Pending">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+                                            </button>
+                                        </form>
+
+                                    {{-- 4. FALLBACK --}}
                                     @else
                                         <span class="text-muted">No actions</span>
                                     @endif
@@ -192,7 +207,7 @@
     </div>
 </div>
 
-{{--  Copy link --}}
+{{--  Copy link Script --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const copyButton = document.getElementById('copyButton');
@@ -207,10 +222,10 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-{{--  SweetAlert2 --}}
+{{--  SweetAlert2 Library --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-{{--  Approval SweetAlert (Single Copy-All Button) --}}
+{{--  Approval Success Popup --}}
 @if(session('seller_approved_data'))
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -263,18 +278,22 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 @endif
 
-{{--  Confirmation for Activate / Deactivate --}}
+{{--  SWEETALERT LOGIC FOR BUTTONS (Activate, Deactivate, Restore) --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    
+    // 1. Activate / Deactivate Confirmation
     document.querySelectorAll('.toggle-status-form').forEach(form => {
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             const btn = form.querySelector('button[type="submit"]');
             const action = btn ? btn.getAttribute('data-action') : 'change';
             Swal.fire({
-                title: `Are you sure you want to ${action} this seller?`,
+                title: `Are you sure?`,
+                text: `Do you want to ${action} this seller?`,
                 icon: 'warning',
                 showCancelButton: true,
+                confirmButtonColor: action === 'deactivate' ? '#dc3545' : '#198754',
                 confirmButtonText: `Yes, ${action}`,
                 cancelButtonText: 'Cancel'
             }).then(result => {
@@ -284,6 +303,27 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     });
+
+    // 2. Restore Confirmation (The fix for your popup issue)
+    document.querySelectorAll('.restore-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // Stop the ugly browser popup
+            Swal.fire({
+                title: 'Restore Seller?',
+                text: "This will move the seller back to 'Pending' for re-evaluation.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Restore',
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
 });
 </script>
 @endsection

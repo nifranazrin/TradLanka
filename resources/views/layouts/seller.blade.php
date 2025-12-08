@@ -25,13 +25,15 @@
             top: 0;
             left: 0;
             padding-top: 20px;
+            /* Added z-index to keep it above other content */
+            z-index: 1000; 
         }
 
         .sidebar .brand {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #800000; /* maroon */
-            margin-bottom: 20px;
+            color: #800000;
+            margin-bottom: 30px; /* Increased bottom margin for logo */
             text-align: center;
         }
 
@@ -43,17 +45,23 @@
             text-decoration: none;
             font-weight: 500;
             transition: 0.2s;
+            
+            /* --- CHANGED: Added Gap & Spacing --- */
+            margin-bottom: 10px;   /* The gap between items */
+            margin-left: 10px;     /* Space from left edge */
+            margin-right: 10px;    /* Space from right edge */
+            border-radius: 8px;    /* Rounded corners */
         }
 
         .sidebar a:hover,
         .sidebar a.active {
             background-color: #800000;
             color: #fff;
-            border-radius: 6px;
+            /* Border radius is already set in the main class above */
         }
 
         .sidebar a i {
-            margin-right: 10px;
+            margin-right: 12px;
             font-size: 18px;
         }
 
@@ -105,7 +113,7 @@
         }
 
         .content-wrapper {
-            margin-top: 80px; /* space for navbar */
+            margin-top: 80px;
         }
 
         html, body {
@@ -131,6 +139,7 @@
 </head>
 
 <body>
+
     {{-- Sidebar --}}
     <div class="sidebar">
         <div class="brand">TradLanka Seller</div>
@@ -138,9 +147,11 @@
         <a href="{{ route('seller.dashboard') }}" class="{{ request()->is('seller/dashboard') ? 'active' : '' }}">
             <i class="bi bi-speedometer2"></i> Dashboard Overview
         </a>
+
         <a href="{{ route('seller.products.index') }}" class="{{ request()->is('seller/products*') ? 'active' : '' }}">
             <i class="bi bi-box-seam"></i> Product Management
         </a>
+
         <a href="#"><i class="bi bi-cart"></i> Orders</a>
         <a href="#"><i class="bi bi-truck"></i> Delivery Management</a>
         <a href="#"><i class="bi bi-chat-dots"></i> Customer Inquiries</a>
@@ -174,29 +185,32 @@
     {{-- Bootstrap JS --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    {{-- ✅ SweetAlert for success & error messages --}}
+    {{-- SweetAlert --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    {{-- SUCCESS ALERT --}}
     @if(session('success'))
     <script>
         Swal.fire({
             icon: 'success',
             title: 'Success!',
-            text: '{{ session('success') }}',
+            text: {!! json_encode(session('success')) !!},
             confirmButtonColor: '#800000'
         });
     </script>
     @endif
 
+    {{-- ERROR ALERT --}}
     @if(session('error'))
     <script>
         Swal.fire({
             icon: 'error',
             title: 'Oops!',
-            text: '{{ session('error') }}',
+            text: {!! json_encode(session('error')) !!},
             confirmButtonColor: '#800000'
         });
     </script>
     @endif
+
 </body>
 </html>

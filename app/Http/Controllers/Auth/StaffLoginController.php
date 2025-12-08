@@ -10,17 +10,11 @@ use App\Models\Staff;
 
 class StaffLoginController extends Controller
 {
-    /**
-     * Show staff login form (Admin / Seller / Delivery)
-     */
     public function showLoginForm()
     {
         return view('auth.staff-login');
     }
 
-    /**
-     * Handle login request
-     */
     public function login(Request $request)
     {
         $request->validate([
@@ -34,17 +28,22 @@ class StaffLoginController extends Controller
             return back()->with('error', 'Email not found.');
         }
 
-        // ✅ Proper password check using Hash::check()
+        // Check password correctly (hashed)
         if (!Hash::check($request->password, $staff->password)) {
             return back()->with('error', 'Incorrect password.');
         }
 
-        // ✅ Added: check if inactive account
-        if (strtolower($staff->role) === 'seller' && $staff->status !== 'active') {
-            return back()->with('error', 'Your account is not active. Contact admin.');
+        //  Seller-specific login restriction
+        if (strtolower($staff->role) === 'seller') {
+            $status = strtolower($staff->status);
+
+            // Allow login only if status is 'active' or 'approved'
+            if (!in_array($status, ['active', 'approved'])) {
+                return back()->with('error', 'Your account is not active. Please contact admin.');
+            }
         }
 
-        // ✅ Determine guard based on role
+        //  Determine the correct guard
         $guard = match (strtolower($staff->role)) {
             'admin'    => 'admin',
             'seller'   => 'seller',
@@ -52,23 +51,23 @@ class StaffLoginController extends Controller
             default    => 'web',
         };
 
-        // ✅ Log in via correct guard
+        //  Log in through correct guard
         Auth::guard($guard)->login($staff);
 
-        // ✅ Regenerate session for security
+        //  Secure session regeneration
         $request->session()->regenerate();
 
-        // ✅ Store useful session data
+        //  Store session info
         session([
             'staff_id'   => $staff->id,
             'staff_name' => $staff->name,
             'staff_role' => strtolower($staff->role),
         ]);
 
-        // Clear other cached role session values
+        // Clear irrelevant session values
         session()->forget(['seller_name', 'delivery_name']);
 
-        // ✅ Redirect to the proper dashboard
+        //  Redirect by role
         return match ($guard) {
             'admin'    => redirect()->route('admin.dashboard')->with('success', 'Welcome, Admin!'),
             'seller'   => redirect()->route('seller.dashboard')->with('success', 'Welcome, Seller!'),
@@ -77,19 +76,16 @@ class StaffLoginController extends Controller
         };
     }
 
-    /**
-     * Handle logout
-     */
     public function logout()
     {
-        // ✅ Logout from all possible guards
+        // Logout from all guards
         foreach (['admin', 'seller', 'delivery', 'web'] as $guard) {
             if (Auth::guard($guard)->check()) {
                 Auth::guard($guard)->logout();
             }
         }
 
-        // ✅ Clear and regenerate session
+        // Clear session securely
         session()->invalidate();
         session()->regenerateToken();
 
