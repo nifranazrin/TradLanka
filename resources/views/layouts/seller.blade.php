@@ -1,216 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TradLanka Seller</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradLanka Seller Dashboard</title>
 
-    {{-- Bootstrap --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Inter', sans-serif;
-        }
+<style>
+body{
+    margin:0;
+    background:#f9fafb;
+    font-family:'Poppins',sans-serif;
+}
 
-        /* Sidebar */
-        .sidebar {
-            width: 240px;
-            background-color: #fff;
-            border-right: 1px solid #dee2e6;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            padding-top: 20px;
-            /* Added z-index to keep it above other content */
-            z-index: 1000; 
-        }
+/* ================= TOP NAVBAR ================= */
+.seller-navbar{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    height:64px;
+    background:#6e2727;
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    align-items:center;
+    padding:0 24px;
+    z-index:1001;
+}
 
-        .sidebar .brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #800000;
-            margin-bottom: 30px; /* Increased bottom margin for logo */
-            text-align: center;
-        }
+/* LEFT */
+.nav-left{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    white-space:nowrap;
+}
 
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            color: #333;
-            text-decoration: none;
-            font-weight: 500;
-            transition: 0.2s;
-            
-            /* --- CHANGED: Added Gap & Spacing --- */
-            margin-bottom: 10px;   /* The gap between items */
-            margin-left: 10px;     /* Space from left edge */
-            margin-right: 10px;    /* Space from right edge */
-            border-radius: 8px;    /* Rounded corners */
-        }
+.nav-logo{
+    height:36px;
+    width:36px;
+    border-radius:50%;
+    background:#fff;
+    padding:3px;
+}
 
-        .sidebar a:hover,
-        .sidebar a.active {
-            background-color: #800000;
-            color: #fff;
-            /* Border radius is already set in the main class above */
-        }
+/* CENTER */
+.nav-center{
+    text-align:center;
+    color:#fff;
+    font-size:20px;
+    font-weight:800;
+}
 
-        .sidebar a i {
-            margin-right: 12px;
-            font-size: 18px;
-        }
+/* RIGHT */
+.nav-right{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    white-space:nowrap;
+}
 
-        /* Top Navbar */
-        .navbar-top {
-            height: 60px;
-            background-color: #fff;
-            border-bottom: 1px solid #dee2e6;
-            padding: 0 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            left: 240px;
-            right: 0;
-            z-index: 100;
-        }
+/* ================= SIDEBAR ================= */
+.sidebar{
+    position:fixed;
+    top:64px;              /* BELOW NAVBAR */
+    left:0;
+    width:250px;
+    height:calc(100vh - 64px);
+    background:#f5efe1;
+    border-right:1px solid #e5e7eb;
+    padding:16px;
+    z-index:900;
+}
 
-        .navbar-top a {
-            text-decoration: none;
-            color: #333;
-            font-weight: 500;
-            transition: 0.2s;
-        }
+.sidebar .badge {
+    width: 19px;
+    height: 19px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        .navbar-top a:hover {
-            color: #800000;
-        }
 
-        .navbar-top button {
-            border: 1px solid #800000;
-            color: #800000;
-            background: transparent;
-            border-radius: 6px;
-            padding: 6px 12px;
-            transition: 0.3s;
-        }
+.sidebar-header{
+    background:#6b1f1f;
+    color:#fff;
+    font-weight:700;
+    padding:14px;
+    border-radius:8px;
+    margin-bottom:16px;
+    text-align:center;
+}
 
-        .navbar-top button:hover {
-            background-color: #800000;
-            color: #fff;
-        }
+.sidebar a{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    color:#4d4a4a;
+    text-decoration:none;
+    font-weight:500;
+    padding:10px 12px;
+    border-radius:8px;
+    margin-bottom:8px;
+}
 
-        /* Main content */
-        .main-content {
-            margin-left: 240px;
-            padding: 20px 40px;
-        }
+.sidebar a:hover,
+.sidebar a.active{
+    background:#e2dddd;
+    color:#501818;
+}
 
-        .content-wrapper {
-            margin-top: 80px;
-        }
+.sidebar i{
+    margin-right:8px;
+}
 
-        html, body {
-            height: 100%;
-            overflow-x: hidden;
-        }
+/* ================= MAIN CONTENT ================= */
+.main-content{
+    margin-left:250px;
+    margin-top:64px;
+    padding:30px;
+}
 
-        @media (max-width: 992px) {
-            .sidebar {
-                width: 200px;
-            }
-
-            .main-content {
-                margin-left: 200px;
-                padding: 15px;
-            }
-
-            .navbar-top {
-                left: 200px;
-            }
-        }
-    </style>
+/* ================= RESPONSIVE ================= */
+@media(max-width:992px){
+    .sidebar{display:none;}
+    .main-content{margin-left:0;}
+}
+</style>
 </head>
 
 <body>
 
-    {{-- Sidebar --}}
-    <div class="sidebar">
-        <div class="brand">TradLanka Seller</div>
+@php
+$seller = Auth::guard('seller')->user();
+$notifCounts = ['product'=>0,'order'=>0,'inquiry'=>0,'chat'=>0];
+if($seller){
+    foreach($seller->unreadNotifications as $n){
+        $t = $n->data['type'] ?? null;
+        if($t && isset($notifCounts[$t])) $notifCounts[$t]++;
+    }
+}
+@endphp
 
-        <a href="{{ route('seller.dashboard') }}" class="{{ request()->is('seller/dashboard') ? 'active' : '' }}">
-            <i class="bi bi-speedometer2"></i> Dashboard Overview
+<!-- ================= TOP NAV ================= -->
+<div class="seller-navbar">
+
+    <div class="nav-left">
+        <img src="{{ asset('logo/tradlanka-logo.jpg') }}" class="nav-logo">
+        <span class="fw-bold fs-5">
+    <span class="text-white">Trad</span><span style="color:#facc15;">Lanka</span>
+</span>
+
+
+        <a href="{{ route('home') }}" class="btn btn-light btn-sm fw-semibold ms-5">
+            <i class="bi bi-shop me-1"></i> View Storefront
         </a>
-
-        <a href="{{ route('seller.products.index') }}" class="{{ request()->is('seller/products*') ? 'active' : '' }}">
-            <i class="bi bi-box-seam"></i> Product Management
-        </a>
-
-        <a href="#"><i class="bi bi-cart"></i> Orders</a>
-        <a href="#"><i class="bi bi-truck"></i> Delivery Management</a>
-        <a href="#"><i class="bi bi-chat-dots"></i> Customer Inquiries</a>
-        <a href="#"><i class="bi bi-bar-chart"></i> Sales Reports</a>
-        <a href="#"><i class="bi bi-gear"></i> Settings</a>
     </div>
 
-    {{-- Top Navbar --}}
-    <div class="navbar-top">
-        <a href="#" class="fw-bold"><i class="bi bi-shop me-2 text-maroon"></i> View Storefront</a>
+    <div class="nav-center">SELLER MANAGEMENT</div>
 
-        <div class="d-flex align-items-center gap-4">
-            <a href="{{ route('seller.profile') }}" class="text-decoration-none">
-                <i class="bi bi-person-circle me-1 text-maroon"></i> My Profile
+    <div class="nav-right">
+
+        {{--  NOTIFICATION (UNCHANGED LOGIC) --}}
+        <div class="dropdown">
+            <a href="#" class="position-relative text-white" data-bs-toggle="dropdown">
+                <i class="bi bi-bell fs-5"></i>
+                @if($seller && $seller->unreadNotifications->count() > 0)
+                    <span class="position-absolute top-0 start-100 translate-middle badge bg-danger rounded-pill" style="font-size:0.6rem;">
+                        {{ $seller->unreadNotifications->count() }}
+                    </span>
+                @endif
             </a>
 
-            <form action="{{ route('staff.logout') }}" method="POST" class="d-inline">
-                @csrf
-                <button type="submit"><i class="bi bi-box-arrow-right me-1"></i> Logout</button>
-            </form>
+            <ul class="dropdown-menu dropdown-menu-end shadow" style="width:320px;max-height:400px;overflow:auto;">
+                <li><h6 class="dropdown-header text-muted small">Notifications</h6></li>
+                <li><hr class="dropdown-divider"></li>
+
+                @forelse($seller->unreadNotifications as $notification)
+                    <li>
+                        <a class="dropdown-item d-flex gap-2" href="{{ route('seller.notifications.read',$notification->id) }}">
+                            <i class="bi bi-info-circle text-primary mt-1"></i>
+                            <div>
+                                <div class="small fw-semibold">{{ $notification->data['message'] }}</div>
+                                <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>
+                            </div>
+                        </a>
+                    </li>
+                @empty
+                    <li class="dropdown-item text-muted text-center small">No new notifications</li>
+                @endforelse
+                @if($seller && $seller->unreadNotifications->count() > 0)
+    <li><hr class="dropdown-divider"></li>
+    <li>
+        <form method="POST" action="{{ route('seller.notifications.markAllRead') }}">
+            @csrf
+            <button class="dropdown-item text-center small fw-bold text-primary">
+                Mark all as read
+            </button>
+        </form>
+    </li>
+@endif
+            </ul>
         </div>
-    </div>
 
-    {{-- Main Content --}}
-    <div class="main-content">
-        <div class="content-wrapper">
-            @yield('content')
+        {{-- PROFILE --}}
+        <div class="dropdown">
+            <a href="#" class="text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle me-1"></i> {{ $seller->name }}
+            </a>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li><a class="dropdown-item" href="{{ route('seller.profile') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="POST" action="{{ route('seller.logout') }}">
+                        @csrf
+                        <button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+                    </form>
+                </li>
+            </ul>
         </div>
+
     </div>
+</div>
 
-    {{-- Bootstrap JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- ================= SIDEBAR ================= -->
+<div class="sidebar">
 
-    {{-- SweetAlert --}}
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <a href="{{ route('seller.dashboard') }}" class="{{ request()->is('seller/dashboard')?'active':'' }}">
+        <span><i class="bi bi-speedometer2"></i> Dashboard</span>
+    </a>
 
-    {{-- SUCCESS ALERT --}}
-    @if(session('success'))
-    <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: {!! json_encode(session('success')) !!},
-            confirmButtonColor: '#800000'
-        });
-    </script>
-    @endif
+    <a href="{{ route('seller.products.index') }}">
+        <span><i class="bi bi-box-seam-fill"></i> Products</span>
+        @if($notifCounts['product'])
+            <span class="badge bg-danger">{{ $notifCounts['product'] }}</span>
+        @endif
+    </a>
 
-    {{-- ERROR ALERT --}}
-    @if(session('error'))
-    <script>
-        Swal.fire({
-            icon: 'error',
-            title: 'Oops!',
-            text: {!! json_encode(session('error')) !!},
-            confirmButtonColor: '#800000'
-        });
-    </script>
-    @endif
+    <a href="{{ route('seller.orders.index') }}">
+        <span><i class="bi bi-cart-check-fill"></i> Orders</span>
+        @if($notifCounts['order'])
+            <span class="badge bg-danger">{{ $notifCounts['order'] }}</span>
+        @endif
+    </a>
 
+    <a href="{{ route('seller.inquiries') }}">
+        <span><i class="bi bi-chat-dots-fill"></i> Inquiries</span>
+        @if($notifCounts['inquiry'])
+            <span class="badge bg-danger">{{ $notifCounts['inquiry'] }}</span>
+        @endif
+    </a>
+
+    <a href="{{ route('seller.chat.index') }}">
+        <span><i class="bi bi-people-fill"></i> Staff Chat</span>
+        @if($notifCounts['chat'])
+            <span class="badge bg-danger">{{ $notifCounts['chat'] }}</span>
+        @endif
+    </a>
+
+</div>
+
+
+<!-- ================= CONTENT ================= -->
+<div class="main-content">
+    @yield('content')
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -6,15 +6,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
-// It is good practice to import related models, even if in the same namespace
+
+// Related models
 use App\Models\Category;
 use App\Models\Staff;
 use App\Models\ProductImage;
+use App\Models\OrderItem;
 
 class Product extends Model
 {
     use HasFactory;
 
+    /**
+     * Mass assignable attributes
+     */
     protected $fillable = [
         'category_id',
         'seller_id',
@@ -23,40 +28,59 @@ class Product extends Model
         'description',
         'price',
         'stock',
-        'image',   // main image (front image)
+        'unit_type',
+        'image',   // main image
         'status',
     ];
 
     /**
-     * Casts for predictable types.
+     * Attribute casting
      */
     protected $casts = [
-        'price' => 'decimal:2',
-        'stock' => 'integer',
+        'price'      => 'decimal:2',
+        'stock'      => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
     /**
-     * Append derived attributes when model is serialized.
+     * Accessors automatically appended to JSON / array
      */
     protected $appends = [
         'image_url',
+        'display_price',
+        
     ];
 
+public function getDisplayPriceAttribute()
+{
+    $originalPrice = $this->price;
+    $currency = session('currency', 'LKR');
+
+    if ($currency === 'USD') {
+        // Force a calculation even if the API fails for testing
+        $rate = cache()->get('usd_rate', 0.0032); // 0.0032 is roughly 1/310
+        
+        $converted = $originalPrice * $rate;
+        return '$' . number_format($converted, 2);
+    }
+
+    return 'Rs ' . number_format($originalPrice, 2);
+}
     /**
-     * Boot model events to set slug only on create and prevent slug from changing on update.
+     * -------------------------------------------------
+     * Model boot logic (IMPORTANT – unchanged)
+     * -------------------------------------------------
      */
     protected static function booted()
     {
-        // Set slug only when creating (if not provided)
+        // Generate slug only when creating
         static::creating(function ($product) {
             if (empty($product->slug)) {
                 $base = Str::slug($product->name ?: 'product');
-
-                // ensure uniqueness (try a few times)
                 $slug = $base;
                 $attempt = 0;
+
                 while (static::where('slug', $slug)->exists() && $attempt < 10) {
                     $slug = $base . '-' . Str::random(6);
                     $attempt++;
@@ -66,20 +90,21 @@ class Product extends Model
             }
         });
 
-        // Prevent accidental slug change on update by restoring original slug
-        // This ensures your URLs don't break if you edit a product name later.
+        // Prevent slug from changing on update
         static::updating(function ($product) {
             $product->slug = $product->getOriginal('slug');
         });
     }
 
     /**
-     * Use slug for route model binding (essential for your SEO URLs).
+     * Use slug for route model binding
      */
     public function getRouteKeyName()
     {
         return 'slug';
     }
+
+    
 
     /*
     |--------------------------------------------------------------------------
@@ -87,23 +112,39 @@ class Product extends Model
     |--------------------------------------------------------------------------
     */
 
-    // Relationship: Product belongs to a Category
-    // This is the function that allows $product->category->name in your breadcrumbs
+    /**
+     * Product belongs to a category
+     */
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
 
-    // Relationship: Product belongs to a Seller (Staff)
+    /**
+     * Product belongs to a seller (staff)
+     * CRITICAL for seller order filtering
+     */
     public function seller()
     {
         return $this->belongsTo(Staff::class, 'seller_id');
     }
 
-    // Relationship for additional product images (gallery)
+    /**
+     * Product gallery images
+     */
     public function images()
     {
-        return $this->hasMany(ProductImage::class, 'product_id')->orderBy('sort_order');
+        return $this->hasMany(ProductImage::class, 'product_id')
+                    ->orderBy('sort_order');
+    }
+
+    /**
+     * Order items that include this product
+     * (SAFE addition – needed for marketplace logic)
+     */
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'product_id');
     }
 
     /*
@@ -112,29 +153,52 @@ class Product extends Model
     |--------------------------------------------------------------------------
     */
 
-    // Helper: full public URL for main image
+    /**
+     * Public URL for main product image
+     */
     public function getImageUrlAttribute(): ?string
     {
-        if (! $this->image) return null;
+        if (! $this->image) {
+            return null;
+        }
 
-        // Normalize path: remove leading 'public/' and any leading slashes
         $clean = preg_replace('/^public\//', '', $this->image);
         $clean = ltrim($clean, '/');
 
         return Storage::url($clean);
     }
 
+    public function variants()
+{
+    return $this->hasMany(ProductVariant::class);
+}
+
+
+
+
     /**
-     * Return collection of public URLs for gallery images.
+     * Public URLs for gallery images
      */
     public function galleryUrls()
     {
-        return $this->images->map(function ($img) {
-            $p = $img->path ?? null;
-            if (! $p) return null;
-            $clean = preg_replace('/^public\//', '', $p);
-            $clean = ltrim($clean, '/');
-            return $clean ? Storage::url($clean) : null;
-        })->filter();
-    }
+        return $this->images
+            ->map(function ($img) {
+                if (! $img->path) {
+                    return null;
+                }
+
+                $clean = preg_replace('/^public\//', '', $img->path);
+                $clean = ltrim($clean, '/');
+
+                return $clean ? Storage::url($clean) : null;
+            })
+            ->filter();
+        }
+ public function reviews()
+{
+    return $this->hasMany(Review::class)
+                ->where('status', 1) // only approved reviews
+                ->latest();
+}
+
 }

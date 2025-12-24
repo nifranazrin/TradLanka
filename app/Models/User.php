@@ -17,12 +17,17 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'user_role',
-    ];
+     protected $fillable = [
+    'name',
+    'email',
+    'password',
+    'user_role',
+    'phone',
+    'city',
+    'address1',
+    'google_id',
+  ];
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -46,4 +51,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function user()
+{
+    // If your User model is in App\Models\User
+    return $this->belongsTo(\App\Models\User::class);
+}
 }

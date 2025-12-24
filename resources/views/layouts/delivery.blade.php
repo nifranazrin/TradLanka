@@ -3,185 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TradLanka Delivery Dashboard</title>
+    <title>TradLanka | Delivery Dashboard</title>
 
-    {{-- Bootstrap --}}
+    {{-- Bootstrap & Icons --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    {{-- Bootstrap Icons --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
         body {
-            background-color: #f9fafb;
+            margin: 0;
+            background: #f9fafb;
             font-family: 'Poppins', sans-serif;
         }
 
-        /* Sidebar */
-        .sidebar {
-            height: 100vh;
-            background-color: #ffffff;
-            border-right: 1px solid #e5e7eb;
-            padding: 1rem;
+        /* ================= TOP NAVBAR (Matches Seller) ================= */
+        .seller-navbar {
             position: fixed;
-            width: 250px;
             top: 0;
             left: 0;
-            z-index: 100;
+            right: 0;
+            height: 64px;
+            background: #6e2727; /* Your Maroon Branding */
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 1001;
         }
 
-        .sidebar h4 {
-            color: #d84315;
+        .nav-left { display: flex; align-items: center; gap: 14px; }
+        .nav-logo { height: 36px; width: 36px; border-radius: 50%; background: #fff; padding: 3px; }
+        .nav-center { text-align: center; color: #fff; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-right { display: flex; align-items: center; gap: 18px; }
+
+        /* ================= SIDEBAR (Matches Seller) ================= */
+        .sidebar {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            width: 250px;
+            height: calc(100vh - 64px);
+            background: #f5efe1; /* Beige Sidebar background */
+            border-right: 1px solid #e5e7eb;
+            padding: 16px;
+            z-index: 900;
+        }
+
+        .sidebar-header {
+            background: #6b1f1f;
+            color: #fff;
             font-weight: 700;
-            margin-bottom: 2rem;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
         }
 
         .sidebar a {
             display: flex;
-            align-items: center;
-            text-decoration: none;
-            color: #444;
-            font-weight: 500;
-            margin-bottom: 10px;
-            padding: 10px 12px;
-            border-radius: 8px;
-        }
-
-        .sidebar a:hover,
-        .sidebar a.active {
-            background-color: #fff3f1;
-            color: #d84315;
-        }
-
-        .sidebar a i {
-            margin-right: 10px;
-            font-size: 1.2rem;
-        }
-
-        /* Main */
-        .main-content {
-            margin-left: 250px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Topbar */
-        .topbar {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 10px 25px;
-            display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 99;
+            color: #4d4a4a;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            transition: all 0.2s ease;
         }
 
-        .topbar .brand {
-            font-weight: 700;
-            color: #d84315;
+        .sidebar a:hover, .sidebar a.active {
+            background: #e2dddd;
+            color: #6e2727;
         }
 
-        /* Dashboard content */
-        .dashboard-content {
+        .sidebar a i { font-size: 1.1rem; margin-right: 10px; }
+
+        /* ================= MAIN CONTENT ================= */
+        .main-content {
+            margin-left: 250px;
+            margin-top: 64px;
             padding: 30px;
-            flex: 1;
+            min-height: calc(100vh - 64px);
         }
 
-        /* Hover effects */
-        .card:hover {
-            transform: translateY(-3px);
-            transition: 0.3s ease;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+        /* ================= RESPONSIVE ================= */
+        @media(max-width: 992px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
         }
 
-        /* Responsive */
-        @media (max-width: 992px) {
-            .sidebar {
-                display: none;
-            }
-            .main-content {
-                margin-left: 0;
-            }
+        /* Card Styling for Dashboard Items */
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
         }
-
-        @media (max-width: 576px) {
-            .topbar .d-flex {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
+        .stat-card:hover { transform: translateY(-5px); }
     </style>
 </head>
-
 <body>
-<div class="d-flex">
-    {{-- Sidebar --}}
+
+    <nav class="seller-navbar">
+        <div class="nav-left">
+            <img src="{{ asset('logo/tradlanka-logo.jpg') }}" class="nav-logo">
+            <span class="fw-bold text-white fs-5">Trad<span style="color:#facc15;">Lanka</span></span>
+        </div>
+        
+        <div class="nav-center">Delivery Management</div>
+
+        <div class="nav-right">
+            <div class="dropdown text-white">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle fs-4 me-2"></i>
+                    <span class="d-none d-sm-inline">Rider #{{ Auth::id() }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form action="{{ route('staff.logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i> Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
     <div class="sidebar">
-        <h4>TradLanka Delivery</h4>
 
-        <a href="{{ route('delivery.dashboard') }}" 
-           class="{{ request()->is('delivery/dashboard') ? 'active' : '' }}">
-            <i class="bi bi-speedometer2"></i> Dashboard Overview
+        <a href="{{ route('delivery.dashboard') }}" class="{{ request()->routeIs('delivery.dashboard') ? 'active' : '' }}">
+            <span><i class="bi bi-speedometer2"></i> Dashboard</span>
         </a>
 
-        <a href="#">
-            <i class="bi bi-box-seam"></i> My Deliveries
+        <a href="{{ route('delivery.my-deliveries') }}" class="{{ request()->routeIs('delivery.my-deliveries') ? 'active' : '' }}">
+            <span><i class="bi bi-box-seam"></i> Active Tasks</span>
+            <span class="badge bg-danger rounded-pill">3</span>
         </a>
 
-        <a href="#">
-            <i class="bi bi-check2-circle"></i> Completed Orders
-        </a>
-
-        <a href="#">
-            <i class="bi bi-gear"></i> Account Settings
-        </a>
+         <a href="{{ route('delivery.task-history') }}" class="nav-link {{ request()->routeIs('delivery.task-history') ? 'active' : '' }}">
+    <span><i class="bi bi-clock-history"></i> Task History</span>
+</a>
     </div>
 
-    {{-- Main Content --}}
-    <div class="main-content w-100">
-        {{-- Topbar --}}
-        <div class="topbar">
-            <div class="brand">
-                Delivery Person
-            </div>
-            <div class="d-flex align-items-center">
-                {{-- Notifications --}}
-                <a href="#" class="btn btn-light btn-sm me-3 position-relative">
-                    <i class="bi bi-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        0
-                    </span>
-                </a>
-
-                {{-- Profile --}}
-                <a href="#" class="btn btn-outline-secondary btn-sm me-3">
-                    <i class="bi bi-person-circle me-1"></i> Profile
-                </a>
-
-                {{-- Logout --}}
-                <form action="{{ route('staff.logout') }}" method="POST" class="d-inline">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        {{-- Dashboard Page Content --}}
-        <div class="dashboard-content">
-            @yield('content')
-        </div>
+    <div class="main-content">
+        @yield('content')
     </div>
-</div>
 
-{{-- Bootstrap JS --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-{{-- Page-specific scripts --}}
-@stack('scripts')
-
+    {{-- Bootstrap JS --}}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

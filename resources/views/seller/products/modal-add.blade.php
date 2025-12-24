@@ -1,277 +1,257 @@
-<div class="modal fade" id="addProductModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
 
-      <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title">Add New Product</h5>
-        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
 
-      <form id="addProductForm" action="{{ route('seller.products.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
+            <form id="addProductForm" action="{{ route('seller.products.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
 
-        <div class="modal-body">
+                <div class="modal-body">
+                    <div class="row">
+                        {{-- CATEGORY --}}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category_id" class="form-select" required>
+                                <option value="">Select Category</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-          {{-- CATEGORY --}}
-          <div class="mb-3">
-            <label class="form-label fw-bold">Category</label>
-            <select name="category_id" class="form-select" required>
-              @foreach($categories as $category)
-                <option value="{{ $category->id }}">{{ $category->name }}</option>
-              @endforeach
-            </select>
-          </div>
+                        {{-- UNIT TYPE --}}
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold form-label">Unit Type</label>
+                            <select name="unit_type" class="form-select" required>
+                                <option value="">Select Type</option>
+                                <option value="weight">Weight (g / kg)</option>
+                                <option value="liquid">Liquid (ml / L)</option>
+                                <option value="default">Default (No unit)</option>
+                            </select>
+                        </div>
+                    </div>
 
-          {{-- NAME --}}
-          <div class="mb-3">
-            <label class="form-label fw-bold">Product Name</label>
-            <input type="text" name="name" class="form-control" required>
-          </div>
+                    {{-- NAME --}}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Product Name</label>
+                        <input type="text" name="name" id="productNameInput" class="form-control" placeholder="E.g. Ceylon Tea" required>
+                        <small class="text-muted">Must start with a Capital letter.</small>
+                    </div>
 
-          {{-- DESCRIPTION --}}
-          <div class="mb-3">
-            <label class="form-label fw-bold">Description</label>
-            <textarea name="description" class="form-control" rows="3"></textarea>
-          </div>
+                    {{-- DYNAMIC VARIANTS SECTION (REQUIRED FOR CONTROLLER) --}}
+                    <div class="mb-4 p-3 border rounded bg-light">
+                        <label class="fw-bold mb-2">Product Variations (Sizes & Prices)</label>
+                        <div class="alert alert-info py-1 px-2 mb-2 small">
+                            <i class="bi bi-info-circle"></i> Add at least one size. The main price is auto-calculated.
+                        </div>
 
-          {{-- PRICE --}}
-          <div class="mb-3">
-            <label class="form-label fw-bold">Price</label>
-            <input type="number" name="price" class="form-control" min="0" step="0.01" required>
-          </div>
+                        <table class="table table-bordered table-sm bg-white" id="variantTable">
+                            <thead>
+                                <tr>
+                                    <th>Size (e.g. 100g)</th>
+                                    <th>Price (Rs.)</th>
+                                    <th>Stock</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="variantTableBody">
+                                {{-- Initial Row --}}
+                                <tr>
+                                    <td>
+                                        <input type="text" name="variations[0][unit_label]" placeholder="Size" class="form-control form-control-sm" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" name="variations[0][price]" placeholder="Price" class="form-control form-control-sm" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" name="variations[0][stock]" placeholder="Qty" class="form-control form-control-sm" required />
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="button" id="addVariantBtn" class="btn btn-sm btn-success">
+                            <i class="bi bi-plus"></i> Add Another Size
+                        </button>
+                    </div>
+                    {{-- END VARIANTS --}}
 
-          {{-- STOCK --}}
-          <div class="mb-3">
-            <label class="form-label fw-bold">Stock</label>
-            <input type="number" name="stock" class="form-control" min="0" required>
-          </div>
+                    {{-- DESCRIPTION --}}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
 
-          {{-- MAIN FRONT IMAGE --}}
-          <div class="mb-3">
-            <label class="form-label fw-bold">Front Image (Main)</label>
-            <input type="file" name="image" class="form-control" accept="image/*">
-          </div>
+                    {{-- MAIN FRONT IMAGE --}}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Front Image (Main)</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
 
-          {{-- GALLERY IMAGES --}}
-          <div class="mb-3">
-            <label class="form-label fw-bold">Additional Images (Gallery)</label>
+                    {{-- GALLERY IMAGES --}}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Gallery Images</label>
+                        
+                        {{-- Drag & Drop Area --}}
+                        <div id="galleryDropArea" class="border rounded p-3 mb-2 text-center" style="background:#f9f9f9; cursor:pointer;">
+                            <p class="mb-0 text-muted">Click or Drag images here</p>
+                        </div>
+                        
+                        {{-- Hidden Input --}}
+                        <input type="file" id="galleryInput" name="images[]" class="d-none" multiple accept="image/*">
+                        
+                        {{-- Preview Container --}}
+                        <div id="galleryPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+                </div>
 
-            {{-- file input (we will attempt to set its .files) --}}
-            <input type="file" id="galleryInput" name="images[]" class="form-control" accept="image/*" multiple>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="addProductSubmit" type="submit" class="btn btn-dark">Save Product</button>
+                </div>
 
-            <small class="text-muted d-block mb-2">
-              You can select multiple images. Pick files multiple times to add more — uploader will accumulate selections.
-            </small>
-
-            {{-- preview --}}
-            <div id="galleryPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
-          </div>
-
-          {{-- STATUS informational --}}
-          <div class="mb-3">
-            <label class="form-label fw-bold">Status</label><br>
-            <span class="badge bg-info text-dark">Status will be set to <strong>Pending</strong> until admin approval.</span>
-          </div>
-
+            </form>
         </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button id="addProductSubmit" type="submit" class="btn btn-dark">Save Product</button>
-        </div>
-
-      </form>
-
     </div>
-  </div>
 </div>
 
-{{-- Script: accumulate files, preview, robust submit --}}
+{{-- JAVASCRIPT --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const galleryInput = document.getElementById('galleryInput');
-  const preview = document.getElementById('galleryPreview');
-  const form = document.getElementById('addProductForm');
-  const submitBtn = document.getElementById('addProductSubmit');
+    
+    // --- 1. VARIANT LOGIC (Add Rows) ---
+    let variantIndex = 1;
+    const variantTableBody = document.getElementById('variantTableBody');
+    const addVariantBtn = document.getElementById('addVariantBtn');
 
-  if (!galleryInput || !form) return;
-
-  // DataTransfer to accumulate files chosen across multiple picks
-  let dt = new DataTransfer();
-
-  // whether we successfully assigned dt.files to input.files in this browser
-  let assignSupported = true;
-
-  // helper: render preview thumbnails
-  function renderPreview() {
-    preview.innerHTML = '';
-    Array.from(dt.files).forEach((file, idx) => {
-      if (!file.type.startsWith('image/')) return;
-
-      const url = URL.createObjectURL(file);
-
-      const wrap = document.createElement('div');
-      wrap.style.width = '84px';
-      wrap.style.position = 'relative';
-
-      const img = document.createElement('img');
-      img.src = url;
-      img.style.width = '84px';
-      img.style.height = '84px';
-      img.style.objectFit = 'cover';
-      img.className = 'rounded border';
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.innerHTML = '&times;';
-      btn.className = 'btn btn-sm btn-danger position-absolute';
-      btn.style.top = '-6px';
-      btn.style.right = '-6px';
-      btn.style.borderRadius = '50%';
-      btn.style.width = '22px';
-      btn.style.height = '22px';
-      btn.style.padding = '0';
-      btn.addEventListener('click', () => {
-        removeFileAt(idx);
-      });
-
-      wrap.appendChild(img);
-      wrap.appendChild(btn);
-      preview.appendChild(wrap);
-
-      img.onload = () => URL.revokeObjectURL(url);
-    });
-
-    // Attempt to sync to native input.files (may fail in some browsers)
-    try {
-      galleryInput.files = dt.files;
-      assignSupported = true;
-    } catch (err) {
-      assignSupported = false;
-      // we'll fallback to explicit FormData upload on submit
-      console.warn('Could not assign files to input.files (browser limitation). Will fallback to FormData submit.', err);
-    }
-  }
-
-  function removeFileAt(index) {
-    const files = Array.from(dt.files);
-    const newDt = new DataTransfer();
-    files.forEach((f, i) => {
-      if (i !== index) newDt.items.add(f);
-    });
-    dt = newDt;
-    renderPreview();
-  }
-
-  // user picks files via input
-  galleryInput.addEventListener('change', function (e) {
-    const files = Array.from(e.target.files || []);
-    files.forEach(f => {
-      if (f.type && f.type.startsWith('image/')) {
-        // avoid duplicate by name+size
-        const exists = Array.from(dt.files).some(x => x.name === f.name && x.size === f.size && x.type === f.type);
-        if (!exists) dt.items.add(f);
-      }
-    });
-    // clear native file input so next picks append manually
-    galleryInput.value = '';
-    renderPreview();
-  });
-
-  // form submit handler — fallback safe submit
-  form.addEventListener('submit', async function (ev) {
-    // If assignSupported is true, try one more time to sync dt.files into input before allowing native submit
-    if (assignSupported && dt.files.length > 0) {
-      try {
-        galleryInput.files = dt.files;
-        // native input now has the files — let browser do regular multipart submit
-        return;
-      } catch (err) {
-        assignSupported = false;
-        // continue to fallback to fetch
-      }
-    }
-
-    // If dt is empty and nothing selected, allow normal submit
-    if (dt.files.length === 0) {
-      return; // no gallery files — native submit fine
-    }
-
-    // Otherwise intercept and send via fetch with FormData (append files from dt explicitly)
-    ev.preventDefault();
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      const oldText = submitBtn.innerHTML;
-      submitBtn.innerHTML = 'Saving...';
-      try {
-        const fd = new FormData();
-
-        // Append all form fields except images[] — we'll add images from dt
-        const nativeFd = new FormData(form);
-        for (let pair of nativeFd.entries()) {
-          if (pair[0] === 'images[]') continue;
-          fd.append(pair[0], pair[1]);
-        }
-
-        // Append gallery files from dt
-        Array.from(dt.files).forEach(file => {
-          fd.append('images[]', file, file.name);
+    if(addVariantBtn) {
+        addVariantBtn.addEventListener('click', function() {
+            const row = document.createElement('tr');
+            row.id = `row-${variantIndex}`;
+            row.innerHTML = `
+                <td><input type="text" name="variations[${variantIndex}][unit_label]" placeholder="e.g. 500g" class="form-control form-control-sm" required /></td>
+                <td><input type="number" step="0.01" name="variations[${variantIndex}][price]" placeholder="Price" class="form-control form-control-sm" required /></td>
+                <td><input type="number" name="variations[${variantIndex}][stock]" placeholder="Qty" class="form-control form-control-sm" required /></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-row" data-id="${variantIndex}">&times;</button></td>
+            `;
+            variantTableBody.appendChild(row);
+            variantIndex++;
         });
 
-        // Append any remaining native input files (edge-case)
-        if (galleryInput.files && galleryInput.files.length) {
-          Array.from(galleryInput.files).forEach(f => {
-            const duplicate = Array.from(dt.files).some(x => x.name === f.name && x.size === f.size);
-            if (!duplicate && f.type.startsWith('image/')) fd.append('images[]', f, f.name);
-          });
-        }
+        // Remove Row Logic
+        variantTableBody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-row')) {
+                const id = e.target.getAttribute('data-id');
+                document.getElementById(`row-${id}`).remove();
+            }
+        });
+    }
 
-        // CSRF token from meta tag or blade
-        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+    // --- 2. IMAGE UPLOAD LOGIC ---
+    const dropArea = document.getElementById('galleryDropArea');
+    const galleryInput = document.getElementById('galleryInput');
+    const preview = document.getElementById('galleryPreview');
+    const form = document.getElementById('addProductForm');
+    const submitBtn = document.getElementById('addProductSubmit');
+    
+    // DataTransfer object to hold files
+    const dt = new DataTransfer();
 
-        const res = await fetch(form.action, {
-          method: (form.method || 'POST').toUpperCase(),
-          body: fd,
-          credentials: 'same-origin',
-          headers: {
-            'X-CSRF-TOKEN': token,
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'text/html,application/json'
-          }
+    if(dropArea) {
+        // Click to open file dialog
+        dropArea.addEventListener('click', () => galleryInput.click());
+
+        // Handle File Selection
+        galleryInput.addEventListener('change', function() {
+            for (let i = 0; i < this.files.length; i++) {
+                dt.items.add(this.files[i]);
+            }
+            updatePreview();
+            this.value = ''; // Clear input to allow re-selecting same file
         });
 
-        // If server redirected, follow it
-        if (res.redirected) {
-          window.location = res.url;
-          return;
-        }
-
-        if (res.ok) {
-          // success -> reload to show new product
-          window.location.reload();
-          return;
-        }
-
-        //  JSON error or show generic
-        let text = await res.text();
-        try {
-          const json = JSON.parse(text);
-          alert(json.message || json.error || 'Failed to save product.');
-        } catch (err) {
-          alert('Failed to save product. Server returned an error.');
-        }
-      } catch (err) {
-        console.error('Submit error', err);
-        alert('Network or server error while saving product.');
-      } finally {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = oldText || 'Save Product';
-        }
-      }
+        // Drag & Drop Effects
+        dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.style.borderColor = 'blue'; });
+        dropArea.addEventListener('dragleave', () => { dropArea.style.borderColor = '#dee2e6'; });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = '#dee2e6';
+            for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                if (e.dataTransfer.files[i].type.startsWith('image/')) {
+                    dt.items.add(e.dataTransfer.files[i]);
+                }
+            }
+            updatePreview();
+        });
     }
-  });
 
+    function updatePreview() {
+        preview.innerHTML = '';
+        [...dt.files].forEach((file, index) => {
+            let div = document.createElement('div');
+            div.style.position = 'relative';
+            div.style.width = '70px';
+            div.style.height = '70px';
+
+            let img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.className = 'rounded border';
+
+            let btn = document.createElement('button');
+            btn.innerHTML = '&times;';
+            btn.className = 'btn btn-danger btn-sm p-0 rounded-circle position-absolute';
+            btn.style.top = '-5px';
+            btn.style.right = '-5px';
+            btn.style.width = '20px';
+            btn.style.height = '20px';
+            btn.style.lineHeight = '18px';
+            
+            btn.onclick = (e) => {
+                e.preventDefault(); 
+                dt.items.remove(index);
+                updatePreview();
+            };
+
+            div.appendChild(img);
+            div.appendChild(btn);
+            preview.appendChild(div);
+        });
+    }
+
+    // --- 3. FORM SUBMIT HANDLER ---
+    if(form) {
+        form.addEventListener('submit', function(e) {
+            
+            // Name Capitalization Check
+            const nameInput = document.getElementById('productNameInput');
+            const nameValue = nameInput.value.trim();
+            if (nameValue.length > 0 && nameValue.charAt(0) !== nameValue.charAt(0).toUpperCase()) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    text: 'Product Name must start with a Capital Letter!',
+                    confirmButtonColor: '#212529'
+                });
+                return;
+            }
+
+            // Sync DataTransfer files to Input
+            if (dt.files.length > 0) {
+                galleryInput.files = dt.files;
+            }
+
+            // Button Loading State
+            submitBtn.innerText = 'Saving...';
+            submitBtn.disabled = true;
+        });
+    }
 });
 </script>

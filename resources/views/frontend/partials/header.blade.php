@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
   <style>
-    /* Custom Scrollbar for the sub-menu if it gets too long */
+    /* Custom Scrollbar */
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
@@ -21,11 +21,12 @@
   <header class="fixed top-0 left-0 right-0 z-50 bg-[#5b2c2c] text-white shadow-lg">
     <div class="w-full flex items-center justify-between px-4 py-3 gap-4">
 
-      {{-- 1. LEFT SIDE: Logo + All Categories Button --}}
+      {{-- 1. LEFT SIDE: Logo + All Categories --}}
       <div class="flex items-center gap-6 flex-shrink-0">
         
         {{-- Logo --}}
         <a href="{{ route('home') }}" class="flex items-center gap-2">
+          {{-- Check if image exists, otherwise placeholder --}}
           <img src="https://via.placeholder.com/40" alt="TradLanka"
                class="h-10 w-10 rounded-full bg-white p-1" />
           <h1 class="text-xl font-bold">
@@ -98,7 +99,6 @@
       </div>
 
       {{-- 2. CENTER: Search Bar --}}
-      {{-- 'flex-1' allows it to fill space, 'justify-center' aligns the inner div --}}
       <div class="flex-1 px-4 hidden lg:flex justify-center">
          <div class="w-full max-w-2xl">
             <livewire:search-bar />
@@ -108,25 +108,70 @@
       {{-- 3. RIGHT SIDE: Navigation Links + Icons --}}
       <div class="flex items-center gap-6 flex-shrink-0">
         
-        {{-- Nav Links (Moved to Right Side) --}}
         <nav class="hidden xl:flex items-center gap-6 text-sm font-medium">
           <a href="#" class="hover:text-yellow-400 transition">Shop</a>
-          <a href="#" class="hover:text-yellow-400 transition">Offers</a>
-          <a href="#" class="hover:text-yellow-400 transition">About</a>
-          <a href="#" class="hover:text-yellow-400 transition">Contact</a>
+          <div class="flex items-center space-x-4">
+    
+         <div class="relative inline-block text-left">
+            <select onchange="window.location.href='/set-currency/'+this.value" 
+        class="bg-transparent border-none text-white font-semibold cursor-pointer focus:outline-none">
+    <option class="text-black" value="LKR" {{ session('currency') == 'LKR' ? 'selected' : '' }}>LKR</option>
+    <option class="text-black" value="USD" {{ session('currency') == 'USD' ? 'selected' : '' }}>USD</option>
+</select>
+          <a href="{{ route('about') }}" class="...your-classes...">About</a>
+          <a href="{{ route('contact') }}" class="text-sm font-medium text-white hover:text-gray-200 transition">
+    Contact
+</a>
         </nav>
 
         {{-- Icons --}}
         <div class="flex items-center gap-5 text-xl">
-          <a href="{{ route('cart.show') }}" class="hover:text-yellow-400 relative">
+          
+          {{-- CART ICON (Fixed to check WEB guard only) --}}
+          <a href="{{ Route::has('cart.show') ? route('cart.show') : '#' }}" class="hover:text-yellow-400 relative">
             <i class="fas fa-shopping-cart"></i>
-            <span class="absolute -top-2 -right-3 bg-yellow-400 text-xs text-black rounded-full px-1">0</span>
+            <span id="cart-badge" class="absolute -top-2 -right-3 bg-yellow-400 text-xs text-black font-bold rounded-full px-1.5 py-0.5 {{ (Auth::guard('web')->check() && \App\Models\Cart::where('user_id', Auth::guard('web')->id())->count() > 0) ? '' : 'hidden' }}">
+                @if(Auth::guard('web')->check())
+                    {{ \App\Models\Cart::where('user_id', Auth::guard('web')->id())->count() }}
+                @else
+                    0
+                @endif
+            </span>
           </a>
-          <a href="#" class="hover:text-yellow-400"><i class="fas fa-box-open"></i></a>
-          <a href="#" class="hover:text-yellow-400"><i class="fas fa-user-circle"></i></a>
+         {{-- Order Icon linked to the trackOrder method --}}
+<a href="{{ url('track-order') }}" class="hover:text-yellow-400" title="Track Order">
+    <i class="fas fa-box-open"></i>
+</a>
+
+             {{-- USER ICON (GUEST + LOGGED CUSTOMER) --}}
+
+@auth('web')
+    {{-- LOGGED IN → GO TO PROFILE --}}
+    <a href="{{ route('user.profile.index') }}"
+       class="flex flex-col items-center select-none cursor-pointer hover:opacity-90 transition">
+        <i class="fas fa-user-circle text-2xl text-yellow-400"></i>
+
+        <span class="text-[10px] font-bold mt-1 uppercase tracking-wide text-yellow-400 max-w-[80px] truncate">
+            {{ strtok(auth('web')->user()->name, ' ') }}
+        </span>
+    </a>
+@else
+    {{-- GUEST → OPEN LOGIN MODAL --}}
+    <div onclick="openAuthModal('login')"
+         class="flex flex-col items-center select-none cursor-pointer hover:opacity-90 transition">
+        <i class="fas fa-user-circle text-2xl text-white"></i>
+    </div>
+@endauth
+
+
+
+          {{-- Global Logout Form  --}}
+          <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+              @csrf
+          </form>
+
         </div>
       </div>
-
     </div>
   </header>
 

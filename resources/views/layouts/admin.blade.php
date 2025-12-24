@@ -10,6 +10,13 @@
     {{-- Bootstrap Icons --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
+    <!-- Tailwind CSS (for Admin UI components like Banner editor) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    
+
+
+
     {{-- Inline CSS to ensure styles load correctly on nested routes --}}
     <style>
         body {
@@ -88,7 +95,10 @@
         }
     </style>
 </head>
+
+
 <body>
+
 
 <div class="d-flex">
     {{-- Sidebar: hidden on admin.products.show --}}
@@ -113,21 +123,7 @@
                 <span class="badge bg-danger rounded-pill" style="font-size: 0.75rem;">{{ $pendingSellers }}</span>
             @endif
         </a>
-        {{-- === USER MANAGEMENT WITH COUNTER FOR SELLER APPROVAL === --}}
-        <a href="{{ route('admin.seller.requests') }}" class="{{ request()->is('admin/seller-requests*') ? 'active' : '' }} d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-people"></i> User Management</span>
-            
-            @php
-                // FIX: Count from 'SellerRequest' table, not 'Staff'
-                // This counts the people waiting in your "Seller Management" list
-                $pendingSellers = \App\Models\SellerRequest::where('status', 'pending')->count();
-            @endphp
-
-            @if($pendingSellers > 0)
-                <span class="badge bg-danger rounded-pill" style="font-size: 0.75rem;">{{ $pendingSellers }}</span>
-            @endif
-        </a>
-
+    
         {{-- === REVIEW PRODUCTS WITH COUNTER === --}}
         <a href="{{ route('admin.products.index') }}" class="{{ request()->is('admin/products*') ? 'active' : '' }} d-flex justify-content-between align-items-center pe-3">
             <span><i class="bi bi-bag-check me-2"></i> Review Products</span>
@@ -148,11 +144,15 @@
         </a>
 
         {{-- Other Menu Items --}}
-        <a href="#"><i class="bi bi-truck"></i> Order & Delivery</a>
+          <a href="{{ route('admin.orders.review') }}" class="nav-link">
+    <i class="fa fa-truck"></i> Review Orders
+</a>
         <a href="#"><i class="bi bi-credit-card"></i> Payment & Refunds</a>
         <a href="#"><i class="bi bi-robot"></i> Chatbot Settings</a>
         <a href="#"><i class="bi bi-graph-up"></i> Reports & Analytics</a>
-        <a href="#"><i class="bi bi-pencil-square"></i> Website Content</a>
+        <a href="{{ route('admin.banner.edit') }}">
+    <i class="bi bi-pencil-square"></i> Website Content
+</a>
         <a href="#"><i class="bi bi-gear"></i> Settings</a>
     </div>
     @endunless
@@ -286,6 +286,7 @@
 
 {{-- Bootstrap JS --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 
 {{-- SweetAlert2 --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

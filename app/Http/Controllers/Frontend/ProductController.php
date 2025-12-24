@@ -5,50 +5,84 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Category;
+use App\Models\Order;
 
 class ProductController extends Controller
 {
     /**
      * Show product detail (customer-facing).
-     *
-     * Uses route-model binding: route should be defined as:
-     * Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
-     *
-     * @param  \App\Models\Product  $product
-     * @return \Illuminate\View\View
      */
-    public function show(Product $product): View
-    {
-        // Eager load relations and order gallery images if you use sort_order
-        $product->load([
-            'images' => function ($q) {
-                $q->orderBy('sort_order')->orderBy('id');
-            },
-            'category',
-            'seller'
-        ]);
-
-        // Acceptable public statuses (case-insensitive)
-        $publicStatuses = ['approved', 'active', 'reapproved'];
-        $status = strtolower((string) ($product->status ?? ''));
-
-        // If product is public, show normally
-        if (in_array($status, $publicStatuses, true)) {
-            return view('frontend.product.show', compact('product'));
+     public function show(Product $product, Request $request): View
+{
+    $currency = session('currency', 'LKR');
+    $exchangeRate = 0.0032; //
+   
+    // 1. Load relations
+    $product->load([
+        'images' => function ($q) {
+            $q->orderBy('sort_order')->orderBy('id');
+        },
+        'category',
+        'seller',
+        'variants',
+        'reviews' => function ($q) {
+            $q->where('status', 1)
+              ->with('user')
+              ->latest();
         }
+    ]);
 
-        // Allow preview for admins
-        if (Auth::guard('admin')->check()) {
-            return view('frontend.product.show', compact('product'));
+    // 2. APPLY CURRENCY CONVERSION
+    if ($currency === 'USD') {
+        // Convert main product price
+        $product->price = $product->price * $exchangeRate;
+
+        // Convert all variant prices
+        foreach ($product->variants as $variant) {
+            $variant->price = $variant->price * $exchangeRate;
         }
-
-        // Allow preview for the owning seller
-        if (Auth::guard('seller')->check() && Auth::guard('seller')->id() === $product->seller_id) {
-            return view('frontend.product.show', compact('product'));
-        }
-
-        // Otherwise hide the product
-        abort(404);
     }
+
+        // Breadcrumb category (optional)
+        $breadcrumbCategory = null;
+        if ($request->has('from_category')) {
+            $breadcrumbCategory = Category::where(
+                'slug',
+                $request->query('from_category')
+            )->first();
+        }
+
+        // Can the logged-in user review this product?
+        $canReview = false;
+    if (Auth::check()) {
+        $canReview = Order::where('user_id', Auth::id())
+            ->where('status', 4)
+            ->whereHas('items', function ($query) use ($product) {
+                $query->where('product_id', $product->id);
+            })
+            ->exists();
+    }
+
+        // Product visibility rules
+       $publicStatuses = ['approved', 'active', 'reapproved'];
+    $status = strtolower((string) ($product->status ?? ''));
+    $isPublic = in_array($status, $publicStatuses, true);
+
+    $isAdmin = Auth::guard('admin')->check();
+    $isOwner = Auth::guard('seller')->check() && Auth::guard('seller')->id() === $product->seller_id;
+
+    if ($isPublic || $isAdmin || $isOwner) {
+        return view('frontend.product.show', compact(
+            'product',
+            'breadcrumbCategory',
+            'canReview',
+            'currency' // Pass currency to the view for the $ / Rs. symbol
+        ));
+    }
+
+    abort(404);
+}
 }

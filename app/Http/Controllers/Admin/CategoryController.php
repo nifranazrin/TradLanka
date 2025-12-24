@@ -15,16 +15,13 @@ class CategoryController extends Controller
     // Show all categories
     public function index()
     {
-        // We need all categories to populate the "Parent Category" dropdown in the modal
         $categories = Category::orderBy('id', 'desc')->get();
-        // Also handy to have just main categories separated if needed, but your view uses $categories
         return view('admin.categories.index', compact('categories'));
     }
 
     // Show create form
     public function create()
     {
-        // Retrieve parents if you use a separate create page
         $categories = Category::whereNull('parent_id')->get();
         return view('admin.categories.create', compact('categories'));
     }
@@ -32,19 +29,18 @@ class CategoryController extends Controller
     // Store new category
     public function store(Request $request)
     {
-        // Validate inputs
+        // 1. Validation
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
-            'banner_image' => 'nullable|image|max:5120', // <--- ADDED: Banner Validation (Max 5MB)
+            'image' => 'nullable|image|max:2048',       // Thumbnail
+            'banner_image' => 'nullable|image|max:5120', // Banner (5MB)
             'parent_id' => 'nullable|exists:categories,id',
-            // status is checked below via request
         ]);
 
         $name = trim($request->name);
 
-        // Case-insensitive duplicate check
+        // 2. Custom Duplicate Check (Case-Insensitive)
         $exists = Category::whereRaw('LOWER(name) = ?', [Str::lower($name)])->exists();
         if ($exists) {
             return back()
@@ -52,16 +48,17 @@ class CategoryController extends Controller
                 ->with('error', "Category '{$name}' already exists.");
         }
 
-        // Status Handling
-        $status = $request->status; // Expecting 1 or 0 from the form
+        // 3. Status Handling (Ensure it saves as '1' or '0')
+        $status = $request->status == '1' ? '1' : '0';
 
-        // 1. Handle Main Image
+        // 4. Handle Main Image Upload (Thumbnail)
         $imagePath = null;
         if ($request->hasFile('image')) {
+            // Using store() automatically generates a unique hash ID for the filename
             $imagePath = $request->file('image')->store('categories', 'public');
         }
 
-        // 2. Handle Banner Image (NEW)
+        // 5. Handle Banner Image Upload
         $bannerPath = null;
         if ($request->hasFile('banner_image')) {
             $bannerPath = $request->file('banner_image')->store('category_banners', 'public');
@@ -73,7 +70,7 @@ class CategoryController extends Controller
                 'slug' => Str::slug($name),
                 'description' => $request->description,
                 'image' => $imagePath,
-                'banner_image' => $bannerPath, // <--- ADDED: Saving Banner
+                'banner_image' => $bannerPath,
                 'status' => $status,
                 'parent_id' => $request->parent_id,
             ]);
@@ -81,7 +78,7 @@ class CategoryController extends Controller
             Log::error('Category store error: ' . $e->getMessage());
             return back()
                 ->withInput()
-                ->with('error', "Category '{$name}' could not be saved.");
+                ->with('error', "Category '{$name}' could not be saved due to a database error.");
         }
 
         return redirect()->route('admin.categories.index')->with('success', 'Category added successfully!');
@@ -92,7 +89,7 @@ class CategoryController extends Controller
     {
         $category = Category::findOrFail($id);
         // Get all categories except the current one (cannot be its own parent)
-        $parentCategories = Category::where('id', '!=', $id)->get(); 
+        $parentCategories = Category::where('id', '!=', $id)->get();
         
         return view('admin.categories.edit', compact('category', 'parentCategories'));
     }
@@ -100,18 +97,18 @@ class CategoryController extends Controller
     // Update existing category
     public function update(Request $request, $id)
     {
-        // Validate inputs
+        // 1. Validation
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $id,
+            'name' => 'required|string|max:255', // Removed unique check here as you do it manually below
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
-            'banner_image' => 'nullable|image|max:5120', // <--- ADDED: Banner Validation
+            'banner_image' => 'nullable|image|max:5120',
             'parent_id' => 'nullable|exists:categories,id',
         ]);
 
         $name = trim($request->name);
 
-        // Case-insensitive duplicate check excluding current id
+        // 2. Custom Duplicate Check (Excluding current ID)
         $exists = Category::whereRaw('LOWER(name) = ?', [Str::lower($name)])
                     ->where('id', '!=', $id)
                     ->exists();
@@ -122,35 +119,37 @@ class CategoryController extends Controller
                 ->with('error', "Category '{$name}' already exists.");
         }
 
-        $status = $request->status;
-
-        $category = Category::findOrFail($id);
-
-        // Check if user tried to set the category as its own parent (loop prevention)
+        // 3. Prevent Category from being its own Parent
         if ($request->parent_id == $id) {
              return back()->withInput()->with('error', "A category cannot be its own parent.");
         }
 
-        // 1. Handle Main Image Update
+        $category = Category::findOrFail($id);
+        $status = $request->status == '1' ? '1' : '0';
+
+        // 4. Handle Main Image Update
         if ($request->hasFile('image')) {
+            // Delete old image if it exists
             if ($category->image && Storage::disk('public')->exists($category->image)) {
                 Storage::disk('public')->delete($category->image);
             }
+            // Store new image
             $imagePath = $request->file('image')->store('categories', 'public');
         } else {
+            // Keep old image
             $imagePath = $category->image;
         }
 
-        // 2. Handle Banner Image Update (NEW)
+        // 5. Handle Banner Image Update
         if ($request->hasFile('banner_image')) {
-            // Delete old banner if exists
+            // Delete old banner if it exists
             if ($category->banner_image && Storage::disk('public')->exists($category->banner_image)) {
                 Storage::disk('public')->delete($category->banner_image);
             }
             // Store new banner
             $bannerPath = $request->file('banner_image')->store('category_banners', 'public');
         } else {
-            // Keep existing banner
+            // Keep old banner
             $bannerPath = $category->banner_image;
         }
 
@@ -160,7 +159,7 @@ class CategoryController extends Controller
                 'slug' => Str::slug($name),
                 'description' => $request->description,
                 'image' => $imagePath,
-                'banner_image' => $bannerPath, // <--- ADDED: Updating Banner
+                'banner_image' => $bannerPath,
                 'status' => $status,
                 'parent_id' => $request->parent_id,
             ]);
@@ -179,16 +178,17 @@ class CategoryController extends Controller
     {
         $category = Category::findOrFail($id);
 
-        // Delete Main Image
+        // 1. Delete Main Image
         if ($category->image && Storage::disk('public')->exists($category->image)) {
             Storage::disk('public')->delete($category->image);
         }
 
-        // Delete Banner Image (NEW)
+        // 2. Delete Banner Image
         if ($category->banner_image && Storage::disk('public')->exists($category->banner_image)) {
             Storage::disk('public')->delete($category->banner_image);
         }
 
+        // 3. Delete Record
         $category->delete();
 
         return redirect()->route('admin.categories.index')->with('success', 'Category deleted successfully!');

@@ -10,15 +10,15 @@
             <div class="mt-4 space-y-2 text-sm">
                 <p class="flex items-center gap-2">
                     <i class="fas fa-map-marker-alt text-yellow-400"></i>
-                    29/4, Dalada Ela Road, Mailagasthenna, Badulla
+                     Colombo, Sri Lanka
                 </p>
                 <p class="flex items-center gap-2">
                     <i class="fas fa-phone-alt text-yellow-400"></i>
-                    076 578 3330
+                    +94 75 767 9793
                 </p>
                 <p class="flex items-center gap-2">
                     <i class="fas fa-envelope text-yellow-400"></i>
-                    info@tradlanka.lk
+                    infotradlanka@gmail.com
                 </p>
             </div>
         </div>

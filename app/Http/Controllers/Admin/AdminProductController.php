@@ -5,17 +5,19 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Staff; 
+use App\Notifications\SellerDashboardNotification;
+use Illuminate\Support\Facades\Log; // Required to fix the Log error
+use Illuminate\Support\Facades\Auth; // Required for Auth guard usage
 
 class AdminProductController extends Controller
 {
     // Display all products with their sellers.
     public function index()
     {
-        // UPDATE: Fetch products with smart sorting
-        // 1. Priority to 'pending' and 'reapproval_pending' (Case = 1)
-        // 2. Everything else is secondary (Case = 0)
-        // 3. Sort by updated_at desc to show newest changes first
-        
+        // 1. Priority to 'pending' and 'reapproval_pending'
+        // 2. Everything else is secondary
+        // 3. Sort by updated_at desc
         $products = Product::with(['seller', 'images'])
             ->orderByRaw("CASE 
                 WHEN status IN ('pending', 'reapproval_pending') THEN 1 
@@ -30,9 +32,7 @@ class AdminProductController extends Controller
     // Show single product details.
     public function show($id)
     {
-        // UPDATE: CRITICAL FIX - Added 'images' here so gallery is available in the view
         $product = Product::with(['seller', 'images'])->findOrFail($id);
-        
         return view('admin.products.show', compact('product'));
     }
 
@@ -41,20 +41,31 @@ class AdminProductController extends Controller
     {
         $product = Product::findOrFail($id);
 
-        // Safe improvement: ensure approved items become active and visible on frontend
         if ($product->status === 'reapproval_pending') {
             $product->status = 'reapproved';
-            $product->is_active = 1;       // make sure product is visible
-            $product->approved_at = now(); // optional tracking
             $message = '✅ Product re-approved successfully!';
+            $notifText = "Your product '{$product->name}' has been re-approved.";
         } else {
             $product->status = 'approved';
-            $product->is_active = 1;       // make it visible
-            $product->approved_at = now(); // optional tracking
             $message = '✅ Product approved successfully!';
+            $notifText = "Your product '{$product->name}' has been approved!";
         }
 
+        $product->is_active = 1;
+        $product->approved_at = now();
         $product->save();
+
+        // --- SAFE NOTIFICATION TRIGGER ---
+        try {
+            $seller = Staff::find($product->seller_id);
+            if ($seller) {
+                // This triggers the red circle on the Seller's Product sidebar
+                $seller->notify(new SellerDashboardNotification('product', $notifText, $product->id));
+            }
+        } catch (\Exception $e) {
+            // This ensures if notifications fail, the main approval still works
+            Log::error('Notification Error: ' . $e->getMessage());
+        }
 
         return back()->with('success', $message);
     }
@@ -64,8 +75,18 @@ class AdminProductController extends Controller
     {
         $product = Product::findOrFail($id);
         $product->status = 'rejected';
-        $product->is_active = 0; // hide rejected ones from frontend
+        $product->is_active = 0;
         $product->save();
+
+        // --- SAFE NOTIFICATION TRIGGER ---
+        try {
+            $seller = Staff::find($product->seller_id);
+            if ($seller) {
+                $seller->notify(new SellerDashboardNotification('product', "Your product '{$product->name}' was rejected.", $product->id));
+            }
+        } catch (\Exception $e) {
+            Log::error('Notification Error: ' . $e->getMessage());
+        }
 
         return back()->with('error', '❌ Product rejected successfully.');
     }

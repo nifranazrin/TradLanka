@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable; // <--- 1. ADD THIS IMPORT
+use Illuminate\Notifications\Notifiable; 
 
 class Staff extends Authenticatable
 {

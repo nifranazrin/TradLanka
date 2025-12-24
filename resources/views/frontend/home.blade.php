@@ -2,18 +2,73 @@
 
 @section('content')
 
-{{-- Sticky Header --}}
-@include('frontend.partials.header')
+{{-- ================================================= --}}
+{{-- 1. CUSTOM CSS (POPUP + SLIDER)                    --}}
+{{-- ================================================= --}}
+<style>
+    /* --- SweetAlert Popup Styles --- */
+    .cart-alert-popup {
+        background: #dfdacc !important;
+        border-radius: 16px !important;
+        padding: 1.5rem 1.6rem !important;
+        border: 1px solid #efeae8;
+    }
+    .cart-alert-popup .swal2-title {
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        color: #2c1111 !important;
+        letter-spacing: 0.3px;
+        margin-bottom: 8px !important;
+    }
+    .cart-alert-popup .swal2-icon {
+        transform: scale(0.7);
+        margin-top: 5px !important;
+        border-color: #5b2c2c !important;
+    }
+    .cart-alert-popup p { margin: 0; }
+    
+    /* Confirm Button (View Cart) */
+    .cart-alert-popup .swal2-confirm {
+        background: #bb8f8f !important;
+        color: #300f07 !important;
+        border-radius: 8px !important;
+        font-weight: 600;
+        padding: 10px 24px !important;
+        box-shadow: 0 4px 6px rgba(91, 44, 44, 0.2) !important;
+    }
+    
+    /* Cancel Button (Continue Shopping) */
+    .cart-alert-popup .swal2-cancel {
+        background: #cabf59 !important;
+        color: #191a13 !important;
+        border-radius: 8px !important;
+        font-weight: 600;
+        padding: 10px 18px !important;
+    }
+    .cart-alert-popup .swal2-close { color: #5b2c2c !important; }
 
-{{-- Floating Toast Message --}}
-<div id="cartToast" 
-     class="hidden fixed bottom-6 right-6 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 transition-all duration-500 flex items-center space-x-2">
+    /* --- Recommended Slider Animation --- */
+    @keyframes scroll { 
+        0% { transform: translateX(0); } 
+        100% { transform: translateX(-50%); } 
+    }
+    .animate-scroll { 
+        display: flex; 
+        animation: scroll 30s linear infinite; 
+    }
+    .animate-scroll:hover {
+        animation-play-state: paused; /* Pauses when user hovers */
+    }
+</style>
+
+{{-- Floating Toast Fallback --}}
+<div id="cartToast" class="hidden fixed bottom-6 right-6 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 transition-all duration-500 flex items-center space-x-2">
     <i class="fas fa-check-circle text-white text-lg"></i>
     <span id="toastMessage">Added to cart!</span>
 </div>
 
-{{-- Main Content --}}
-<main class="w-full mt-0 pt-0">
+{{-- Main Wrapper --}}
+<div class="w-full mt-0 pt-0">
 
     {{-- Hero Banner --}}
     <div class="w-full mt-0">
@@ -23,188 +78,252 @@
     {{-- Page Content --}}
     <div class="px-6 lg:px-10">
 
-              {{-- SHOP BY CATEGORY --}}
+    {{-- SECTION: SHOP BY CATEGORY --}}
 <section class="mt-10 mb-12">
     <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-center">Shop by Category</h2>
-
     @if($categories->isEmpty())
         <p class="text-center text-gray-500">No categories available yet.</p>
     @else
-        <div class="flex space-x-6 overflow-x-auto pb-4 justify-center">
+        <div class="flex flex-wrap justify-center items-start gap-y-8 gap-x-4 md:gap-x-10 pb-4">
             @foreach ($categories as $category)
-                
-                {{-- FIX: Add this check to hide sub-categories --}}
                 @if($category->parent_id === null) 
-
-                    {{-- UPDATED: Use the correct route name 'categories.show' --}}
-<a href="{{ route('categories.show', $category->slug) }}" 
-   class="flex-shrink-0 flex flex-col items-center cursor-pointer group no-underline">
-                        
-                        <div class="w-24 h-24 rounded-full overflow-hidden bg-[#f7f0ef] shadow-md hover:scale-105 transition-transform">
-                            {{-- Image Logic --}}
+                    <a href="{{ route('categories.show', $category->slug) }}" class="flex flex-col items-center cursor-pointer group no-underline w-[110px] sm:w-[130px]">
+                        {{-- Circle Container --}}
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-[#f7f0ef] shadow-md hover:scale-105 transition-transform">
                             @if ($category->image)
-                                <img src="{{ asset('storage/' . $category->image) }}" 
-                                     alt="{{ $category->name }}" 
-                                     class="w-full h-full object-cover group-hover:opacity-90">
+                                <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:opacity-90">
                             @else
-                                <img src="https://via.placeholder.com/100x100?text={{ urlencode($category->name) }}" 
-                                     alt="{{ $category->name }}" 
-                                     class="w-full h-full object-cover">
+                                <img src="https://via.placeholder.com/100x100?text={{ urlencode($category->name) }}" alt="{{ $category->name }}" class="w-full h-full object-cover">
                             @endif
                         </div>
-                        <p class="mt-2 text-sm font-medium text-gray-700 group-hover:text-[#5b2c2c] transition-colors">
+                        {{-- Text Label --}}
+                        <p class="mt-3 text-xs sm:text-sm font-medium text-gray-700 group-hover:text-[#5b2c2c] transition-colors text-center leading-tight">
                             {{ $category->name }}
                         </p>
                     </a>
-
-                @endif {{-- End of FIX --}}
-
+                @endif
             @endforeach
         </div>
     @endif
 </section>
         
-        {{-- BEST SELLERS --}}
-        <section class="mt-12">
-            <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-left">Best Sellers</h2>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-6 w-full">
-                @foreach (range(1, 10) as $i)
-                    <div class="bg-white shadow-md rounded-lg overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg w-full">
-                        <img src="https://via.placeholder.com/300x200?text=Product+{{ $i }}" 
-                             alt="Product {{ $i }}" 
-                             class="w-full h-56 md:h-60 object-cover">
-                        <div class="p-4 text-center">
-                            <h3 class="font-semibold text-gray-800 text-base md:text-lg">Product {{ $i }}</h3>
-                            <p class="text-[#5b2c2c] font-bold mt-1 text-base">$ {{ 20 + $i }}.00</p>
-
-                            <div class="flex justify-center items-center text-yellow-500 mt-1">
-                                @for ($s = 0; $s < 5; $s++)
-                                    <i class="fas fa-star text-sm"></i>
-                                @endfor
-                                <span class="text-xs text-gray-500 ml-2">(120)</span>
-                            </div>
-
-                            <button 
-                                type="button"
-                                class="addToCartBtn mt-3 bg-[#5b2c2c] text-white px-4 py-1 rounded hover:bg-[#4a2424] text-sm flex items-center justify-center mx-auto"
-                                data-id="{{ $i }}">
-                                <i class="fas fa-cart-plus mr-2"></i> Add to Cart
-                            </button>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-
-        {{-- NEW ARRIVALS --}}
-        <section class="mt-16 mb-12">
-            <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-left">New Arrivals</h2>
-
-            @if ($products->isEmpty())
-                <p class="text-center text-gray-500">No new products available.</p>
-            @else
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-6 w-full">
-                    @foreach ($products as $product)
-                        <div class="bg-white shadow-md rounded-lg overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg w-full">
-
-                            <a href="{{ route('product.show', $product->slug) }}" class="block group">
-    <img src="{{ $product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/300x200?text=No+Image' }}"
-         alt="{{ $product->name }}"
-         class="w-full h-56 md:h-60 object-cover group-hover:opacity-90 transition">
-
-    <div class="p-4 text-center">
-        <h3 class="font-semibold text-gray-800 text-base md:text-lg">{{ $product->name }}</h3>
-        <p class="text-[#5b2c2c] font-bold mt-1 text-base">Rs {{ number_format($product->price, 2) }}</p>
-
-        <div class="flex justify-center items-center text-yellow-500 mt-1">
-            @for ($s = 0; $s < 5; $s++)
-                <i class="fas fa-star text-sm"></i>
-            @endfor
-            <span class="text-xs text-gray-500 ml-2">(98)</span>
-        </div>
+      {{-- SECTION: BEST SELLERS --}}
+<section class="mt-12">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-[#5b2c2c]">Best Sellers</h2>
+        <a href="{{ route('search.page', ['query' => 'new arrivals']) }}" 
+           class="text-[#5b2c2c] font-semibold hover:underline flex items-center gap-2 group text-sm md:text-base">
+            Browse more
+            <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+        </a>
     </div>
-</a>
 
-
-                            <div class="p-4 text-center">
-                                <button 
-                                    type="button"
-                                    class="addToCartBtn bg-[#5b2c2c] text-white px-4 py-1 rounded hover:bg-[#4a2424] text-sm flex items-center justify-center mx-auto"
-                                    data-id="{{ $product->id }}">
-                                    <i class="fas fa-cart-plus mr-2"></i> Add to Cart
-                                </button>
-                            </div>
-                        </div>
-                    @endforeach
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-8 w-full">
+        @foreach ($bestSellers as $item)
+            @php
+                $itemImg = $item->image ? asset('storage/' . $item->image) : 'https://via.placeholder.com/300x300?text=No+Image';
+                // DELETE: $itemPrice = 'Rs ' . number_format($item->price, 2);
+            @endphp
+            <div class="bg-white shadow-md rounded-lg overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg flex flex-col h-full">
+                <a href="{{ route('product.show', $item->slug) }}" class="block">
+                    <img src="{{ $itemImg }}" alt="{{ $item->name }}" class="w-full h-48 md:h-56 object-cover">
+                </a>
+                
+                <div class="p-4 text-center flex-grow flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-semibold text-gray-800 text-sm md:text-base line-clamp-2 min-h-[40px]">
+                            {{ $item->name }}
+                        </h3>
+                        {{-- FIX: Use display_price from Model to handle LKR/USD switching --}}
+                        <p class="text-[#5b2c2c] font-bold mt-1 text-base">{{ $item->display_price }}</p>
+                    </div>
+                    
+                    <button type="button"
+                            class="addToCartBtn mt-3 bg-[#5b2c2c] text-white px-4 py-2 rounded hover:bg-[#4a2424] text-xs md:text-sm flex items-center justify-center mx-auto transition w-full"
+                            data-id="{{ $item->id }}"
+                            data-name="{{ $item->name }}"
+                            {{-- FIX: Update data-price for the professional popup --}}
+                            data-price="{{ $item->display_price }}"
+                            data-image="{{ $itemImg }}">
+                        <i class="fas fa-cart-plus mr-2"></i> Add to Cart
+                    </button>
                 </div>
-            @endif
-        </section>
+            </div>
+        @endforeach
+    </div>
+</section>
+         
 
-        {{-- POPULAR CATEGORIES --}}
+{{-- SECTION: NEW ARRIVALS --}}
+<section class="mt-16 mb-12">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-[#5b2c2c]">New Arrivals</h2>
+        <a href="{{ route('search.page', ['query' => 'new arrivals']) }}"
+           class="text-[#5b2c2c] font-semibold hover:underline flex items-center gap-2 group text-sm md:text-base">
+             Browse more
+            <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+        </a>
+    </div>
+
+    @if ($products->isEmpty())
+        <p class="text-center text-gray-500">No new products available.</p>
+    @else
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-8 w-full">
+            @foreach ($products as $product)
+                @php
+                    $prodImg = $product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/300x200?text=No+Image';
+                    // DELETE: $prodPrice = 'Rs ' . number_format($product->price, 2);
+                @endphp
+                <div class="relative bg-white shadow-md rounded-lg overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg flex flex-col h-full">
+                    
+                    @if($loop->index < 5)
+                        <span class="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-sm z-10 shadow-sm">
+                            NEW
+                        </span>
+                    @endif
+
+                    <a href="{{ route('product.show', $product->slug) }}" class="block group">
+                        <img src="{{ $prodImg }}" alt="{{ $product->name }}" class="w-full h-48 md:h-56 object-cover group-hover:opacity-90 transition">
+                        
+                        <div class="p-4 text-center">
+                            <h3 class="font-semibold text-gray-800 text-sm md:text-base line-clamp-2 min-h-[40px]">
+                                {{ $product->name }}
+                            </h3>
+                            {{-- FIX: Dynamic price --}}
+                            <p class="text-[#5b2c2c] font-bold mt-1 text-base">{{ $product->display_price }}</p>
+                        </div>
+                    </a>
+
+                    <div class="p-4 text-center pt-0 mt-auto">
+                        <button type="button"
+                                class="addToCartBtn bg-[#5b2c2c] text-white px-4 py-2 rounded hover:bg-[#4a2424] text-xs md:text-sm flex items-center justify-center mx-auto transition w-full"
+                                data-id="{{ $product->id }}"
+                                data-name="{{ $product->name }}"
+                                data-price="{{ $product->display_price }}"
+                                data-image="{{ $prodImg }}">
+                            <i class="fas fa-cart-plus mr-2"></i> Add to Cart
+                        </button>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+</section>
+        {{-- SECTION: POPULAR CATEGORIES --}}
         <section class="mt-16 mb-12">
             <h2 class="text-2xl font-bold text-[#5b2c2c] mb-8 text-left">Popular Categories</h2>
-
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
                 <div class="flex items-center justify-between bg-green-50 rounded-2xl p-6 shadow-sm hover:shadow-lg transition">
                     <div>
                         <p class="text-green-700 font-medium">Ceylon’s Pride!</p>
                         <h3 class="text-2xl font-extrabold text-gray-800">Tea</h3>
                     </div>
-                    <img src="https://via.placeholder.com/100x100?text=Tea" 
-                         class="w-24 h-24 object-contain">
+                    <img src="https://via.placeholder.com/100x100?text=Tea" class="w-24 h-24 object-contain">
                 </div>
-
                 <div class="flex items-center justify-between bg-orange-50 rounded-2xl p-6 shadow-sm hover:shadow-lg transition">
                     <div>
                         <p class="text-orange-600 font-medium">Taste of Tradition!</p>
                         <h3 class="text-2xl font-extrabold text-gray-800">Spices</h3>
                     </div>
-                    <img src="https://via.placeholder.com/100x100?text=Spices" 
-                         class="w-24 h-24 object-contain">
+                    <img src="https://via.placeholder.com/100x100?text=Spices" class="w-24 h-24 object-contain">
                 </div>
-
                 <div class="flex items-center justify-between bg-yellow-50 rounded-2xl p-6 shadow-sm hover:shadow-lg transition">
                     <div>
                         <p class="text-yellow-600 font-medium">Crafted with Heritage!</p>
                         <h3 class="text-2xl font-extrabold text-gray-800">Handicrafts</h3>
                     </div>
-                    <img src="https://via.placeholder.com/100x100?text=Handicraft" 
-                         class="w-24 h-24 object-contain">
+                    <img src="https://via.placeholder.com/100x100?text=Handicraft" class="w-24 h-24 object-contain">
                 </div>
             </div>
         </section>
+             {{-- SECTION: ADVERTISEMENT BANNER --}}
+<section class="mt-14 mb-14 relative overflow-hidden">
 
-        {{-- ADVERTISEMENT BANNER --}}
-        <section class="mt-14 mb-14 relative overflow-hidden">
-            <div class="relative bg-[url('https://via.placeholder.com/1200x400?text=TradLanka+Deals')] bg-cover bg-center h-64 md:h-[420px] flex items-center justify-center">
-                <div class="absolute inset-0 bg-[#5b2c2c]/50"></div>
-                <div class="relative text-center">
-                    <h2 class="text-white text-2xl md:text-3xl font-extrabold mb-3">Special Festive Offers!</h2>
-                    <a href="#" class="inline-block bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-2 rounded shadow">View</a>
+    @php
+        $bgImage = 'https://via.placeholder.com/1200x400?text=Default+Banner';
+        $title = 'Special Offers';
+        $btnLink = '#';
+        $btnText = 'View';
+
+        if(isset($banner)) {
+            if(\Illuminate\Support\Str::startsWith($banner->image_path, 'http')) {
+                $bgImage = $banner->image_path;
+            } else {
+                $bgImage = asset('storage/' . $banner->image_path);
+            }
+            $title = $banner->title;
+            $btnLink = $banner->button_link;
+            $btnText = $banner->button_text;
+        }
+    @endphp
+
+    <div class="relative w-full h-[260px] md:h-[420px] overflow-hidden rounded-xl">
+
+        {{-- Banner Image --}}
+        <img 
+            src="{{ $bgImage }}"
+            alt="Advertisement Banner"
+            class="absolute inset-0 w-full h-full object-cover"
+        >
+
+        {{-- Overlay --}}
+        <div class="absolute inset-0 bg-gradient-to-r from-[#2b0f0f]/80 via-[#5b2c2c]/60 to-transparent"></div>
+
+        {{-- Content --}}
+        <div class="relative h-full flex items-center">
+            <div class="max-w-6xl mx-auto px-6 text-center w-full">
+
+                <h2 class="text-white text-2xl md:text-4xl font-extrabold mb-6 drop-shadow-lg leading-tight">
+                    {{ $title }}
+                </h2>
+
+                <div class="flex justify-center">
+                    <a href="{{ $btnLink }}"
+                       class="inline-flex items-center gap-2
+                              bg-yellow-400 hover:bg-yellow-500
+                              text-black font-semibold
+                              px-8 py-3
+                              rounded-lg shadow-lg
+                              transition duration-200">
+                        {{ $btnText }}
+                    </a>
                 </div>
-            </div>
-        </section>
 
-        {{-- RECOMMENDED FOR YOU --}}
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+        {{-- SECTION: RECOMMENDED FOR YOU (Fixed & Unified) --}}
+    
         <section class="mt-10 mb-16">
             <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-left">Recommended for You</h2>
-
             <div class="overflow-hidden relative">
+                {{-- Slider Container --}}
                 <div id="recommendSlider" class="flex space-x-6 animate-scroll will-change-transform">
                     @foreach (range(1, 10) as $i)
+                        @php
+                            // Mock Data for Recommended Items
+                            $recName = "Recommended Item " . $i;
+                            $recPrice = "Rs " . (1500 + ($i * 50)) . ".00";
+                            $recImg = "https://via.placeholder.com/300x200?text=Rec+" . $i;
+                        @endphp
                         <div class="min-w-[220px] bg-white rounded-lg shadow-md overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg">
-                            <img src="https://via.placeholder.com/300x200?text=AI+Rec+{{ $i }}" 
-                                 class="w-full h-36 object-cover">
-
+                            <img src="{{ $recImg }}" class="w-full h-36 object-cover">
                             <div class="p-4 text-center">
-                                <h3 class="font-semibold text-gray-800 text-sm">Recommended Product {{ $i }}</h3>
-                                <p class="text-[#5b2c2c] font-bold mt-1">Rs {{ 10 + $i }}.00</p>
-
-                                <button 
-                                    type="button"
-                                    class="addToCartBtn mt-2 bg-[#5b2c2c] text-white px-3 py-1 rounded text-xs hover:bg-[#4a2424]"
-                                    data-id="{{ $i }}">
+                                <h3 class="font-semibold text-gray-800 text-sm md:text-base">{{ $recName }}</h3>
+                                <p class="text-[#5b2c2c] font-bold mt-1">{{ $recPrice }}</p>
+                                
+                                {{-- ADD TO CART BUTTON (Recommended - Matches others now) --}}
+                                <button type="button" 
+                                        class="addToCartBtn mt-3 bg-[#5b2c2c] text-white px-4 py-1 rounded hover:bg-[#4a2424] text-sm flex items-center justify-center mx-auto transition" 
+                                        data-id="{{ 100 + $i }}" {{-- Unique ID for Rec items --}}
+                                        data-name="{{ $recName }}"
+                                        data-price="{{ $recPrice }}"
+                                        data-image="{{ $recImg }}">
                                     <i class="fas fa-cart-plus mr-1"></i> Add to Cart
                                 </button>
                             </div>
@@ -212,50 +331,86 @@
                     @endforeach
                 </div>
             </div>
-
-            <style>
-                @keyframes scroll {
-                    0% { transform: translateX(0); }
-                    100% { transform: translateX(-50%); }
-                }
-                .animate-scroll {
-                    display: flex;
-                    animation: scroll 30s linear infinite;
-                }
-            </style>
         </section>
 
     </div>
-</main>
+</div>
 
-{{-- Floating Action Buttons --}}
+{{-- ================================================= --}}
+{{-- 3. FLOATING BUTTONS                               --}}
+{{-- ================================================= --}}
 <div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3 z-50">
     <a href="#" id="chatbotBtn" class="bg-[#5b2c2c] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
         <i class="fas fa-robot text-xl"></i>
     </a>
-
-    <a href="https://wa.me/94771234567" target="_blank" 
-       class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
+    <a href="https://wa.me/94757679793" target="_blank" class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
         <i class="fab fa-whatsapp text-2xl"></i>
     </a>
 </div>
 
-{{-- ADD TO CART AJAX --}}
+{{-- ================================================= --}}
+{{-- 4. SCRIPTS                                        --}}
+{{-- ================================================= --}}
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // Initialize Animations
+    AOS.init({ once: true, offset: 100 });
 
+    // Auth Status
+    const isLoggedIn = {{ auth()->check() ? 'true' : 'false' }};
+    
+    // Helper: Update Header Cart Icon
+    function updateCartIcon(count) {
+        const badge = document.getElementById('cart-badge'); 
+        if(badge) {
+            badge.innerText = count;
+            badge.classList.remove('hidden');
+        }
+    }
+
+    // ============================================
+    // UNIVERSAL ADD TO CART LOGIC
+    // ============================================
     const buttons = document.querySelectorAll('.addToCartBtn');
-    const toast = document.getElementById('cartToast');
-    const toastMessage = document.getElementById('toastMessage');
 
     buttons.forEach(btn => {
         btn.addEventListener('click', function(event) {
+            event.preventDefault(); 
+            
+            // Get Product Data from Button Attributes
+            const productId   = this.getAttribute('data-id'); 
+            const productName = this.getAttribute('data-name'); 
+            const productPrice= this.getAttribute('data-price'); 
+            const productImage= this.getAttribute('data-image'); 
+            const productQty  = 1; 
 
-            event.preventDefault();
-            event.stopPropagation();
+            // --- Guest Logic ---
+            if (!isLoggedIn) {
+                localStorage.setItem('pendingCartItem', JSON.stringify({
+                    id: productId,
+                    qty: productQty
+                }));
+                // Open Login Modal
+                if (document.getElementById('authModal')) {
+                    document.getElementById('authModal').classList.remove('hidden');
+                } else if (typeof $ !== 'undefined' && $('#authModal').length) {
+                    $('#authModal').modal('show');
+                }
+                return; 
+            }
 
-            const productId = this.dataset.id;
+            // --- Logged In Logic ---
+            // Visual feedback on button
+            const originalHTML = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            this.disabled = true;
 
+            // AJAX Request
             fetch("{{ route('cart.add') }}", {
                 method: "POST",
                 headers: {
@@ -263,22 +418,105 @@ document.addEventListener('DOMContentLoaded', function() {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
                 },
-                body: JSON.stringify({ product_id: productId })
+                body: JSON.stringify({ 
+                    product_id: productId,
+                    product_qty: productQty
+                })
             })
-            .then(res => res.json())
+            .then(response => response.json())
             .then(data => {
-                toastMessage.textContent = data.message ?? 'Added to cart!';
-                toast.classList.remove('hidden');
-                setTimeout(() => toast.classList.add('hidden'), 2500);
+                // Reset Button
+                this.innerHTML = originalHTML;
+                this.disabled = false;
+
+                if(data.status === 'success') {
+                    // Update Badge
+                    if(data.cart_count !== undefined) {
+                        updateCartIcon(data.cart_count);
+                    }
+
+                    // ✅ SHOW PROFESSIONAL POPUP
+                    Swal.fire({
+                        title: 'Added to Cart',
+                        html: `
+                            <div style="display:flex; align-items:center; gap:16px; margin-top:10px;">
+                                <img src="${productImage}" 
+                                    style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:1px solid #ddd;">
+                                <div style="text-align:left;">
+                                    <div style="font-weight:600; color:#333; font-size:15px; line-height:1.3;">
+                                        ${productName}
+                                    </div>
+                                    <div style="color:#5b2c2c; font-weight:700; font-size:15px; margin-top:4px;">
+                                        ${productPrice}
+                                    </div>
+                                </div>
+                            </div>
+                        `,
+                        icon: 'success',
+                        showCloseButton: true,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="fas fa-shopping-cart"></i> View Cart',
+                        cancelButtonText: 'Continue Shopping',
+                        reverseButtons: true,
+                        width: 440,
+                        padding: '1.5em',
+                        backdrop: 'rgba(0,0,0,0.45)',
+                        customClass: {
+                            popup: 'cart-alert-popup'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = "{{ route('cart.show') }}";
+                        }
+                    });
+
+                }
+                else if(data.status === 'exists') {
+                    // Item Exists Alert
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Already in Cart',
+                        text: data.message,
+                        confirmButtonText: 'OK',
+                        customClass: {
+                            popup: 'cart-alert-popup'
+                        }
+                    });
+                }
             })
-            .catch(() => {
-                toastMessage.textContent = "Something went wrong!";
-                toast.classList.remove('hidden');
-                setTimeout(() => toast.classList.add('hidden'), 2500);
+            .catch((error) => {
+                console.error('Error:', error);
+                this.innerHTML = originalHTML;
+                this.disabled = false;
             });
         });
     });
 });
 </script>
+
+{{-- ================= ORDER SUCCESS SWEETALERT ================= --}}
+@if(session('order_success'))
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Swal.fire({
+        icon: 'success',
+        title: 'Thank You!',
+        html: `
+            <p style="font-size:16px; line-height:1.6;">
+                Thank you for choosing <b>TradLanka</b> ♥ <br>
+                Your order has been placed successfully.
+            </p>
+        `,
+        confirmButtonText: 'Continue Shopping',
+        confirmButtonColor: '#5b2c2c',
+        background: '#fffaf0',
+        color: '#5b2c2c',
+        iconColor: '#d4af37',
+        allowOutsideClick: false
+    });
+});
+</script>
+@endif
+
 
 @endsection

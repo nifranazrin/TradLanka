@@ -30,17 +30,28 @@
                     @forelse($categories as $category)
                         <tr>
                             <td>{{ $category->id }}</td>
+                            
+                            {{-- Image Column: Shows Thumbnail + Banner Badge --}}
                             <td>
-                                @if ($category->image)
-                                    <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}"
-                                        width="50" height="50" class="rounded">
-                                @else
-                                    <span class="text-muted text-xs">No image</span>
-                                @endif
+                                <div class="d-flex flex-column align-items-start">
+                                    {{-- Thumbnail --}}
+                                    @if ($category->image)
+                                        <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}"
+                                            width="50" height="50" class="rounded border" style="object-fit: cover;">
+                                    @else
+                                        <span class="text-muted text-xs">No Icon</span>
+                                    @endif
+
+                                    {{-- Banner Indicator (Visual Check) --}}
+                                    @if ($category->banner_image)
+                                        <span class="badge bg-secondary mt-1" style="font-size: 0.6rem;">+ Banner</span>
+                                    @endif
+                                </div>
                             </td>
+
                             <td class="fw-semibold">{{ $category->name }}</td>
                             
-                            {{-- Main Category (Green) or Parent Name (Info) --}}
+                            {{-- Parent / Main Category Logic --}}
                             <td>
                                 @if($category->parent)
                                     <span class="badge bg-info text-dark">{{ $category->parent->name }}</span>
@@ -49,10 +60,10 @@
                                 @endif
                             </td>
 
-                            <td>{{Str::limit($category->description ?? '—', 30)}}</td>
+                            <td>{{ Str::limit($category->description ?? '—', 30) }}</td>
                             <td>{{ $category->slug }}</td>
                             
-                            {{-- Active (Green) or Inactive (Red) --}}
+                            {{-- Status Badge --}}
                             <td>
                                 @if ($category->status == 1)
                                     <span class="badge bg-success">Active</span>
@@ -61,6 +72,7 @@
                                 @endif
                             </td>
                             
+                            {{-- Actions --}}
                             <td>
                                 <a href="{{ route('admin.categories.edit', $category->id) }}"
                                    class="btn btn-sm"
@@ -71,9 +83,9 @@
                                     @csrf
                                     @method('DELETE')
                                     <button class="btn btn-sm text-white"
-                                        style="background-color: #a81c1c; border: none;"
-                                        onclick="return confirm('Delete this category?')">
-                                        <i class="bi bi-trash3"></i>
+                                            style="background-color: #a81c1c; border: none;"
+                                            onclick="return confirm('Delete this category?')">
+                                            <i class="bi bi-trash3"></i>
                                     </button>
                                 </form>
                             </td>
@@ -91,7 +103,7 @@
 
 {{-- Modal for Add Category --}}
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg"> {{-- Increased width for better layout --}}
+    <div class="modal-dialog modal-lg">
         <div class="modal-content border-0">
             <div class="modal-header text-white" style="background-color: #8a4b2b;">
                 <h5 class="modal-title fw-semibold" id="addCategoryLabel">Add New Category</h5>
@@ -132,17 +144,19 @@
                         {{-- Main Image (Thumbnail) --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Main Image (Thumbnail)</label>
+                            {{-- name="image" matches your controller logic for icons --}}
                             <input type="file" name="image" class="form-control" accept="image/*" onchange="previewImage(event, 'imagePreview')">
-                            <img id="imagePreview" class="mt-2 rounded" style="max-width: 100px; max-height: 100px; object-fit: cover; display:none;">
-                            <small class="text-muted">Used for icons/thumbnails.</small>
+                            <img id="imagePreview" class="mt-2 rounded border" style="max-width: 100px; max-height: 100px; object-fit: cover; display:none;">
+                            <small class="text-muted d-block mt-1">Used for circular icons.</small>
                         </div>
 
                         {{-- NEW: Banner Image (Page Header) --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Banner Image (Page Header)</label>
+                            {{-- name="banner_image" matches your controller logic for headers --}}
                             <input type="file" name="banner_image" class="form-control" accept="image/*" onchange="previewImage(event, 'bannerPreview')">
-                            <img id="bannerPreview" class="mt-2 rounded" style="max-width: 100%; max-height: 100px; object-fit: cover; display:none;">
-                            <small class="text-muted">Used for the top banner.</small>
+                            <img id="bannerPreview" class="mt-2 rounded border" style="max-width: 100%; max-height: 100px; object-fit: cover; display:none;">
+                            <small class="text-muted d-block mt-1">Used for top banners.</small>
                         </div>
                     </div>
 
@@ -174,7 +188,7 @@
     </div>
 </div>
 
-{{-- Updated Script for Multiple Image Previews --}}
+{{-- Script for Image Previews --}}
 <script>
 function previewImage(event, previewId) {
     const preview = document.getElementById(previewId);

@@ -53,11 +53,7 @@
                     {{ $sidebarTitle ?? 'Items' }}
                 </h2>
 
-                {{-- Mini Breadcrumb --}}
-                <div class="text-xs text-gray-500 mb-4">
-                    Home / {{ $sidebarTitle ?? 'Items' }}
-                </div>
-
+                
                 {{-- "All Items" Bar (Maroon Background) --}}
                 <div class="bg-[#5b2c2c] text-white px-4 py-2 rounded-md flex justify-between items-center font-medium shadow-sm mb-4">
                     <span>All Items</span>
@@ -77,7 +73,10 @@
                                        {{ $item->name }}
                                     </a>
                                 @else
-                                    <a href="{{ route('product.show', $item->slug) }}" 
+                                    {{-- 
+                                       UPDATED: Sidebar Product Links also carry the context 
+                                    --}}
+                                    <a href="{{ route('product.show', $item->slug) }}?from_category={{ $category->slug }}" 
                                        class="block text-sm text-gray-700 hover:text-[#8a4b2b] hover:font-bold transition pl-2">
                                        {{ $item->name }}
                                     </a>
@@ -128,7 +127,11 @@
                 <div class="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition group overflow-hidden h-full flex flex-col">
                     
                     <div class="relative h-48 overflow-hidden bg-gray-100">
-                        <a href="{{ route('product.show', $product->slug) }}">
+                        {{-- 
+                           UPDATED: Image Link 
+                           Appending ?from_category=...
+                        --}}
+                        <a href="{{ route('product.show', $product->slug) }}?from_category={{ $category->slug }}">
                             @if($product->image)
                                 <img src="{{ asset('storage/' . $product->image) }}" 
                                      alt="{{ $product->name }}" 
@@ -145,19 +148,38 @@
 
                     <div class="p-4 flex flex-col flex-grow">
                         <h3 class="text-sm font-semibold text-gray-800 mb-1 group-hover:text-[#8a4b2b] truncate">
-                            <a href="{{ route('product.show', $product->slug) }}">{{ $product->name }}</a>
+                            {{-- 
+                                UPDATED: Title Link 
+                            --}}
+                            <a href="{{ route('product.show', $product->slug) }}?from_category={{ $category->slug }}">
+                                {{ $product->name }}
+                            </a>
                         </h3>
                         
                         <div class="mt-auto flex items-center justify-between pt-3">
                             <div class="flex flex-col">
-                                @if(isset($product->sale_price) && $product->sale_price)
-                                    <span class="text-xs text-gray-400 line-through">Rs {{ number_format($product->price, 2) }}</span>
-                                    <span class="text-md font-bold text-red-600">Rs {{ number_format($product->sale_price, 2) }}</span>
-                                @else
-                                    <span class="text-md font-bold text-gray-900">Rs {{ number_format($product->price, 2) }}</span>
-                                @endif
-                            </div>
-                            <a href="{{ route('product.show', $product->slug) }}" class="text-[#8a4b2b] border border-[#8a4b2b] hover:bg-[#8a4b2b] hover:text-white px-3 py-1 rounded text-xs transition">
+                                    @php
+                                        $currencySymbol = session('currency') == 'USD' ? '$' : 'Rs';
+                                    @endphp
+
+                                    @if(isset($product->sale_price) && $product->sale_price)
+                                        <span class="text-xs text-gray-400 line-through">
+                                            {{ $currencySymbol }} {{ number_format($product->price, 2) }}
+                                        </span>
+                                        <span class="text-md font-bold text-red-600">
+                                            {{ $currencySymbol }} {{ number_format($product->sale_price, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="text-md font-bold text-gray-900">
+                                            {{ $currencySymbol }} {{ number_format($product->price, 2) }}
+                                        </span>
+                                    @endif
+                                </div>
+                            {{-- 
+                                UPDATED: View Button Link 
+                            --}}
+                            <a href="{{ route('product.show', $product->slug) }}?from_category={{ $category->slug }}" 
+                               class="text-[#8a4b2b] border border-[#8a4b2b] hover:bg-[#8a4b2b] hover:text-white px-3 py-1 rounded text-xs transition">
                                 View
                             </a>
                         </div>
@@ -177,6 +199,7 @@
             @endforelse
 
             <div class="mt-8">
+                {{-- Keep existing query parameters (like sort) when paging --}}
                 {{ $products->appends(request()->query())->links() }}
             </div>
 
