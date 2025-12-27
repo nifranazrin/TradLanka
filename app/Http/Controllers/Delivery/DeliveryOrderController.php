@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\OrderDeliveredNotification;
 
 class DeliveryOrderController extends Controller 
 {
@@ -75,7 +76,8 @@ class DeliveryOrderController extends Controller
             'delivered_at' => now()
         ]); 
 
-        // Redirect back to active tasks; the order will now appear in History
+       $order->user->notify(new OrderDeliveredNotification($order));
+
         return redirect()->route('delivery.my-deliveries')->with('success', 'Order completed and moved to history!');
     }
 

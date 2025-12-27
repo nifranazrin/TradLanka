@@ -94,58 +94,58 @@
                     @forelse($orders as $order)
 
                     @php
-        $dbCurrency = strtoupper(trim($order->currency));
-        $payMode = strtoupper($order->payment_mode);
-        
-        // Logical check for highlight and symbol
-        $isActuallyUSD = ($dbCurrency === 'USD' || str_contains($payMode, '(USD)'));
-        $symbol = $isActuallyUSD ? '$ ' : 'Rs. ';
-    @endphp
-                       <tr class="border-bottom {{ $isActuallyUSD ? 'international-highlight' : '' }}">
+                            $dbCurrency = strtoupper(trim($order->currency));
+                            $payMode = strtoupper($order->payment_mode);
+                            
+                            // Logical check for highlight and symbol
+                            $isActuallyUSD = ($dbCurrency === 'USD' || str_contains($payMode, '(USD)'));
+                            $symbol = $isActuallyUSD ? '$ ' : 'Rs. ';
+                        @endphp
+                                        <tr class="border-bottom {{ $isActuallyUSD ? 'international-highlight' : '' }}">
+                                            
+
                            
+                            <td class="ps-4 py-4">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="fw-bold tracking-id">{{ $order->tracking_no }}</span>
+                                    
+                                    {{-- ✅ STRICT INTERNATIONAL LOGIC: Only show if DB currency is USD --}}
+                                    @if(strtoupper(trim($order->currency)) === 'USD')
+                                        <span class="badge bg-primary ms-2" style="font-size: 0.65rem;">
+                                            <i class="bi bi-globe me-1"></i>INTERNATIONAL (USD)
+                                        </span>
+                                    @endif
+                                </div>
 
-                            {{-- ORDER ID & PRICE --}}
-<td class="ps-4 py-4">
-    <div class="d-flex align-items-center mb-1">
-        <span class="fw-bold tracking-id">{{ $order->tracking_no }}</span>
-        
-        {{-- ✅ STRICT INTERNATIONAL LOGIC: Only show if DB currency is USD --}}
-        @if(strtoupper(trim($order->currency)) === 'USD')
-            <span class="badge bg-primary ms-2" style="font-size: 0.65rem;">
-                <i class="bi bi-globe me-1"></i>INTERNATIONAL (USD)
-            </span>
-        @endif
-    </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-calendar3 me-1"></i>{{ $order->created_at->format('d M, Y | h:i A') }}
+                                </div>
 
-    <div class="small text-muted mt-1">
-        <i class="bi bi-calendar3 me-1"></i>{{ $order->created_at->format('d M, Y | h:i A') }}
-    </div>
+                                <div class="mt-2 d-flex align-items-center">
+                                    @if(strtolower($order->payment_mode) === 'cod')
+                                        <span class="badge bg-warning text-dark fw-bold px-3 py-1">COD</span>
+                                    @else
+                                        <span class="badge bg-success fw-bold px-3 py-1 text-white">PAID</span>
+                                    @endif
 
-    <div class="mt-2 d-flex align-items-center">
-        @if(strtolower($order->payment_mode) === 'cod')
-            <span class="badge bg-warning text-dark fw-bold px-3 py-1">COD</span>
-        @else
-            <span class="badge bg-success fw-bold px-3 py-1 text-white">PAID</span>
-        @endif
+                                    @php
+                                        /** ✅ ULTIMATE CURRENCY SYMBOL LOGIC
+                                         * Check the specific currency column and backup with payment mode string
+                                         */
+                                        $dbCurrency = strtoupper(trim($order->currency));
+                                        $payMode = strtoupper($order->payment_mode);
+                                        
+                                        $isUSD = ($dbCurrency === 'USD' || str_contains($payMode, '(USD)'));
+                                        $symbol = $isUSD ? '$ ' : 'Rs. ';
+                                    @endphp
 
-        @php
-            /** ✅ ULTIMATE CURRENCY SYMBOL LOGIC
-             * Check the specific currency column and backup with payment mode string
-             */
-            $dbCurrency = strtoupper(trim($order->currency));
-            $payMode = strtoupper($order->payment_mode);
-            
-            $isUSD = ($dbCurrency === 'USD' || str_contains($payMode, '(USD)'));
-            $symbol = $isUSD ? '$ ' : 'Rs. ';
-        @endphp
+                                    <span class="ms-2 fw-bold text-dark">
+                                        {{ $symbol }}{{ number_format($order->total_price, 2) }}
+                                    </span>
+                                </div>
+                            </td>
 
-        <span class="ms-2 fw-bold text-dark">
-            {{ $symbol }}{{ number_format($order->total_price, 2) }}
-        </span>
-    </div>
-</td>
-
-                            {{-- CUSTOMER DETAILS --}}
+                                                        {{-- CUSTOMER DETAILS --}}
                             <td>
                                 <div class="fw-bold fs-6">{{ $order->fname }} {{ $order->lname }}</div>
                                 <div class="text-muted small mt-1">

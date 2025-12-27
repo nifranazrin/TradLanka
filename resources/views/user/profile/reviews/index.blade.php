@@ -157,7 +157,6 @@
 {{-- TAB + SUCCESS ALERT SCRIPT --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-
     const btnToReview = document.getElementById('btn-to-review');
     const btnHistory  = document.getElementById('btn-history');
     const panelToReview = document.getElementById('panel-to-review');
@@ -167,24 +166,38 @@ document.addEventListener('DOMContentLoaded', function () {
         if (tab === 'history') {
             panelHistory.style.display = 'block';
             panelToReview.style.display = 'none';
+            
+            // Update Button Styles
+            btnHistory.classList.add('border-[#5b2c2c]', 'text-[#5b2c2c]', 'font-bold');
+            btnHistory.classList.remove('border-transparent', 'text-gray-500');
+            
+            btnToReview.classList.remove('border-[#5b2c2c]', 'text-[#5b2c2c]', 'font-bold');
+            btnToReview.classList.add('border-transparent', 'text-gray-500');
         } else {
             panelToReview.style.display = 'block';
             panelHistory.style.display = 'none';
+            
+            // Update Button Styles
+            btnToReview.classList.add('border-[#5b2c2c]', 'text-[#5b2c2c]', 'font-bold');
+            btnToReview.classList.remove('border-transparent', 'text-gray-500');
+            
+            btnHistory.classList.remove('border-[#5b2c2c]', 'text-[#5b2c2c]', 'font-bold');
+            btnHistory.classList.add('border-transparent', 'text-gray-500');
         }
     }
 
     btnToReview.addEventListener('click', () => openTab('to-review'));
     btnHistory.addEventListener('click', () => openTab('history'));
 
+    // Handle initial state or redirect after success
     @if(session('success'))
         openTab('history');
-
         Swal.fire({
             icon: 'success',
             title: 'Review Submitted!',
             text: '{{ session('success') }}',
-            background: '#4a1d1d', // maroon
-            color: '#facc15',      // gold text
+            background: '#4a1d1d',
+            color: '#facc15',
             iconColor: '#facc15',
             confirmButtonColor: '#facc15',
             confirmButtonText: 'OK',

@@ -105,75 +105,130 @@
          </div>
       </div>
 
-      {{-- 3. RIGHT SIDE: Navigation Links + Icons --}}
+     {{-- 3. RIGHT SIDE: Nav + Icons --}}
       <div class="flex items-center gap-6 flex-shrink-0">
-        
         <nav class="hidden xl:flex items-center gap-6 text-sm font-medium">
-          <a href="#" class="hover:text-yellow-400 transition">Shop</a>
-          <div class="flex items-center space-x-4">
-    
-         <div class="relative inline-block text-left">
-            <select onchange="window.location.href='/set-currency/'+this.value" 
-        class="bg-transparent border-none text-white font-semibold cursor-pointer focus:outline-none">
-    <option class="text-black" value="LKR" {{ session('currency') == 'LKR' ? 'selected' : '' }}>LKR</option>
-    <option class="text-black" value="USD" {{ session('currency') == 'USD' ? 'selected' : '' }}>USD</option>
-</select>
-          <a href="{{ route('about') }}" class="...your-classes...">About</a>
-          <a href="{{ route('contact') }}" class="text-sm font-medium text-white hover:text-gray-200 transition">
-    Contact
-</a>
+          <select onchange="window.location.href='/set-currency/'+this.value" class="bg-transparent border-none text-white font-semibold cursor-pointer focus:outline-none">
+            <option class="text-black" value="LKR" {{ session('currency') == 'LKR' ? 'selected' : '' }}>LKR</option>
+            <option class="text-black" value="USD" {{ session('currency') == 'USD' ? 'selected' : '' }}>USD</option>
+          </select>
+          <a href="{{ route('about') }}" class="hover:text-yellow-400 transition">About</a>
+          <a href="{{ route('contact') }}" class="hover:text-yellow-400 transition text-white">Contact</a>
         </nav>
 
-        {{-- Icons --}}
+        {{-- Unified Icons Row --}}
         <div class="flex items-center gap-5 text-xl">
           
-          {{-- CART ICON (Fixed to check WEB guard only) --}}
-          <a href="{{ Route::has('cart.show') ? route('cart.show') : '#' }}" class="hover:text-yellow-400 relative">
+        {{-- 1. NOTIFICATION BELL --}}
+@auth('web')
+  <div class="relative group pt-2 pb-2">
+      <button class="hover:text-yellow-400 relative transition cursor-pointer flex items-center focus:outline-none">
+          <i class="fas fa-bell"></i>
+          
+          @php 
+            $unreadCount = Auth::guard('web')->user()->unreadNotifications->count(); 
+          @endphp
+
+          @if($unreadCount > 0)
+              {{-- Badge remains perfectly aligned using translate-x/y --}}
+              <span class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-500 text-[10px] text-white font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                  {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+              </span>
+          @endif
+      </button>
+
+      {{-- Dropdown Menu --}}
+      <div class="absolute right-0 top-full bg-white text-gray-800 rounded-lg shadow-2xl w-72 border border-gray-100 hidden group-hover:block py-2 z-[60]">
+          <div class="px-4 py-2 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-lg">
+              <span class="text-xs font-bold uppercase text-gray-500 tracking-wider">Notifications</span>
+          </div>
+          
+          <div class="max-h-80 overflow-y-auto custom-scroll">
+              @forelse(Auth::guard('web')->user()->notifications->take(5) as $notification)
+                  {{-- ✅ DYNAMIC LINK: Checks if 'url' exists (Reviews), otherwise goes to Tracking --}}
+                  @php
+                    $targetUrl = $notification->data['url'] ?? url('track-order?tracking_no=' . ($notification->data['tracking_no'] ?? ''));
+                  @endphp
+
+                  <a href="{{ $targetUrl }}" 
+                     class="block px-4 py-3 hover:bg-gray-100 border-b border-gray-50 last:border-0 transition-colors {{ $notification->read_at ? 'opacity-60' : 'bg-yellow-50/40' }}">
+                      
+                      <p class="text-xs leading-tight text-gray-700">
+                         {{ $notification->data['message'] ?? 'Order update received.' }}
+                      </p>
+
+                      {{-- Helpful sub-text for successful deliveries --}}
+                      @if(isset($notification->data['type']) && $notification->data['type'] == 'delivery_success')
+                        <span class="text-[9px] font-bold text-green-600 uppercase mt-1 block">Click to leave a review!</span>
+                      @endif
+                      
+                      <div class="flex justify-between items-center mt-2">
+                          <span class="text-[10px] font-bold text-[#5b2c2c] bg-gray-200 px-1.5 py-0.5 rounded">
+                              {{ $notification->data['tracking_no'] ?? 'N/A' }}
+                          </span>
+                          <span class="text-[10px] text-gray-400 italic">
+                              {{ $notification->created_at->diffForHumans() }}
+                          </span>
+                      </div>
+                  </a>
+              @empty
+                  <div class="px-4 py-8 text-center text-gray-400 text-xs italic">
+                      <i class="fas fa-bell-slash mb-2 block text-lg opacity-20"></i>
+                      No new notifications.
+                  </div>
+              @endforelse
+          </div>
+
+          {{-- ✅ MARK ALL AS READ SECTION --}}
+          @if($unreadCount > 0)
+              <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 flex justify-center">
+                  <form action="{{ route('user.notifications.markAllRead') }}" method="POST">
+                      @csrf
+                      <button type="submit" class="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-tight transition flex items-center gap-1">
+                          <i class="fas fa-check-double text-[8px]"></i> 
+                          Mark all as read
+                      </button>
+                  </form>
+              </div>
+          @endif
+          <a href="#" class="block text-center py-2 text-[11px] font-bold text-[#5b2c2c] hover:bg-gray-100 transition border-t border-gray-100 uppercase tracking-tighter">
+              View All Notifications
+          </a>
+      </div>
+  </div>
+@endauth
+        {{-- CART --}}
+          <a href="{{ route('cart.show') }}" class="hover:text-yellow-400 relative">
             <i class="fas fa-shopping-cart"></i>
-            <span id="cart-badge" class="absolute -top-2 -right-3 bg-yellow-400 text-xs text-black font-bold rounded-full px-1.5 py-0.5 {{ (Auth::guard('web')->check() && \App\Models\Cart::where('user_id', Auth::guard('web')->id())->count() > 0) ? '' : 'hidden' }}">
-                @if(Auth::guard('web')->check())
-                    {{ \App\Models\Cart::where('user_id', Auth::guard('web')->id())->count() }}
-                @else
-                    0
-                @endif
+            @php $cartCount = Auth::guard('web')->check() ? \App\Models\Cart::where('user_id', Auth::guard('web')->id())->count() : 0; @endphp
+            <span id="cart-badge" class="absolute -top-2 -right-3 bg-yellow-400 text-xs text-black font-bold rounded-full px-1.5 py-0.5 {{ $cartCount > 0 ? '' : 'hidden' }}">
+              {{ $cartCount }}
             </span>
           </a>
-         {{-- Order Icon linked to the trackOrder method --}}
-<a href="{{ url('track-order') }}" class="hover:text-yellow-400" title="Track Order">
-    <i class="fas fa-box-open"></i>
-</a>
 
-             {{-- USER ICON (GUEST + LOGGED CUSTOMER) --}}
+          {{-- TRACK --}}
+          <a href="{{ url('track-order') }}" class="hover:text-yellow-400" title="Track Order">
+            <i class="fas fa-box-open"></i>
+          </a>
 
-@auth('web')
-    {{-- LOGGED IN → GO TO PROFILE --}}
-    <a href="{{ route('user.profile.index') }}"
-       class="flex flex-col items-center select-none cursor-pointer hover:opacity-90 transition">
-        <i class="fas fa-user-circle text-2xl text-yellow-400"></i>
+          {{-- USER --}}
+          @auth('web')
+            <a href="{{ route('user.profile.index') }}" class="flex flex-col items-center select-none cursor-pointer hover:opacity-90 transition">
+              <i class="fas fa-user-circle text-2xl text-yellow-400"></i>
+              <span class="text-[10px] font-bold mt-1 uppercase tracking-wide text-yellow-400 max-w-[80px] truncate">
+                {{ strtok(auth('web')->user()->name, ' ') }}
+              </span>
+            </a>
+          @else
+            <div onclick="openAuthModal('login')" class="flex flex-col items-center select-none cursor-pointer hover:opacity-90 transition">
+              <i class="fas fa-user-circle text-2xl text-white"></i>
+            </div>
+          @endauth
 
-        <span class="text-[10px] font-bold mt-1 uppercase tracking-wide text-yellow-400 max-w-[80px] truncate">
-            {{ strtok(auth('web')->user()->name, ' ') }}
-        </span>
-    </a>
-@else
-    {{-- GUEST → OPEN LOGIN MODAL --}}
-    <div onclick="openAuthModal('login')"
-         class="flex flex-col items-center select-none cursor-pointer hover:opacity-90 transition">
-        <i class="fas fa-user-circle text-2xl text-white"></i>
-    </div>
-@endauth
-
-
-
-          {{-- Global Logout Form  --}}
-          <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
-              @csrf
-          </form>
-
+          <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">@csrf</form>
         </div>
       </div>
     </div>
   </header>
-
 </body>
 </html>

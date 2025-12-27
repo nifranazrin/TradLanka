@@ -201,4 +201,12 @@ public function getDisplayPriceAttribute()
                 ->latest();
 }
 
+// app/Models/Product.php
+
+public function averageRating()
+{
+    // Returns the average of approved reviews
+    return $this->reviews()->avg('rating');
+}
+
 }

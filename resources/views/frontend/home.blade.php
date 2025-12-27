@@ -59,7 +59,73 @@
     .animate-scroll:hover {
         animation-play-state: paused; /* Pauses when user hovers */
     }
+  
+
+/* 1. The Card: Subtle shadow, more breathing room */
+.full-card-height {
+    display: flex;
+    flex-direction: column;
+    height: 85%;
+    background: #ffffff;
+    border-radius: 4px; /* Shorter radius is more modern */
+    border: 1px solid #f2f2f2;
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    overflow: hidden;
+}
+
+.full-card-height:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05); /* Very light hover shadow */
+    border-color: #e0e0e0;
+}
+
+/* 2. Image: Standardized Square with high-quality fill */
+.unified-image-wrapper {
+    width: 100%;
+    aspect-ratio: 1 / 1; 
+    background: #fff;
+    overflow: hidden;
+}
+
+.unified-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Keeps the full image presence you liked */
+    display: block;
+}
+
+/* 3. Title: Professional and Clean */
+.unified-title-height {
+    min-height: 40px; /* Locked height so even 1-word titles don't break alignment */
+    font-size: 0.92rem;
+    font-weight: 500; /* Medium weight is more elegant than Bold */
+    color: #333;
+    line-height: 1.4;
+    text-align: center;
+    padding: 0 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 4. Elegant Action Button */
+.custom-cart-btn {
+    background-color: #5b2c2c;
+    color: #ffffff;
+    padding: 10px 0; 
+    border-radius: 2px; /* Nearly square buttons look premium */
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 100%;
+    margin-top: auto;
+    border: none;
+    cursor: pointer;
+}
 </style>
+
+
 
 {{-- Floating Toast Fallback --}}
 <div id="cartToast" class="hidden fixed bottom-6 right-6 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 transition-all duration-500 flex items-center space-x-2">
@@ -106,109 +172,116 @@
         </div>
     @endif
 </section>
-        
-
-      {{-- SECTION: BEST SELLERS --}}
-<section class="mt-12">
+   {{-- SECTION: BEST SELLERS --}}
+<section class="mt-12 mb-4"> {{-- Reduced mb-12 to mb-4 --}}
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-[#5b2c2c]">Best Sellers</h2>
-        <a href="{{ route('search.page', ['query' => 'new arrivals']) }}" 
-           class="text-[#5b2c2c] font-semibold hover:underline flex items-center gap-2 group text-sm md:text-base">
-            Browse more
-            <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </a>
+        <h2 class="text-xl md:text-2xl font-bold text-[#5b2c2c]">Best Sellers</h2>
+       <a href="{{ route('search.page', ['query' => 'best sellers']) }}" 
+       class="text-[#5b2c2c] font-bold hover:underline text-base md:text-lg transition-all"> {{-- Increased font size --}}
+        Browse more →
+       </a>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-8 w-full">
-        @foreach ($bestSellers as $item)
-            @php
-                $itemImg = $item->image ? asset('storage/' . $item->image) : 'https://via.placeholder.com/300x300?text=No+Image';
-                // DELETE: $itemPrice = 'Rs ' . number_format($item->price, 2);
-            @endphp
-            <div class="bg-white shadow-md rounded-lg overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg flex flex-col h-full">
-                <a href="{{ route('product.show', $item->slug) }}" class="block">
-                    <img src="{{ $itemImg }}" alt="{{ $item->name }}" class="w-full h-48 md:h-56 object-cover">
-                </a>
-                
-                <div class="p-4 text-center flex-grow flex flex-col justify-between">
-                    <div>
-                        <h3 class="font-semibold text-gray-800 text-sm md:text-base line-clamp-2 min-h-[40px]">
-                            {{ $item->name }}
-                        </h3>
-                        {{-- FIX: Use display_price from Model to handle LKR/USD switching --}}
-                        <p class="text-[#5b2c2c] font-bold mt-1 text-base">{{ $item->display_price }}</p>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
+    {{-- ✅ Uses $bestSellers variable --}}
+    @foreach ($bestSellers->take(5) as $item)
+        <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 full-card-height">
+            <a href="{{ route('product.show', $item->slug) }}" class="unified-image-wrapper">
+                <img src="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}" alt="{{ $item->name }}">
+            </a>
+            
+            <div class="p-4 text-center flex-grow flex flex-col">
+                <div>
+                    <h3 class="font-semibold text-gray-800 unified-title-height">
+                        {{ $item->name }}
+                    </h3>
+
+                    {{-- Review Stars logic: Fixed height keeps boxes level --}}
+                    <div class="flex justify-center items-center h-5 mb-1">
+                        @php $avgRating = $item->reviews->avg('rating'); @endphp
+                        @if($avgRating > 0)
+                            <div class="flex text-yellow-400 text-[10px]">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <i class="{{ $i <= round($avgRating) ? 'fas' : 'far' }} fa-star"></i>
+                                @endfor
+                                <span class="text-gray-400 ml-1">({{ $item->reviews->count() }})</span>
+                            </div>
+                        @else
+                            <div class="h-5"></div>
+                        @endif
                     </div>
-                    
-                    <button type="button"
-                            class="addToCartBtn mt-3 bg-[#5b2c2c] text-white px-4 py-2 rounded hover:bg-[#4a2424] text-xs md:text-sm flex items-center justify-center mx-auto transition w-full"
-                            data-id="{{ $item->id }}"
-                            data-name="{{ $item->name }}"
-                            {{-- FIX: Update data-price for the professional popup --}}
-                            data-price="{{ $item->display_price }}"
-                            data-image="{{ $itemImg }}">
-                        <i class="fas fa-cart-plus mr-2"></i> Add to Cart
-                    </button>
+
+                    <p class="text-[#5b2c2c] font-bold text-lg mb-2">
+                        {{ $item->display_price }}
+                    </p>
                 </div>
+                
+                <button type="button"
+                        class="addToCartBtn custom-cart-btn active:scale-95"
+                        data-id="{{ $item->id }}" 
+                        data-name="{{ $item->name }}" 
+                        data-price="{{ $item->display_price }}" 
+                        data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
+                    Add to Cart
+                </button>
             </div>
-        @endforeach
+        </div>
+    @endforeach
     </div>
 </section>
-         
 
 {{-- SECTION: NEW ARRIVALS --}}
-<section class="mt-16 mb-12">
+<section class="mt-12 mb-4"> {{-- Reduced mb-12 to mb-4 --}}
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-[#5b2c2c]">New Arrivals</h2>
-        <a href="{{ route('search.page', ['query' => 'new arrivals']) }}"
-           class="text-[#5b2c2c] font-semibold hover:underline flex items-center gap-2 group text-sm md:text-base">
-             Browse more
-            <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </a>
+        <h2 class="text-xl md:text-2xl font-bold text-[#5b2c2c]">New Arrivals</h2>
+        <a href="{{ route('search.page', ['query' => 'new arrivals']) }}" class="text-[#5b2c2c] font-bold hover:underline text-base md:text-lg transition-all">Browse more →</a>
     </div>
 
-    @if ($products->isEmpty())
-        <p class="text-center text-gray-500">No new products available.</p>
-    @else
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-8 w-full">
-            @foreach ($products as $product)
-                @php
-                    $prodImg = $product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/300x200?text=No+Image';
-                    // DELETE: $prodPrice = 'Rs ' . number_format($product->price, 2);
-                @endphp
-                <div class="relative bg-white shadow-md rounded-lg overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg flex flex-col h-full">
-                    
-                    @if($loop->index < 5)
-                        <span class="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-sm z-10 shadow-sm">
-                            NEW
-                        </span>
-                    @endif
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
+    {{--  Uses $products variable --}}
+    @foreach ($products->take(5) as $item)
+        <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 full-card-height">
+            <a href="{{ route('product.show', $item->slug) }}" class="unified-image-wrapper">
+                <img src="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}" alt="{{ $item->name }}">
+            </a>
+            
+            <div class="p-4 text-center flex-grow flex flex-col">
+                <div>
+                    <h3 class="font-semibold text-gray-800 unified-title-height">
+                        {{ $item->name }}
+                    </h3>
 
-                    <a href="{{ route('product.show', $product->slug) }}" class="block group">
-                        <img src="{{ $prodImg }}" alt="{{ $product->name }}" class="w-full h-48 md:h-56 object-cover group-hover:opacity-90 transition">
-                        
-                        <div class="p-4 text-center">
-                            <h3 class="font-semibold text-gray-800 text-sm md:text-base line-clamp-2 min-h-[40px]">
-                                {{ $product->name }}
-                            </h3>
-                            {{-- FIX: Dynamic price --}}
-                            <p class="text-[#5b2c2c] font-bold mt-1 text-base">{{ $product->display_price }}</p>
-                        </div>
-                    </a>
-
-                    <div class="p-4 text-center pt-0 mt-auto">
-                        <button type="button"
-                                class="addToCartBtn bg-[#5b2c2c] text-white px-4 py-2 rounded hover:bg-[#4a2424] text-xs md:text-sm flex items-center justify-center mx-auto transition w-full"
-                                data-id="{{ $product->id }}"
-                                data-name="{{ $product->name }}"
-                                data-price="{{ $product->display_price }}"
-                                data-image="{{ $prodImg }}">
-                            <i class="fas fa-cart-plus mr-2"></i> Add to Cart
-                        </button>
+                    <div class="flex justify-center items-center h-5 mb-1">
+                        @php $avgRating = $item->reviews->avg('rating'); @endphp
+                        @if($avgRating > 0)
+                            <div class="flex text-yellow-400 text-[10px]">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <i class="{{ $i <= round($avgRating) ? 'fas' : 'far' }} fa-star"></i>
+                                @endfor
+                                <span class="text-gray-400 ml-1">({{ $item->reviews->count() }})</span>
+                            </div>
+                        @else
+                            <div class="h-5"></div>
+                        @endif
                     </div>
+
+                    <p class="text-[#5b2c2c] font-bold text-lg mb-2">
+                        {{ $item->display_price }}
+                    </p>
                 </div>
-            @endforeach
+                
+                <button type="button"
+                        class="addToCartBtn custom-cart-btn active:scale-95"
+                        data-id="{{ $item->id }}" 
+                        data-name="{{ $item->name }}" 
+                        data-price="{{ $item->display_price }}" 
+                        data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
+                    Add to Cart
+                </button>
+            </div>
         </div>
-    @endif
+    @endforeach
+    </div>
 </section>
         {{-- SECTION: POPULAR CATEGORIES --}}
         <section class="mt-16 mb-12">

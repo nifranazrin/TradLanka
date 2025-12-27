@@ -55,33 +55,35 @@ class ProductController extends Controller
             )->first();
         }
 
-        // Can the logged-in user review this product?
-        $canReview = false;
-    if (Auth::check()) {
-        $canReview = Order::where('user_id', Auth::id())
-            ->where('status', 4)
-            ->whereHas('items', function ($query) use ($product) {
-                $query->where('product_id', $product->id);
-            })
-            ->exists();
-    }
 
-        // Product visibility rules
-       $publicStatuses = ['approved', 'active', 'reapproved'];
-    $status = strtolower((string) ($product->status ?? ''));
-    $isPublic = in_array($status, $publicStatuses, true);
+                $canReview = false;
+                if (Auth::check()) {
+                    $canReview = Order::where('user_id', Auth::id())
+                        
+                        ->where('orders.status', 5) 
+                        
+                        ->whereHas('items', function ($query) use ($product) {
+                            $query->where('product_id', $product->id);
+                        })
+                        ->exists();
+                }
 
-    $isAdmin = Auth::guard('admin')->check();
-    $isOwner = Auth::guard('seller')->check() && Auth::guard('seller')->id() === $product->seller_id;
+                // Product visibility rules
+                $publicStatuses = ['approved', 'active', 'reapproved'];
+                $status = strtolower((string) ($product->status ?? ''));
+                $isPublic = in_array($status, $publicStatuses, true);
 
-    if ($isPublic || $isAdmin || $isOwner) {
-        return view('frontend.product.show', compact(
-            'product',
-            'breadcrumbCategory',
-            'canReview',
-            'currency' // Pass currency to the view for the $ / Rs. symbol
-        ));
-    }
+                $isAdmin = Auth::guard('admin')->check();
+                $isOwner = Auth::guard('seller')->check() && Auth::guard('seller')->id() === $product->seller_id;
+
+                if ($isPublic || $isAdmin || $isOwner) {
+                    return view('frontend.product.show', compact(
+                        'product',
+                        'breadcrumbCategory',
+                        'canReview',
+                        'currency' // Pass currency to the view for the $ / Rs. symbol
+                    ));
+                }
 
     abort(404);
 }

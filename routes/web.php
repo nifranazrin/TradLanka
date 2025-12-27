@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 
+
 // FRONTEND CONTROLLERS
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\Frontend\ProductController as FrontendProductController;
@@ -153,7 +154,9 @@ Route::prefix('user')->name('user.')->middleware('auth')->group(function () {
     
     // 2. The page to write a review for a specific product
     Route::get('/reviews/create/{product_id}', [UserReviewController::class, 'create'])->name('reviews.create');
-    
+    Route::post('/notifications/mark-all-read', [UserReviewController::class, 'markAllRead'])
+         ->name('notifications.markAllRead');
+         
     // 3. Save the review to database
     Route::post('/reviews/store', [UserReviewController::class, 'store'])->name('reviews.store');
     // Orders

@@ -26,6 +26,18 @@ class OrderController extends Controller
         return view('admin.orders.index', compact('orders', 'deliveryPartners'));
     }
 
+
+
+    public function acceptOrder($id)
+    {
+        $order = Order::findOrFail($id);
+        
+        // Update status to 1 so the customer sees "Order Received"
+        $order->update(['status' => 1]);
+
+        return redirect()->back()->with('success', 'Order accepted successfully. The customer timeline is now updated.');
+    }
+    
     /**
      * Show Order Details for Admin Review
      */

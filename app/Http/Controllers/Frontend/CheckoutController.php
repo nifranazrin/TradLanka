@@ -12,6 +12,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Staff;
 use App\Notifications\SellerDashboardNotification;
+use App\Notifications\CustomerOrderNotification;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 
@@ -166,6 +167,8 @@ class CheckoutController extends Controller
                 'status'       => 0,
                 'currency'     => $currency,
             ]);
+
+            Auth::user()->notify(new CustomerOrderNotification($order));
 
             $cartItems = Cart::whereIn('id', $selectedIds)->with(['product', 'variant'])->get();
             $sellersToNotify = [];

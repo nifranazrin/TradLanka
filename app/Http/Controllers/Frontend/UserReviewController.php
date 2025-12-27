@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // Added for safety
+use Illuminate\Support\Facades\DB;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
@@ -17,6 +17,7 @@ class UserReviewController extends Controller
         $userId = Auth::id();
 
         // 1. PRODUCTS TO REVIEW
+        // We look for Status 5 (Delivered) to match the tracking logic
         $toReview = Order::where('user_id', $userId)
             ->where('status', 5) 
             ->with('orderItems.product')
@@ -25,6 +26,7 @@ class UserReviewController extends Controller
                 return $order->orderItems;
             })
             ->filter(function ($item) use ($userId) {
+                // Only show items that haven't been reviewed yet
                 return !Review::where('user_id', $userId)
                     ->where('product_id', $item->product_id)
                     ->exists();
@@ -41,12 +43,19 @@ class UserReviewController extends Controller
         return view('user.profile.reviews.index', compact('toReview', 'history', 'toReviewCount'));
     }
 
+    public function markAllRead()
+{
+    Auth::guard('web')->user()->unreadNotifications->markAsRead();
+    return back()->with('success', 'All notifications marked as read.');
+}
+
     public function create($product_id)
     {
         $product = Product::findOrFail($product_id);
         
+        // ✅ FIXED: Changed status from 4 to 5 to match delivery success
         $hasPurchased = Order::where('user_id', Auth::id())
-            ->where('status', 4)
+            ->where('status', 5) 
             ->whereHas('orderItems', function($q) use ($product_id) {
                 $q->where('product_id', $product_id);
             })->exists();
@@ -70,23 +79,21 @@ class UserReviewController extends Controller
 
         $userId = Auth::id();
 
-        // Security check
+        // ✅ FIXED: Changed status from 4 to 5 for security check
         $hasPurchased = Order::where('user_id', $userId)
-            ->where('status', 4)
+            ->where('status', 5)
             ->whereHas('orderItems', function($q) use ($request) {
                 $q->where('product_id', $request->product_id);
             })->exists();
 
         if (!$hasPurchased) {
-            return back()->with('error', 'Security check failed. You must own this product to review it.');
+            return back()->with('error', 'Security check failed. Order must be delivered to review it.');
         }
 
-        // Duplicate check
         if (Review::where('user_id', $userId)->where('product_id', $request->product_id)->exists()) {
             return redirect()->route('user.reviews.index')->with('error', 'You have already reviewed this product.');
         }
 
-        // Use a transaction to ensure database and file storage are in sync
         DB::beginTransaction();
         try {
             $review = new Review();

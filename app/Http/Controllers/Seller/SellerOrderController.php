@@ -14,28 +14,33 @@ class SellerOrderController extends Controller
      * Seller Order List
      */
     public function index()
-    {
-        $sellerId = auth('seller')->id();
-        $seller = Auth::guard('seller')->user();
+{
+    // ✅ Use the explicit 'seller' guard for both ID and User instance
+    $sellerId = Auth::guard('seller')->id();
+    $seller = Auth::guard('seller')->user();
 
-        // --- SAFE NOTIFICATION CLEARING ---
-        // Marks order notifications as read when the seller visits this list
-        if ($seller) {
-            $seller->unreadNotifications
-                ->where('data.type', 'order')
-                ->markAsRead();
-        }
-
-        // Get orders that contain at least one item from this seller
-        $orders = Order::whereHas('items.product', function ($query) use ($sellerId) {
-                $query->where('seller_id', $sellerId);
-            })
-            ->with(['items.product'])
-            ->latest()
-            ->paginate(10);
-
-        return view('seller.orders.index', compact('orders'));
+    // Security Check: Redirect if not authenticated
+    if (!$seller) {
+        return redirect()->route('seller.login');
     }
+
+    // --- SAFE NOTIFICATION CLEARING ---
+    // Marks order notifications as read when the seller visits this list
+    $seller->unreadNotifications
+        ->where('data.type', 'order')
+        ->markAsRead();
+
+    // ✅ Relationship Check: 
+    // Ensure 'items' is defined in your Order model and 'product' in your OrderItem model
+    $orders = Order::whereHas('items.product', function ($query) use ($sellerId) {
+            $query->where('seller_id', $sellerId);
+        })
+        ->with(['items.product'])
+        ->latest()
+        ->paginate(10);
+
+    return view('seller.orders.index', compact('orders'));
+}
 
     /**
      * Show Order Details (Seller View)
