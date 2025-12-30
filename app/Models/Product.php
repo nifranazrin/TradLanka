@@ -201,6 +201,14 @@ public function getDisplayPriceAttribute()
                 ->latest();
 }
 
+/**
+ * Relationship needed for the Dashboard Top Products calculation
+ */
+public function items()
+{
+    return $this->hasMany(OrderItem::class, 'product_id');
+}
+
 // app/Models/Product.php
 
 public function averageRating()

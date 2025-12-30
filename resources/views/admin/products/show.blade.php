@@ -60,83 +60,121 @@
                 @endif
             </div>
 
-            {{-- RIGHT COLUMN: DETAILS --}}
-            <div class="col-md-8">
-                <div class="card-body h-100 d-flex flex-column">
-                    <h5 class="card-title display-6 fs-4">{{ $product->name }}</h5>
-                    <p class="card-text text-muted">{{ $product->description }}</p>
+             {{-- RIGHT COLUMN: DETAILS --}}
+<div class="col-md-8">
+    <div class="card-body h-100 d-flex flex-column">
+        {{-- Product Header --}}
+        <h5 class="card-title display-6 fs-4">{{ $product->name }}</h5>
+        <p class="card-text text-muted">{{ $product->description }}</p>
 
-                    <hr>
-                    <div class="flex-grow-1">
-                        <div class="row mb-2">
-                            <div class="col-sm-4 fw-bold">Category:</div>
-                            <div class="col-sm-8">{{ $product->category->name ?? 'N/A' }}</div>
-                        </div>
+        <hr>
 
-                        <div class="row mb-2">
-                            <div class="col-sm-4 fw-bold">Seller:</div>
-                            <div class="col-sm-8">{{ $product->seller->name ?? 'Unknown' }}</div>
-                        </div>
+        {{-- Product Specifications --}}
+        <div class="flex-grow-1">
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Category:</div>
+                <div class="col-sm-8">{{ $product->category->name ?? 'N/A' }}</div>
+            </div>
 
-                        <div class="row mb-2">
-                            <div class="col-sm-4 fw-bold">Price:</div>
-                            <div class="col-sm-8 text-success fw-bold">Rs {{ number_format($product->price, 2) }}</div>
-                        </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Seller:</div>
+                <div class="col-sm-8">{{ $product->seller->name ?? 'Unknown' }}</div>
+            </div>
 
-                        <div class="row mb-2">
-                            <div class="col-sm-4 fw-bold">Stock:</div>
-                            <div class="col-sm-8">{{ $product->stock }} items</div>
-                        </div>
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Base Price:</div>
+                <div class="col-sm-8 text-success fw-bold">Rs {{ number_format($product->price, 2) }}</div>
+            </div>
 
-                        <div class="row mb-2">
-                            <div class="col-sm-4 fw-bold">Status:</div>
-                            <div class="col-sm-8">
-                                @if($product->status == 'approved')
-                                    <span class="badge bg-success">Approved</span>
-                                @elseif($product->status == 'rejected')
-                                    <span class="badge bg-danger">Rejected</span>
-                                @else
-                                    <span class="badge bg-warning text-dark">Pending Approval</span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- ACTION BUTTONS SECTION --}}
-                    <div class="mt-4 pt-3 border-top bg-light p-3 rounded">
-                        <h6 class="fw-bold mb-3">Admin Actions</h6>
-                        <div class="d-flex flex-wrap gap-2 align-items-center">
-                            
-                            {{-- 1. Back Button --}}
-                            <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back
-                            </a>
-
-                            {{-- 2. Approve Form --}}
-                            {{-- NOTICE: I removed @method('PUT') below --}}
-                            <form id="approve-form-{{ $product->id }}" action="{{ route('admin.products.approve', $product->id) }}" method="POST">
-                                @csrf
-                                <button type="button" class="btn btn-success text-white" 
-                                        onclick="confirmAction('approve-form-{{ $product->id }}', 'Approve Product?', 'Are you sure you want to approve this product?', 'success', 'Yes, Approve!')">
-                                    <i class="fas fa-check-circle"></i> Approve
-                                </button>
-                            </form>
-
-                            {{-- 3. Reject Form --}}
-                            {{-- NOTICE: I removed @method('PUT') below --}}
-                            <form id="reject-form-{{ $product->id }}" action="{{ route('admin.products.reject', $product->id) }}" method="POST">
-                                @csrf
-                                <button type="button" class="btn btn-danger" 
-                                        onclick="confirmAction('reject-form-{{ $product->id }}', 'Reject Product?', 'Are you sure you want to reject this product?', 'warning', 'Yes, Reject!')">
-                                    <i class="fas fa-times-circle"></i> Reject
-                                </button>
-                            </form>
-                            
-                        </div>
-                    </div>
-                    {{-- End Action Buttons --}}
-
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Unit Type:</div>
+                <div class="col-sm-8">
+                    {{ $product->unit_type ?? 'N/A' }} 
                 </div>
+            </div>
+
+            <div class="row mb-2">
+                <div class="col-sm-4 fw-bold">Status:</div>
+                <div class="col-sm-8">
+                    @if($product->status == 'approved' || $product->status == 'active')
+                        <span class="badge bg-success">Approved</span>
+                    @elseif($product->status == 'rejected')
+                        <span class="badge bg-danger">Rejected</span>
+                    @else
+                        <span class="badge bg-warning text-dark">Pending Approval</span>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Pricing & Inventory Table for Variants --}}
+            <div class="mt-4">
+                <h6 class="fw-bold mb-3">Pricing & Inventory</h6>
+                <div class="table-responsive shadow-sm rounded border">
+                    <table class="table table-bordered mb-0 text-center align-middle">
+                        <thead class="bg-light">
+                            <tr style="font-size: 14px;">
+                                <th class="fw-bold">Size / Variant</th>
+                                <th class="fw-bold">Price (Rs.)</th>
+                                <th class="fw-bold">Stock Available</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($product->variants as $variant)
+                                <tr>
+                                    {{-- Corrected to use 'unit_label' from your database --}}
+                                    <td class="fw-bold">{{ $variant->unit_label }}</td>
+                                    <td class="text-success fw-bold">{{ number_format($variant->price, 2) }}</td>
+                                    <td>{{ $variant->stock }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td class="text-muted">Standard</td>
+                                    <td class="text-success fw-bold">{{ number_format($product->price, 2) }}</td>
+                                    <td>{{ $product->stock }}</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        <tfoot class="bg-light fw-bold">
+                            <tr>
+                                <td colspan="2" class="text-end pe-3">Total:</td>
+                                <td>
+                                    {{ $product->variants->sum('stock') ?: $product->stock }} {{ $product->unit_type ?? 'items' }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- ACTION BUTTONS SECTION --}}
+        <div class="mt-4 pt-3 border-top bg-light p-3 rounded">
+            <h6 class="fw-bold mb-3">Admin Actions</h6>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                
+                {{-- 1. Back Button --}}
+                <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+
+                {{-- 2. Approve Form --}}
+                <form id="approve-form-{{ $product->id }}" action="{{ route('admin.products.approve', $product->id) }}" method="POST">
+                    @csrf
+                    <button type="button" class="btn btn-success text-white" 
+                            onclick="confirmAction('approve-form-{{ $product->id }}', 'Approve Product?', 'Are you sure you want to approve this product?', 'success', 'Yes, Approve!')">
+                        <i class="fas fa-check-circle"></i> Approve
+                    </button>
+                </form>
+
+                {{-- 3. Reject Form --}}
+                <form id="reject-form-{{ $product->id }}" action="{{ route('admin.products.reject', $product->id) }}" method="POST">
+                    @csrf
+                    <button type="button" class="btn btn-danger" 
+                            onclick="confirmAction('reject-form-{{ $product->id }}', 'Reject Product?', 'Are you sure you want to reject this product?', 'warning', 'Yes, Reject!')">
+                        <i class="fas fa-times-circle"></i> Reject
+                    </button>
+                </form>
+                
             </div>
         </div>
     </div>

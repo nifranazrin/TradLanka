@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\User;
-
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -124,4 +124,36 @@ class ProfileController extends Controller
 
         return view('user.profile.order-details', compact('user', 'order'));
     }
+
+    public function cancelOrder($id)
+{
+    $user = Auth::user(); //
+    
+    // 1. Find the order only if it belongs to this user and is in a cancellable stage
+    // Cancellable Stages: 0 (Placed), 1 (Received), 2 (Packed)
+    $order = Order::where('id', $id)
+        ->where('user_id', $user->id)
+        ->whereIn('status', ['0', '1', '2']) 
+        ->first();
+
+    // 2. If the order is already at status 4 (Head Office) or above, deny the request
+    if (!$order) {
+        return redirect()->back()->with('error', 'Order cannot be cancelled at this stage. It may already be at the Head Office or shipped.');
+    }
+
+    try {
+        // 3. Update Status to 7 (Cancellation Requested)
+        // NOTE: We do NOT restore stock here. Stock is restored ONLY after Admin final approval.
+        $order->status = '7';
+        $order->save();
+
+        // 4. ✅ OPTIONAL: Notify the Seller here so they see it in their dashboard
+        // Notification::send($order->seller, new \App\Notifications\CancellationRequest($order));
+
+        return redirect()->back()->with('status', 'Your cancellation request has been sent to the Seller for approval.');
+        
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Something went wrong. Please try again later.');
+    }
+}
 }

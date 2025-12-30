@@ -4,31 +4,45 @@
 
 {{-- CUSTOM STYLES --}}
 <style>
+    /* Professional Maroon Theme */
     .text-maroon { color: #5b2c2c !important; }
     .bg-maroon { background-color: #5b2c2c !important; color: white !important; }
     
     .info-card {
         border: none;
         border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Shaped corner shadow */
         background: white;
         width: 100%;
     }
     
-    .info-label { font-size: 0.85rem; text-transform: uppercase; color: #6c757d; font-weight: 600; margin-bottom: 4px; display: block; }
-    .info-value { font-size: 1rem; font-weight: 500; color: #212529; }
+    .info-label { font-size: 0.75rem; text-transform: uppercase; color: #6c757d; font-weight: 700; margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
+    .info-value { font-size: 0.95rem; font-weight: 500; color: #212529; }
 
-    .table-custom th {
+    /* Refined International Badge */
+    .intl-badge-refined {
+        font-size: 0.7rem !important;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 50px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        vertical-align: middle;
+        box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+    }
+
+    .table-custom thead th {
         background-color: #f8f9fa;
         color: #495057;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         border-bottom: 2px solid #e9ecef;
+        padding: 15px;
     }
     
     .product-img-box {
-        width: 60px; height: 60px;
+        width: 50px; height: 50px;
         border-radius: 8px;
         border: 1px solid #dee2e6;
         padding: 2px;
@@ -37,97 +51,112 @@
     .product-img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
 
     .variant-badge {
-        font-size: 0.75rem;
-        background-color: #e0f2fe;
-        color: #075985;
-        border: 1px solid #bae6fd;
+        font-size: 0.7rem;
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
         padding: 2px 8px;
-        border-radius: 12px;
+        border-radius: 6px;
         font-weight: 600;
         display: inline-block;
-        margin-top: 4px;
+        margin-top: 2px;
     }
 
-  
+    /* Dispatch Assignment Box */
+    .dispatch-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        transition: border-color 0.3s;
+    }
+    .intl-border { border-color: #0d6efd !important; }
+    .maroon-border { border-color: #5b2c2c !important; }
 </style>
 
 <div class="container-fluid px-4 py-5">
     @php
-        /** * ULTIMATE CURRENCY LOGIC 
-         * This handles the cases where the DB might have LKR labels for USD values.
-         */
+        /** * ULTIMATE CURRENCY LOGIC */
         $dbCurrency = strtoupper(trim($order->currency));
         $payMode = strtoupper($order->payment_mode);
         
-        // Force USD if either the currency column says so or the payment mode contains (USD)
         $isActuallyUSD = ($dbCurrency === 'USD' || str_contains($payMode, '(USD)'));
         $symbol = $isActuallyUSD ? '$ ' : 'Rs. ';
 
-        $statusMap = [
-            3 => ['text' => 'At Head Office', 'class' => 'bg-info text-dark'],
-            4 => ['text' => 'Assigned to Rider', 'class' => 'bg-primary'],
-        ];
-        $statusData = $statusMap[$order->status] ?? ['text' => 'Processing', 'class' => 'bg-secondary'];
-        
-    @endphp
+       /** * EXPANDED STATUS MAPPING */
+    $statusMap = [
+        3 => ['text' => 'At Head Office', 'class' => 'bg-info text-dark', 'icon' => 'bi-building'],
+        4 => ['text' => 'Assigned to Rider', 'class' => 'bg-primary', 'icon' => 'bi-bicycle'],
+        5 => ['text' => 'Delivered', 'class' => 'bg-success', 'icon' => 'bi-check-all'],
+        6 => ['text' => 'Order Closed', 'class' => 'bg-secondary', 'icon' => 'bi-archive'],
+        8 => ['text' => 'Seller Approved Refund', 'class' => 'bg-warning text-dark', 'icon' => 'bi-exclamation-octagon'],
+    ];
+    $statusData = $statusMap[$order->status] ?? ['text' => 'Processing', 'class' => 'bg-secondary', 'icon' => 'bi-clock'];
+@endphp
 
     {{-- HEADER --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
-             <h3 class="fw-bold text-maroon mb-0 d-inline-flex align-items-center">
-                Reviewing Order #{{ $order->tracking_no }}
+             <h3 class="fw-bold text-dark mb-1">
+                Order #{{ $order->tracking_no }}
                 @if($isActuallyUSD)
-                    <span class="badge bg-primary ms-2 fs-6 shadow-sm animated fadeIn">
-                        <i class="bi bi-globe me-1"></i>INTERNATIONAL SHIPMENT
+                    <span class="badge bg-primary intl-badge-refined ms-2">
+                        <i class="bi bi-globe me-1"></i>International
                     </span>
                 @endif
             </h3>
-            <span class="text-muted small">Head Office Processing Phase</span>
+            <p class="text-muted small mb-0">Reviewing order details for dispatch and final processing</p>
         </div>
         
-        <div>
-            <span class="badge {{ $statusData['class'] }} fs-6 px-3 py-2">
-                <i class="bi bi-building me-1"></i> {{ $statusData['text'] }}
-            </span>
+        {{-- HEADER STATUS BADGE --}}
+<div class="text-end">
+    <span class="badge {{ $statusData['class'] }} rounded-pill px-3 py-2 fw-bold shadow-sm">
+        <i class="bi {{ $statusData['icon'] }} me-1"></i> {{ $statusData['text'] }}
+    </span>
+    {{-- ✅ Show Delivery Timestamp if Delivered --}}
+    @if($order->status == 5 && $order->delivered_at)
+        <div class="small text-muted mt-1 fw-bold">
+            Delivered: {{ \Carbon\Carbon::parse($order->delivered_at)->format('d M, h:i A') }}
         </div>
+    @endif
+    </div>
     </div>
 
     <div class="row g-4">
         {{-- LEFT COLUMN --}}
         <div class="col-lg-8">
-            {{-- 1. CUSTOMER & SHIPPING --}}
+            {{-- 1. CUSTOMER & SHIPPING INFO --}}
             <div class="card info-card mb-4">
                 <div class="card-body p-4">
                     <div class="row g-4">
                         <div class="col-md-6 border-end">
-                            <h6 class="text-maroon fw-bold mb-3"><i class="bi bi-person-badge me-2"></i>Customer Information</h6>
+                            <h6 class="text-maroon fw-bold mb-3"><i class="bi bi-person-badge me-2"></i>Customer Profile</h6>
                             <div class="mb-3">
                                 <span class="info-label">Full Name</span>
-                                <span class="info-value">{{ $order->fname }} {{ $order->lname }}</span>
+                                <span class="info-value fw-bold">{{ $order->fname }} {{ $order->lname }}</span>
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-0">
                                 <span class="info-label">Contact Details</span>
-                                <span class="info-value">{{ $order->phone }} <br> {{ $order->email }}</span>
+                                <span class="info-value"><i class="bi bi-telephone text-muted me-1"></i> {{ $order->phone }}</span><br>
+                                <span class="info-value"><i class="bi bi-envelope text-muted me-1"></i> {{ $order->email }}</span>
                             </div>
                         </div>
                         <div class="col-md-6 ps-md-4">
-                            <h6 class="text-maroon fw-bold mb-3"><i class="bi bi-truck me-2"></i>Delivery Location</h6>
+                            <h6 class="text-maroon fw-bold mb-3"><i class="bi bi-geo-alt me-2"></i>Delivery Destination</h6>
                             <div class="info-value lh-base">
-                                {{ $order->address1 }} <br>
-                                @if($order->address2) {{ $order->address2 }} <br> @endif
+                                <span class="fw-bold d-block mb-1">{{ $order->address1 }}</span>
+                                @if($order->address2) <span class="d-block">{{ $order->address2 }}</span> @endif
                                 {{ $order->city }}, {{ $order->state }} <br>
-                                <span class="text-muted">Postal Code: {{ $order->zipcode }}</span> <br>
-                                <strong class="text-uppercase" style="font-size: 0.8rem;">{{ $order->country }}</strong>
+                                <span class="text-muted small fw-bold">Postal: {{ $order->zipcode }}</span> <br>
+                                <span class="badge bg-dark mt-2" style="font-size: 0.65rem; letter-spacing: 1px;">{{ strtoupper($order->country) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- 2. ITEM VERIFICATION --}}
-            <div class="card info-card">
+            {{-- 2. PACKED ITEMS LIST --}}
+            <div class="card info-card overflow-hidden">
                 <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="text-maroon fw-bold mb-0"><i class="bi bi-list-check me-2"></i>Packed Items Verification</h6>
+                    <h6 class="text-maroon fw-bold mb-0"><i class="bi bi-box-seam me-2"></i>Packed Items Verification</h6>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -148,15 +177,15 @@
                                                     <img src="{{ $item->product->image ? \Illuminate\Support\Facades\Storage::url(str_replace('public/', '', $item->product->image)) : asset('images/placeholder.png') }}" class="product-img">
                                                 </div>
                                                 <div>
-                                                    <div class="fw-bold">{{ $item->product->name }}</div>
+                                                    <div class="fw-bold text-dark">{{ $item->product->name }}</div>
                                                     @if($item->variant)
                                                         <span class="variant-badge">{{ $item->variant->unit_label }}</span>
                                                     @endif
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="text-center fw-bold fs-5">{{ $item->qty }}</td>
-                                        <td class="text-end pe-4 fw-bold">
+                                        <td class="text-center fw-bold text-dark">{{ $item->qty }}</td>
+                                        <td class="text-end pe-4 fw-bold text-dark">
                                             {{ $symbol }}{{ number_format($item->price, 2) }}
                                         </td>
                                     </tr>
@@ -172,9 +201,9 @@
         <div class="col-lg-4">
             <div class="d-flex flex-column gap-4">
                 
-                {{-- QUICK ASSIGNMENT BOX --}}
+                {{-- DISPATCH ASSIGNMENT BOX --}}
                 @if($order->status == 3)
-                    <div class="card info-card shadow" style="border: 2px solid {{ $isActuallyUSD ? '#0d6efd' : '#5b2c2c' }};">
+                    <div class="card info-card dispatch-card shadow-sm {{ $isActuallyUSD ? 'intl-border' : 'maroon-border' }}">
                         <div class="card-body">
                             <h6 class="fw-bold mb-3 {{ $isActuallyUSD ? 'text-primary' : 'text-maroon' }}">
                                 <i class="bi bi-truck-flatbed me-2"></i>Dispatch Assignment
@@ -184,14 +213,14 @@
                                 @method('PUT')
                                 <div class="mb-3">
                                     <label class="info-label">Select Delivery Partner</label>
-                                    <select name="rider_id" class="form-select" required>
+                                    <select name="rider_id" class="form-select shadow-none" required>
                                         <option value="" selected disabled>Choose Personnel</option>
                                         @foreach($deliveryPartners as $rider)
                                             <option value="{{ $rider->id }}">{{ $rider->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <button type="submit" class="btn {{ $isActuallyUSD ? 'btn-primary' : 'btn-success' }} w-100 fw-bold py-2 shadow-sm">
+                                <button type="submit" class="btn {{ $isActuallyUSD ? 'btn-primary' : 'btn-success' }} w-100 fw-bold py-2 shadow-sm rounded-3">
                                     <i class="bi bi-send-check me-2"></i> Confirm & Dispatch
                                 </button>
                             </form>
@@ -199,32 +228,30 @@
                     </div>
                 @endif
 
-                {{-- TOTALS SUMMARY --}}
-                <div class="card info-card bg-light border shadow-sm">
+                {{-- VALUE SUMMARY --}}
+                <div class="card info-card bg-light border-0 shadow-sm">
                     <div class="card-body">
-                        <h6 class="text-maroon fw-bold mb-3">Order Value</h6>
+                        <h6 class="text-maroon fw-bold mb-3">Order Value Summary</h6>
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Payment Mode:</span>
-                            <span class="badge {{ str_contains(strtolower($order->payment_mode), 'stripe') ? 'bg-primary text-white' : 'bg-success' }}">
+                            <span class="text-muted small fw-bold">PAYMENT MODE</span>
+                            <span class="badge {{ str_contains(strtolower($order->payment_mode), 'stripe') ? 'bg-primary text-white' : 'bg-success' }} py-1 px-2" style="font-size: 0.65rem;">
                                 {{ strtoupper($order->payment_mode) }}
                             </span>
                         </div>
-                        <hr>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fs-5 fw-bold">Total Payable</span>
-                            <span class="fs-4 fw-bold text-maroon">
+                        <hr class="my-2 opacity-10">
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="fw-bold text-muted small">TOTAL PAYABLE</span>
+                            <span class="fs-4 fw-bold text-dark">
                                 {{ $symbol }}{{ number_format($order->total_price, 2) }}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                {{-- NAVIGATION --}}
-                <div class="d-grid gap-2">
-                    <a href="{{ route('admin.orders.review') }}" class="btn btn-outline-secondary py-2 fw-bold">
-                        <i class="bi bi-arrow-left me-2"></i> Back to Review List
-                    </a>
-                </div>
+                {{-- BACK BUTTON --}}
+                <a href="{{ route('admin.orders.review') }}" class="btn btn-outline-dark py-2 fw-bold rounded-pill border-2">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Review List
+                </a>
 
             </div>
         </div>

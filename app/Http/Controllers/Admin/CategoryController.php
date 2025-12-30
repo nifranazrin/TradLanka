@@ -85,14 +85,15 @@ class CategoryController extends Controller
     }
 
     // Show edit form
-    public function edit($id)
-    {
-        $category = Category::findOrFail($id);
-        // Get all categories except the current one (cannot be its own parent)
-        $parentCategories = Category::where('id', '!=', $id)->get();
-        
-        return view('admin.categories.edit', compact('category', 'parentCategories'));
-    }
+public function edit($id)
+{
+    $category = Category::findOrFail($id);
+    
+    // Change $parentCategories to $mainCategories to match your Blade file
+    $mainCategories = Category::where('id', '!=', $id)->get(); 
+    
+    return view('admin.categories.edit', compact('category', 'mainCategories'));
+}
 
     // Update existing category
     public function update(Request $request, $id)

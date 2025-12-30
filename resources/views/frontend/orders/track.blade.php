@@ -49,77 +49,114 @@
                         Status for:
                         <span>{{ $order->tracking_no }}</span>
                     </h5>
-                    <p>You will get your order within 2–4 working days.</p>
+                    
+                    {{-- Status-based header message --}}
+                    @if($order->status == '6')
+                        <p class="text-danger fw-bold">This order has been cancelled and refunded.</p>
+                    @elseif($order->status >= 7)
+                        <p class="text-warning fw-bold">Cancellation process is in progress.</p>
+                    @else
+                        <p>You will get your order within 2–4 working days.</p>
+                    @endif
                 </div>
 
                 <div class="tracking-list">
-    {{-- 1. Order Placed - ALWAYS ACTIVE --}}
-    <div class="tracking-item active">
-        <div class="tracking-icon"><i class="fas fa-shopping-bag"></i></div>
-        <div>
-            <h6 class="fw-bold mb-0">Order Placed</h6>
-            <p>Successfully placed on {{ $order->created_at->format('d M, Y') }}</p>
-        </div>
-    </div>
+                    
+                    {{-- 🛑 CANCELLATION JOURNEY (Shows only if status is 6, 7, or 8) --}}
+                    @if(in_array($order->status, ['6', '7', '8']))
+                        
+                        {{-- 1. Cancellation Requested --}}
+                        <div class="tracking-item active">
+                            <div class="tracking-icon"><i class="fas fa-undo"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Cancellation Requested</h6>
+                                <p>Requested by customer. Waiting for seller to review.</p>
+                            </div>
+                        </div>
 
-    {{-- 2. Order Received (Status 1) --}}
-    <div class="tracking-item {{ $order->status >= 1 ? 'active' : '' }}">
-        <div class="tracking-icon"><i class="fas fa-file-invoice"></i></div>
-        <div>
-            <h6 class="fw-bold mb-0">Order Received</h6>
-            @if($order->status >= 1)
-                <p>Seller accepted your order</p>
-            @else
-                <p class="text-muted italic">Waiting for seller to accept...</p>
-            @endif
-        </div>
-    </div>
+                        {{-- 2. Seller Approved (Status 8 or 6) --}}
+                        <div class="tracking-item {{ ($order->status == '8' || $order->status == '6') ? 'active' : '' }}">
+                            <div class="tracking-icon"><i class="fas fa-user-check"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Approved by Seller</h6>
+                                @if($order->status == '8' || $order->status == '6')
+                                    <p>Seller verified and approved. Sent to Head Office for refund.</p>
+                                @else
+                                    <p class="text-muted italic">Waiting for seller verification...</p>
+                                @endif
+                            </div>
+                        </div>
 
-    {{-- 3. Packed (Status 2) --}}
-    <div class="tracking-item {{ $order->status >= 2 ? 'active' : '' }}">
-        <div class="tracking-icon"><i class="fas fa-box"></i></div>
-        <div>
-            <h6 class="fw-bold mb-0">Packed</h6>
-            <p>Seller is preparing your order</p>
-        </div>
-    </div>
+                        {{-- 3. Final Refund (Status 6 Only) --}}
+                        <div class="tracking-item {{ $order->status == '6' ? 'active' : '' }}">
+                            <div class="tracking-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Refunded & Closed</h6>
+                                @if($order->status == '6')
+                                    <p class="done">Funds returned and stock updated!</p>
+                                @else
+                                    <p class="text-muted italic">Waiting for Head Office finalization...</p>
+                                @endif
+                            </div>
+                        </div>
 
-    {{-- 4. At Head Office (Status 3) --}}
-    <div class="tracking-item {{ $order->status >= 3 ? 'active' : '' }}">
-        <div class="tracking-icon"><i class="fas fa-warehouse"></i></div>
-        <div>
-            <h6 class="fw-bold mb-0">At Head Office</h6>
-            <p>Arrived at central hub</p>
-        </div>
-    </div>
+                    @else
+                        {{-- 🚚 NORMAL DELIVERY JOURNEY (Original Steps) --}}
+                        
+                        {{-- 1. Order Placed --}}
+                        <div class="tracking-item active">
+                            <div class="tracking-icon"><i class="fas fa-shopping-bag"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Order Placed</h6>
+                                <p>Successfully placed on {{ $order->created_at->format('d M, Y') }}</p>
+                            </div>
+                        </div>
 
-    {{-- 5. Out for Delivery (Status 4) --}}
-    <div class="tracking-item {{ $order->status >= 4 ? 'active' : '' }}">
-        <div class="tracking-icon"><i class="fas fa-truck"></i></div>
-        <div>
-            <h6 class="fw-bold mb-0">Out for Delivery</h6>
-            <p>Rider picked up package</p>
-        </div>
-    </div>
+                        {{-- 2. Order Received (Status 1) --}}
+                        <div class="tracking-item {{ $order->status >= 1 ? 'active' : '' }}">
+                            <div class="tracking-icon"><i class="fas fa-file-invoice"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Order Received</h6>
+                                <p>{{ $order->status >= 1 ? 'Seller accepted your order' : 'Waiting for seller to accept...' }}</p>
+                            </div>
+                        </div>
 
-    {{-- 6. Delivered (Status 5) --}}
-    <div class="tracking-item {{ $order->status >= 5 ? 'active' : '' }}">
-        <div class="tracking-icon"><i class="fas fa-check-circle"></i></div>
-        <div>
-            <h6 class="fw-bold mb-0">Delivered</h6>
-            @if($order->status >= 5)
-                <p class="done">Order Completed!</p>
-            @endif
-        </div>
-    </div>
-</div>
+                        {{-- 3. Packed (Status 2) --}}
+                        <div class="tracking-item {{ $order->status >= 2 ? 'active' : '' }}">
+                            <div class="tracking-icon"><i class="fas fa-box"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Packed</h6>
+                                <p>Seller is preparing your order</p>
+                            </div>
+                        </div>
+
+                        {{-- 4. At Head Office (Status 3 or 4) --}}
+                        <div class="tracking-item {{ ($order->status == 3 || $order->status == 4) ? 'active' : '' }}">
+                            <div class="tracking-icon"><i class="fas fa-warehouse"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">At Head Office</h6>
+                                <p>Arrived at central hub</p>
+                            </div>
+                        </div>
+
+                        {{-- 5. Delivered (Status 5) --}}
+                        <div class="tracking-item {{ $order->status >= 5 ? 'active' : '' }}">
+                            <div class="tracking-icon"><i class="fas fa-check-circle"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Delivered</h6>
+                                @if($order->status >= 5)
+                                    <p class="done">Order Completed!</p>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
         @endisset
 
     </div>
 </div>
 @endsection
-
 {{-- STYLES --}}
 <style>
 .track-page {

@@ -179,63 +179,102 @@
                             </div>
                         </td>
 
-                        {{-- STATUS --}}
-                        <td class="text-center">
-                            @if($status === 0)
-                                <span class="badge-custom badge-new">New Order</span>
-                            @elseif($status === 1)
-                                <span class="badge-custom badge-received">Received – Waiting to Pack</span>
-                            @elseif($status === 2)
-                                <span class="badge-custom badge-packed">Packed</span>
-                            @elseif($status === 3)
-                                <span class="badge-custom badge-delivered">At Head Office</span>
-                            @endif
-                        </td>
+                          {{-- STATUS --}}
+                                <td class="text-center">
+                                    @if($status === 0)
+                                        <span class="badge-custom badge-new">New Order</span>
+                                    @elseif($status === 1)
+                                        <span class="badge-custom badge-received">Received – Waiting to Pack</span>
+                                    @elseif($status === 2)
+                                        <span class="badge-custom badge-packed">Packed</span>
+                                    @elseif($status === 3)
+                                        <span class="badge-custom badge-delivered">At Head Office</span>
+                                    @elseif($status === 7)
+                                        <span class="badge-custom" style="background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;">
+                                            ⚠️ Cancellation Requested
+                                        </span>
+                                    @elseif($status === 8)
+                                        <span class="badge-custom" style="background: #f0fdf4; color: #166534; border: 1px solid #22c55e;">
+                                            ✅ Approved for Refund
+                                        </span>
+                                    @endif
+                                </td>
 
-                        {{-- ACTION --}}
-                        <td class="text-center">
+                           {{-- ACTION --}}
+<td class="text-center">
 
-                            @if($status === 0)
-                                <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="1">
-                                    <button class="btn-action btn-receive">Receive Order</button>
-                                </form>
-                            @endif
+    {{-- 1. Normal Fulfillment Flow (Status 0, 1, 2) --}}
+    @if($status === 0)
+        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="status" value="1">
+            <button class="btn-action btn-receive">Receive Order</button>
+        </form>
+    @endif
 
-                            @if($status === 1)
-                                <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="2">
-                                    <button class="btn-action btn-pack">Pack Order</button>
-                                </form>
-                            @endif
+    @if($status === 1)
+        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="status" value="2">
+            <button class="btn-action btn-pack">Pack Order</button>
+        </form>
+    @endif
 
-                            @if($status === 2)
-                                <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="3">
-                                    <button class="btn-action btn-handover">
-                                        Hand Over to Head Office
-                                    </button>
-                                </form>
-                            @endif
+    @if($status === 2)
+        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="status" value="3">
+            <button class="btn-action btn-handover">
+                Hand Over to Head Office
+            </button>
+        </form>
+    @endif
 
-                            @if($status === 3)
-                                <small class="fw-semibold fst-italic text-muted">
-                                    Received by Head Office
-                                </small>
-                            @endif
+                                {{-- 2. New Cancellation Approval Flow (Status 7, 8) --}}
+                                @if($status === 7)
+                                    <form method="POST" action="{{ route('seller.orders.approve_cancel', $order->id) }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" class="btn-action fw-bold shadow-sm" style="background: #dc2626; color: #fff;">
+                                            Approve Cancellation
+                                        </button>
+                                        <p class="text-danger mt-1 fw-bold" style="font-size: 0.65rem; line-height: 1;">
+                                            *Sends to Head Office for Refund
+                                        </p>
+                                    </form>
+                                @endif
 
-                            <a href="{{ route('seller.orders.show', $order->id) }}"
-                               class="btn btn-outline-secondary btn-sm mt-2 w-100">
-                                View Details
-                            </a>
-                        </td>
-                    </tr>
+                                @if($status === 8)
+                                    <div class="p-2 rounded bg-light border border-success mb-2">
+                                        <small class="fw-bold text-success d-block">
+                                            ✅ Approved
+                                        </small>
+                                        <small class="text-muted fst-italic" style="font-size: 0.7rem;">
+                                            Waiting for Admin Refund
+                                        </small>
+                                    </div>
+                                @endif
+
+                                {{-- 3. Final Head Office Statuses (Status 3 or Status 6) --}}
+                                @if($status === 3)
+                                    <small class="fw-semibold fst-italic text-muted d-block mb-2">
+                                        Received by Head Office
+                                    </small>
+                                @endif
+
+                                @if($status === 6)
+                                    <span class="badge bg-dark text-white d-block mb-2">ORDER CANCELLED</span>
+                                @endif
+
+                                <a href="{{ route('seller.orders.show', $order->id) }}"
+                                class="btn btn-outline-secondary btn-sm mt-2 w-100">
+                                    View Details
+                                </a>
+                            </td>
+                                                </tr>
                 @endforeach
                 </tbody>
             </table>

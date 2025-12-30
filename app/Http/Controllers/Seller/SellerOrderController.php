@@ -21,7 +21,7 @@ class SellerOrderController extends Controller
 
     // Security Check: Redirect if not authenticated
     if (!$seller) {
-        return redirect()->route('seller.login');
+        return redirect()->route('staff.login');
     }
 
     // --- SAFE NOTIFICATION CLEARING ---
@@ -144,5 +144,29 @@ class SellerOrderController extends Controller
         $pdf = Pdf::loadView('seller.orders.pdf', compact('order'));
 
         return $pdf->download('order-' . $order->tracking_no . '.pdf');
+    }
+
+    public function approveCancellation($id)
+    {
+        $sellerId = Auth::guard('seller')->id();
+
+        // 1. Find the order and verify the seller owns items in it
+        $order = Order::where('id', $id)
+            ->whereHas('items.product', function ($query) use ($sellerId) {
+                $query->where('seller_id', $sellerId);
+            })
+            ->firstOrFail();
+
+        // 2. Only allow approval if it is currently "Requested" (Status 7)
+        if ($order->status == 7) {
+            $order->update([
+                'status' => 8 // Move to "Seller Approved Cancellation"
+            ]);
+
+            // ✅ The order is now flagged for the Admin Head Office to refund money
+            return back()->with('success', '✅ Cancellation approved. The request has been sent to the Head Office for final refund.');
+        }
+
+        return back()->with('error', 'This order is not in a cancellation request stage.');
     }
 }

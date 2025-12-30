@@ -27,14 +27,16 @@ use App\Http\Controllers\Frontend\UserReviewController;
 use App\Http\Controllers\Admin\AdminDashController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AdminProfileController;
-use App\Http\Controllers\Admin\SellerApprovalController;
+use App\Http\Controllers\Admin\UserApprovalController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\BannerController; 
 use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\StaffManagementController;
+use App\Http\Controllers\Admin\ReportController;
 
 // SELLER CONTROLLERS
-use App\Http\Controllers\SellerRegistrationController;
+use App\Http\Controllers\StaffRegistrationController;
 use App\Http\Controllers\Seller\SellerDashController;
 use App\Http\Controllers\Seller\SellerProfileController;
 use App\Http\Controllers\Seller\ProductController;
@@ -123,9 +125,9 @@ Route::get('/staff/login', [StaffLoginController::class, 'showLoginForm'])->name
 Route::post('/staff/login', [StaffLoginController::class, 'login'])->name('staff.login.submit');
 Route::post('/staff/logout', [StaffLoginController::class, 'logout'])->name('staff.logout');
 
-// SELLER REGISTRATION (Public)
-Route::get('/seller/register', [SellerRegistrationController::class, 'showForm'])->name('seller.register');
-Route::post('/seller/register', [SellerRegistrationController::class, 'submitForm'])->name('seller.register.submit');
+// S REGISTRATION (Public)
+Route::get('/seller/register', [StaffRegistrationController::class, 'showForm'])->name('seller.register');
+Route::post('/seller/register', [StaffRegistrationController::class, 'submitForm'])->name('seller.register.submit');
 
 
 //imgage based search
@@ -162,6 +164,7 @@ Route::prefix('user')->name('user.')->middleware('auth')->group(function () {
     // Orders
     Route::get('/orders', [ProfileController::class, 'orders'])->name('orders.index');
     Route::get('/orders/{id}', [ProfileController::class, 'viewOrder'])->name('orders.show');
+    Route::put('/orders/cancel/{id}', [ProfileController::class, 'cancelOrder'])->name('orders.cancel');
 });
 
 // =============================================================
@@ -179,13 +182,18 @@ Route::prefix('admin')->name('admin.')->middleware([AdminMiddleware::class])->gr
     Route::get('/website-content/banner', [BannerController::class, 'edit'])->name('banner.edit');
     Route::put('/website-content/banner', [BannerController::class, 'update'])->name('banner.update');
 
-    // Seller Approvals
-    Route::get('/seller-requests', [SellerApprovalController::class, 'index'])->name('seller.requests');
-    Route::post('/seller-requests/{id}/approve', [SellerApprovalController::class, 'approve'])->name('seller.approve');
-    Route::post('/seller-requests/{id}/reject', [SellerApprovalController::class, 'reject'])->name('seller.reject');
-    Route::put('/seller-requests/{id}/toggle-status', [SellerApprovalController::class, 'toggleStatus'])->name('seller.toggleStatus');
-    Route::post('/seller-requests/{id}/restore', [SellerApprovalController::class, 'restore'])->name('seller.restore');
+   
+    // Unified User (Staff) Approvals
+    Route::get('/user-requests', [UserApprovalController::class, 'index'])->name('seller.requests');
+    Route::post('/user-requests/{id}/approve', [UserApprovalController::class, 'approve'])->name('seller.approve');
+    Route::post('/user-requests/{id}/reject', [UserApprovalController::class, 'reject'])->name('seller.reject');
+    Route::put('/user-requests/{id}/toggle-status', [UserApprovalController::class, 'toggleStatus'])->name('seller.toggleStatus');
+    Route::post('/user-requests/{id}/restore', [UserApprovalController::class, 'restore'])->name('seller.restore');
 
+    //cancel
+    Route::put('orders/finalize-refund/{id}', [OrderController::class, 'finalizeRefund'])
+          ->name('orders.finalize_refund');
+    
     // Product Management
     Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
     Route::get('/products/{id}', [AdminProductController::class, 'show'])->name('products.show');
@@ -198,36 +206,34 @@ Route::prefix('admin')->name('admin.')->middleware([AdminMiddleware::class])->gr
     Route::post('/profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password');
    
     // Inside Admin Group chat
-Route::get('/chat', [AdminChatController::class, 'index'])->name('chat.index');
-Route::get('/chat/fetch/{sellerId}', [AdminChatController::class, 'fetchMessages'])->name('chat.fetch');
-Route::post('/chat/send', [AdminChatController::class, 'sendMessage'])->name('chat.send');
+        Route::get('/chat', [AdminChatController::class, 'index'])->name('chat.index');
+        Route::get('/chat/fetch/{sellerId}', [AdminChatController::class, 'fetchMessages'])->name('chat.fetch');
+        Route::post('/chat/send', [AdminChatController::class, 'sendMessage'])->name('chat.send');
 
- // Your new Review and Assignment routes
-Route::get('review-orders', [App\Http\Controllers\Admin\OrderController::class, 'reviewOrders'])
-    ->name('orders.review'); // Removed "admin." because the group adds it automatically
-    
-Route::put('assign-order/{id}', [App\Http\Controllers\Admin\OrderController::class, 'assignOrder'])
-    ->name('orders.assign'); // Removed "admin."
+        // Your new Review and Assignment routes
+        Route::get('review-orders', [App\Http\Controllers\Admin\OrderController::class, 'reviewOrders'])
+            ->name('orders.review'); // Removed "admin." because the group adds it automatically
+            
+        Route::put('assign-order/{id}', [App\Http\Controllers\Admin\OrderController::class, 'assignOrder'])
+            ->name('orders.assign'); // Removed "admin."
 
     Route::get('review-orders/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('orders.show');
 
-    // Notifications
-    Route::get('/notifications/{id}/read', function ($id) {
-        $notification = auth()->guard('admin')->user()->notifications->find($id);
-        if ($notification) {
-            $notification->markAsRead();
-            return redirect($notification->data['link']);
-        }
-        return back();
-    })->name('notifications.read');
+     // CORRECT in web.php
+Route::post('/send-staff-credentials', [UserApprovalController::class, 'sendCredentialsEmail'])
+    ->name('staff.sendEmail'); 
 
-    Route::get('/notifications/mark-all', function () {
-        auth()->guard('admin')->user()->unreadNotifications->markAsRead();
-        return back()->with('success', 'All notifications marked as read');
-    })->name('notifications.markAllRead');
-}); 
+    // Staff Management Routes
+Route::get('/staff-management', [App\Http\Controllers\Admin\StaffManagementController::class, 'index'])
+    ->name('staff.index');
 
+Route::put('/staff-management/{id}/toggle', [App\Http\Controllers\Admin\StaffManagementController::class, 'toggleStatus'])
+    ->name('staff.toggle');
 
+    // Unified Admin Notifications
+    Route::get('/notifications/{id}/read', [UserApprovalController::class, 'readNotification'])->name('notifications.read');
+    Route::get('/notifications/mark-all', [UserApprovalController::class, 'markAllRead'])->name('notifications.markAllRead');
+});
 // MOVE THIS TO THE TOP (Before the seller group)
 Route::get('/set-currency/{currency}', function ($currency) {
     if (in_array($currency, ['LKR', 'USD'])) {
@@ -235,6 +241,20 @@ Route::get('/set-currency/{currency}', function ($currency) {
     }
     return redirect()->back();
 });
+
+
+//REPORTS
+    // web.php
+Route::prefix('admin')->name('admin.')->middleware([AdminMiddleware::class])->group(function () {
+    
+    // ... all your other admin routes ...
+
+    Route::prefix('reports')->group(function () {
+        Route::get('/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
+        Route::get('/sales', [ReportController::class, 'salesReport'])->name('reports.sales');
+    });
+});
+   
 // =============================================================
 //                    SELLER DASHBOARD (Protected)
 // =============================================================
@@ -264,6 +284,9 @@ Route::get('/dashboard/chart-data', [SellerDashController::class, 'getChartData'
     Route::put('/orders/{id}/status', [SellerOrderController::class, 'updateStatus'])->name('orders.update');
     Route::get('/orders/{order}', [SellerOrderController::class, 'show'])->name('orders.show');
     Route::get('/orders/{order}/pdf', [SellerOrderController::class, 'downloadPdf'])->name('orders.pdf');
+
+    // Inside the 'seller.' route name group
+Route::put('/orders/approve-cancel/{id}', [SellerOrderController::class, 'approveCancellation'])->name('orders.approve_cancel');
 
     // Products
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');

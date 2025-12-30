@@ -6,27 +6,22 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Staff; 
-
+use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     /**
      * Display orders at Head Office (Both Waiting and Assigned)
      */
     public function reviewOrders()
-    {
-        // ✅ UPDATED: Include status 4 so orders don't disappear after assignment
-        // Status 3 = At Head Office, Status 4 = Out for Delivery
-        $orders = Order::whereIn('status', [3, 4])
-            ->latest()
-            ->paginate(15);
+{
+    // ✅ ADD 0 and 1 to the list so new COD and Paid orders show up
+    $orders = Order::whereIn('status', [ 1, 3, 4, 5, 8,9, 6])
+        ->latest()
+        ->paginate(15);
 
-        // Fetch internal delivery staff from 'staff' table where role is 'delivery'
-        $deliveryPartners = Staff::where('role', 'delivery')->get(); 
-
-        return view('admin.orders.index', compact('orders', 'deliveryPartners'));
-    }
-
-
+    $deliveryPartners = Staff::where('role', 'delivery')->get(); 
+    return view('admin.orders.index', compact('orders', 'deliveryPartners'));
+}
 
     public function acceptOrder($id)
     {
@@ -73,4 +68,43 @@ class OrderController extends Controller
 
         return redirect()->route('admin.orders.review')->with('success', 'Order assigned and handed over to delivery partner successfully.');
     }
+     
+
+     public function finalizeRefund($id)
+{
+    $order = Order::with('items.product')->findOrFail($id);
+    $payMode = strtoupper($order->payment_mode);
+    $isCod = str_contains($payMode, 'COD');
+
+    // Admin can finalize if it's a Refund Request (8) or a Delivery Failure (9)
+    if ($order->status == 8 || $order->status == 9) {
+        $previousStatus = $order->status; // Remember if it was a rider failure
+
+        DB::beginTransaction();
+        try {
+            foreach ($order->items as $item) {
+                if ($item->product) {
+                    $item->product->increment('stock', $item->qty);
+                }
+            }
+
+            // Update status to 6 (Closed)
+            $order->update(['status' => 6]); 
+
+            DB::commit();
+
+            // Custom Message Logic
+            if ($previousStatus == 9) {
+                return back()->with('success', 'Confirmed: Delivery Cancelled. Stock Restored.');
+            }
+            
+            return back()->with('success', 'Refund Processed successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error: ' . $e->getMessage());
+        }
+    }
+    return back()->with('error', 'Action not allowed.');
+}
 }

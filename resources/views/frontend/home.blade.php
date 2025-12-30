@@ -172,6 +172,57 @@
         </div>
     @endif
 </section>
+
+
+{{-- SECTION: RECOMMENDED FOR YOU (AI POWERED) --}}
+@if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
+    <section class="mt-10 mb-16">
+        <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-left">Recommended for You</h2>
+        
+        <div class="overflow-hidden relative">
+            {{-- Slider Container --}}
+            {{-- Note: I added 'overflow-x-auto' so users can scroll through them manually --}}
+            <div id="recommendSlider" class="flex space-x-6 overflow-x-auto pb-4 custom-scroll">
+                
+                @foreach ($recommendedProducts as $product)
+                    <div class="min-w-[220px] bg-white rounded-lg shadow-md overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg flex-shrink-0">
+                        
+                        {{-- Product Link --}}
+                        <a href="{{ route('product.show', $product->slug) }}">
+                            <img src="{{ asset('storage/' . $product->image) }}" 
+                                 alt="{{ $product->name }}"
+                                 class="w-full h-36 object-cover">
+                        </a>
+
+                        <div class="p-4 text-center">
+                            <a href="{{ route('product.show', $product->slug) }}">
+                                <h3 class="font-semibold text-gray-800 text-sm md:text-base truncate" title="{{ $product->name }}">
+                                    {{ $product->name }}
+                                </h3>
+                            </a>
+                            
+                            <p class="text-[#5b2c2c] font-bold mt-1">
+                                Rs {{ number_format($product->price, 2) }}
+                            </p>
+                            
+                            {{-- ADD TO CART BUTTON --}}
+                            <button type="button" 
+                                    class="addToCartBtn mt-3 bg-[#5b2c2c] text-white px-4 py-1 rounded hover:bg-[#4a2424] text-sm flex items-center justify-center mx-auto transition" 
+                                    data-id="{{ $product->id }}" 
+                                    data-name="{{ $product->name }}"
+                                    data-price="{{ $product->price }}"
+                                    data-image="{{ asset('storage/' . $product->image) }}">
+                                <i class="fas fa-cart-plus mr-1"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+
+            </div>
+        </div>
+    </section>
+@endif
+
    {{-- SECTION: BEST SELLERS --}}
 <section class="mt-12 mb-4"> {{-- Reduced mb-12 to mb-4 --}}
     <div class="flex justify-between items-center mb-6">
@@ -370,45 +421,7 @@
 </section>
 
 
-        {{-- SECTION: RECOMMENDED FOR YOU (Fixed & Unified) --}}
-    
-        <section class="mt-10 mb-16">
-            <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6 text-left">Recommended for You</h2>
-            <div class="overflow-hidden relative">
-                {{-- Slider Container --}}
-                <div id="recommendSlider" class="flex space-x-6 animate-scroll will-change-transform">
-                    @foreach (range(1, 10) as $i)
-                        @php
-                            // Mock Data for Recommended Items
-                            $recName = "Recommended Item " . $i;
-                            $recPrice = "Rs " . (1500 + ($i * 50)) . ".00";
-                            $recImg = "https://via.placeholder.com/300x200?text=Rec+" . $i;
-                        @endphp
-                        <div class="min-w-[220px] bg-white rounded-lg shadow-md overflow-hidden transform transition hover:-translate-y-1 hover:shadow-lg">
-                            <img src="{{ $recImg }}" class="w-full h-36 object-cover">
-                            <div class="p-4 text-center">
-                                <h3 class="font-semibold text-gray-800 text-sm md:text-base">{{ $recName }}</h3>
-                                <p class="text-[#5b2c2c] font-bold mt-1">{{ $recPrice }}</p>
-                                
-                                {{-- ADD TO CART BUTTON (Recommended - Matches others now) --}}
-                                <button type="button" 
-                                        class="addToCartBtn mt-3 bg-[#5b2c2c] text-white px-4 py-1 rounded hover:bg-[#4a2424] text-sm flex items-center justify-center mx-auto transition" 
-                                        data-id="{{ 100 + $i }}" {{-- Unique ID for Rec items --}}
-                                        data-name="{{ $recName }}"
-                                        data-price="{{ $recPrice }}"
-                                        data-image="{{ $recImg }}">
-                                    <i class="fas fa-cart-plus mr-1"></i> Add to Cart
-                                </button>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-
-    </div>
-</div>
-
+      
 {{-- ================================================= --}}
 {{-- 3. FLOATING BUTTONS                               --}}
 {{-- ================================================= --}}

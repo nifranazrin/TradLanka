@@ -10,10 +10,7 @@ use App\Notifications\OrderDeliveredNotification;
 
 class DeliveryOrderController extends Controller 
 {
-    /**
-     * ✅ ACTIVE TASKS
-     * Only show orders with Status 4 (Out for Delivery)
-     */
+   
     public function myDeliveries()
     {
         $riderId = Auth::guard('delivery')->id();
@@ -28,26 +25,19 @@ class DeliveryOrderController extends Controller
         return view('delivery.orders.index', compact('orders'));
     }
 
-    /**
-     * ✅ TASK HISTORY
-     * Show orders that are already processed (Status 5 and 6)
-     */
-    public function taskHistory()
-    {
-        $riderId = Auth::guard('delivery')->id();
+     public function taskHistory()
+{
+    $riderId = Auth::guard('delivery')->id();
 
-        $orders = Order::with(['items.product'])
-            ->where('delivery_boy_id', $riderId)
-            ->whereIn('status', [5, 6]) // 5 = Delivered, 6 = Failed
-            ->latest()
-            ->paginate(10); // History can be long, so we use pagination
+    $orders = Order::with(['items.product'])
+        ->where('delivery_boy_id', $riderId)
+        ->whereIn('status', [5, 6, 9]) 
+        ->latest()
+        ->paginate(10);
 
-        return view('delivery.orders.history', compact('orders'));
-    }
-
-    /**
-     * Show order details
-     */
+    return view('delivery.orders.history', compact('orders'));
+}
+  
     public function show($id)
     {
         $riderId = Auth::guard('delivery')->id();
@@ -60,9 +50,7 @@ class DeliveryOrderController extends Controller
         return view('delivery.orders.show', compact('order'));
     }
 
-    /**
-     * Mark order as successfully Delivered (Status 5)
-     */
+   
     public function markAsDelivered($id)
     {
         $riderId = Auth::guard('delivery')->id();
@@ -81,22 +69,21 @@ class DeliveryOrderController extends Controller
         return redirect()->route('delivery.my-deliveries')->with('success', 'Order completed and moved to history!');
     }
 
-    /**
-     * Mark order as Not Received / Failed (Status 6)
-     */
+   
     public function markAsFailed(Request $request, $id)
-    {
-        $riderId = Auth::guard('delivery')->id();
+{
+    $riderId = Auth::guard('delivery')->id();
 
-        $order = Order::where('id', $id)
-            ->where('delivery_boy_id', $riderId)
-            ->firstOrFail();
+    $order = Order::where('id', $id)
+        ->where('delivery_boy_id', $riderId)
+        ->firstOrFail();
 
-        $order->update([
-            'status' => 6, 
-            'cancel_reason' => $request->reason ?? 'Customer unavailable'
-        ]); 
+    // ✅ Update to Status 9 (Reported Failed)
+    $order->update([
+        'status' => 9, 
+        'cancel_reason' => $request->reason ?? 'Rider reported: Customer not received'
+    ]); 
 
-        return redirect()->route('delivery.my-deliveries')->with('success', 'Order marked as failed and moved to history.');
-    }
+    return redirect()->route('delivery.my-deliveries')->with('warning', 'Order reported to Admin for review.');
+}
 }

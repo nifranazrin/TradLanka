@@ -36,12 +36,12 @@
 
     /* SweetAlert Custom Styling */
     .maroon-swal-popup {
-        background-color: #5b2c2c !important; 
+        background-color: #f1f0de !important; 
         border-radius: 15px !important;
-        border: 2px solid #ffc107 !important;
+        border: 2px solid #570a0a !important;
     }
     .maroon-swal-title, .maroon-swal-content {
-        color: #ffc107 !important; 
+        color: #350b05 !important; 
     }
     .maroon-swal-confirm {
         background-color: #198754 !important; 
@@ -102,13 +102,16 @@
                                     {{ $order->created_at->format('d M, Y') }}
                                 </div>
                                 
-                                @if($order->status == 4)
-                                    <span class="badge bg-info text-dark mt-1" style="font-size: 0.7rem;">OUT FOR DELIVERY</span>
-                                @elseif($order->status == 5)
-                                    <span class="badge bg-success text-white mt-1" style="font-size: 0.7rem;">DELIVERED</span>
-                                @elseif($order->status == 6)
-                                    <span class="badge bg-danger text-white mt-1" style="font-size: 0.7rem;">NOT RECEIVED</span>
-                                @endif
+                                 @if($order->status == 4)
+                                <span class="badge bg-info text-dark mt-1" style="font-size: 0.7rem;">OUT FOR DELIVERY</span>
+                            @elseif($order->status == 5)
+                                <span class="badge bg-success text-white mt-1" style="font-size: 0.7rem;">DELIVERED</span>
+                            @elseif($order->status == 9)
+                                {{-- ✅ Add Status 9 for "Reported/Awaiting Admin" --}}
+                                <span class="badge bg-warning text-dark mt-1" style="font-size: 0.7rem;">REPORTED FAILED</span>
+                            @elseif($order->status == 6)
+                                <span class="badge bg-danger text-white mt-1" style="font-size: 0.7rem;">CANCELLED (CLOSED)</span>
+                            @endif
                             </td>
 
                             {{-- ✅ UPDATED: CUSTOMER & CONTACT COLUMN --}}
@@ -163,6 +166,10 @@
                                         <button type="button" class="btn btn-sm btn-danger btn-action" onclick="confirmAction({{ $order->id }}, 'failed')">
                                             Not Received
                                         </button>
+                                        @elseif($order->status == 9)
+                                    <button class="btn btn-sm btn-warning btn-action text-dark" disabled>
+                                        <i class="bi bi-hourglass-split"></i> Awaiting Admin
+                                    </button>
                                     @else
                                         <button class="btn btn-sm btn-secondary btn-action" disabled>
                                             <i class="bi bi-lock-fill"></i> Processed
@@ -187,9 +194,10 @@
 
 <script>
     function confirmAction(orderId, type) {
-        let config = type === 'delivered' 
-            ? { title: 'Confirm Delivery?', text: 'Mark as successfully delivered?', icon: 'question', btn: 'Yes, Delivered!' }
-            : { title: 'Not Received?', text: 'Please provide a reason for delivery failure:', icon: 'warning', btn: 'Confirm Failure' };
+       // Inside your <script> block
+            let config = type === 'delivered' 
+                ? { title: 'Confirm Delivery?', text: 'Mark as successfully delivered?', icon: 'question', btn: 'Yes, Delivered!' }
+                : { title: 'Report Delivery Failure?', text: 'This will be sent to Admin for final cancellation. Provide a reason:', icon: 'warning', btn: 'Report to Admin' };
 
         Swal.fire({
             title: config.title,

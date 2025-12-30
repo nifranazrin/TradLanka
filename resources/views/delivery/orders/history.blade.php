@@ -94,6 +94,12 @@
                                     <span class="badge bg-danger px-3 py-2" title="Reason: {{ $order->cancel_reason }}">
                                         <i class="bi bi-x-circle me-1"></i> FAILED
                                     </span>
+                                    @if($order->cancel_reason)
+                                    {{-- ✅ This shows the dynamic reason typed by the rider --}}
+                                    <div class="small text-danger mt-1 fw-bold" style="font-size: 0.75rem;">
+                                        Reason: {{ $order->cancel_reason }}
+                                    </div>
+                                @endif
                                 @endif
                             </td>
 

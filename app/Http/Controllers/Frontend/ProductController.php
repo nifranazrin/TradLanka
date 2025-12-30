@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\ProductView; 
+use Illuminate\Support\Facades\Session;
 
 class ProductController extends Controller
 {
@@ -17,6 +19,7 @@ class ProductController extends Controller
      */
      public function show(Product $product, Request $request): View
 {
+    
     $currency = session('currency', 'LKR');
     $exchangeRate = 0.0032; //
    
@@ -34,6 +37,15 @@ class ProductController extends Controller
               ->latest();
         }
     ]);
+      //recomendation
+    $userId = Auth::id(); 
+        $sessionId = Session::getId();
+
+        ProductView::create([
+            'user_id' => $userId,
+            'session_id' => $sessionId,
+            'product_id' => $product->id,
+        ]);
 
     // 2. APPLY CURRENCY CONVERSION
     if ($currency === 'USD') {
