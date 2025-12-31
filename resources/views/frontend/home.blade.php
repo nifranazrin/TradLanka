@@ -59,6 +59,15 @@
     .animate-scroll:hover {
         animation-play-state: paused; /* Pauses when user hovers */
     }
+
+    df-messenger {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    z-index: 9999;
+    
+}
+
   
 
 /* 1. The Card: Subtle shadow, more breathing room */
@@ -85,6 +94,8 @@
     background: #fff;
     overflow: hidden;
 }
+
+
 
 .unified-image-wrapper img {
     width: 100%;
@@ -234,7 +245,7 @@
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-    {{-- ✅ Uses $bestSellers variable --}}
+    
     @foreach ($bestSellers->take(5) as $item)
         <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 full-card-height">
             <a href="{{ route('product.show', $item->slug) }}" class="unified-image-wrapper">
@@ -247,7 +258,7 @@
                         {{ $item->name }}
                     </h3>
 
-                    {{-- Review Stars logic: Fixed height keeps boxes level --}}
+                   
                     <div class="flex justify-center items-center h-5 mb-1">
                         @php $avgRating = $item->reviews->avg('rating'); @endphp
                         @if($avgRating > 0)
@@ -423,16 +434,24 @@
 
       
 {{-- ================================================= --}}
-{{-- 3. FLOATING BUTTONS                               --}}
+{{-- FLOATING BUTTONS --}}
 {{-- ================================================= --}}
 <div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3 z-50">
-    <a href="#" id="chatbotBtn" class="bg-[#5b2c2c] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
+    <!-- Chatbot -->
+    <a href="#" id="chatbotBtn"
+       class="bg-[#5b2c2c] text-white w-12 h-12 rounded-full shadow-lg
+              flex items-center justify-center hover:scale-110 transition">
         <i class="fas fa-robot text-xl"></i>
     </a>
-    <a href="https://wa.me/94757679793" target="_blank" class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
+
+    <!-- WhatsApp -->
+    <a href="https://wa.me/94757679793" target="_blank"
+       class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg
+              flex items-center justify-center hover:scale-110 transition">
         <i class="fab fa-whatsapp text-2xl"></i>
     </a>
 </div>
+
 
 {{-- ================================================= --}}
 {{-- 4. SCRIPTS                                        --}}
@@ -458,6 +477,22 @@ document.addEventListener('DOMContentLoaded', function() {
             badge.classList.remove('hidden');
         }
     }
+    
+    // ===== CHATBOT BUTTON CLICK (FIXED) =====
+const chatbotBtn = document.getElementById('chatbotBtn');
+
+chatbotBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const chatbot = document.querySelector('df-messenger');
+
+    if (chatbot) {
+        chatbot.openChat();
+    } else {
+        console.error('Dialogflow chatbot not found');
+    }
+});
+
 
     // ============================================
     // UNIVERSAL ADD TO CART LOGIC
@@ -521,7 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateCartIcon(data.cart_count);
                     }
 
-                    // ✅ SHOW PROFESSIONAL POPUP
+                    
                     Swal.fire({
                         title: 'Added to Cart',
                         html: `
@@ -603,6 +638,19 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endif
+
+
+<!-- ===== Dialogflow Chatbot (Hidden) ===== -->
+
+<script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+
+<df-messenger
+    id="tradlankaChatbot"
+    intent="WELCOME"
+    chat-title="TradLanka Assistant"
+    agent-id="a0932c0e-d13d-448d-b167-e22321412c89"
+    language-code="en">
+</df-messenger>
 
 
 @endsection

@@ -57,6 +57,9 @@ use App\Http\Middleware\CustomerMiddleware;
 //imgage based search
 use App\Http\Controllers\ImageSearchController;
 
+
+
+
 // =============================================================
 //                    FRONTEND ROUTES (Public)
 // =============================================================
@@ -71,6 +74,8 @@ Route::post('/contact/submit', [FrontendController::class, 'submitContact'])->na
 Route::get('/track-order', [App\Http\Controllers\FrontendController::class, 'trackOrder'])->name('track.order');
 Route::post('/login/google', [GoogleController::class, 'handleGoogleLogin'])->name('login.google');
 // Example fix in web.php
+
+
 
 // Route to store the product review
 // Now it points to the correct ProductController where you added the code
