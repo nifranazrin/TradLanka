@@ -65,7 +65,7 @@
                     2 => ['text' => 'Packed',             'class' => 'bg-primary'],
                     3 => ['text' => 'Handed to Delivery', 'class' => 'bg-dark'], 
                     4 => ['text' => 'Delivered',          'class' => 'bg-success'],
-                    99 => ['text' => 'Cancelled',         'class' => 'bg-danger'], 
+                    9 => ['text' => 'Cancelled',         'class' => 'bg-danger'], 
                 ];
                 $statusData = $statusMap[$order->status] ?? ['text' => 'Unknown', 'class' => 'bg-secondary'];
 

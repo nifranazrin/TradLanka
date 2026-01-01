@@ -1,81 +1,121 @@
-
-import uvicorn
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from pydantic import BaseModel
+from flask import Flask, request, jsonify
 import numpy as np
 import pickle
 import os
 import io
 import pandas as pd
-from sqlalchemy import create_engine
-from sklearn.neighbors import NearestNeighbors
-from sklearn.metrics.pairwise import cosine_similarity
+
+# AI & Math Imports
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.layers import GlobalMaxPooling2D
 from tensorflow.keras.models import Sequential
+from sklearn.neighbors import NearestNeighbors
+from sklearn.metrics.pairwise import linear_kernel, cosine_similarity
 
-# --- APP SETUP ---
-app = FastAPI()
+# Database Imports (Optional - wrapped to prevent crash)
+try:
+    from sqlalchemy import create_engine
+    HAS_DB = True
+except ImportError:
+    HAS_DB = False
+
+app = Flask(__name__)
 
 # --- CONFIGURATION ---
 IMG_WIDTH, IMG_HEIGHT = 224, 224
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-INDEX_FILE = os.path.join(BASE_PATH, 'features.pkl')
-FILENAMES_FILE = os.path.join(BASE_PATH, 'filenames.pkl')
 
-# DB CONFIG (Update 'root' and '' with your DB user/password if needed)
+# File Paths
+VISUAL_INDEX = os.path.join(BASE_PATH, 'features.pkl')
+VISUAL_NAMES = os.path.join(BASE_PATH, 'filenames.pkl')
+TEXT_INDEX = os.path.join(BASE_PATH, 'text_features.pkl')
+TEXT_IDS = os.path.join(BASE_PATH, 'product_ids.pkl')
+
+# DB CONFIG (Update user/pass if needed)
 DB_CONNECTION_STR = 'mysql+mysqlconnector://root:@127.0.0.1/tradlanka_db'
-db_engine = create_engine(DB_CONNECTION_STR)
 
 # --- GLOBAL VARIABLES ---
 model = None
 feature_list = None
 filenames = None
 neighbors = None
+tfidf_matrix = None
+product_ids = None
+db_engine = None
 
-# --- LOAD SYSTEM ---
+# --- INITIALIZATION ---
 def load_system():
-    global model, feature_list, filenames, neighbors
-    
-    # 1. Load Visual Search Index
-    if os.path.exists(INDEX_FILE):
-        feature_list = pickle.load(open(INDEX_FILE, 'rb'))
-        filenames = pickle.load(open(FILENAMES_FILE, 'rb'))
-        
-        base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(IMG_WIDTH, IMG_HEIGHT, 3))
-        base_model.trainable = False
-        model = Sequential([base_model, GlobalMaxPooling2D()])
+    global model, feature_list, filenames, neighbors, tfidf_matrix, product_ids, db_engine
 
-        neighbors = NearestNeighbors(n_neighbors=10, algorithm='brute', metric='euclidean')
-        neighbors.fit(feature_list)
-        print("[AI] Visual Search System Ready!")
+    print(" [AI] Initializing System...")
+
+    # 1. LOAD VISUAL SEARCH
+    if os.path.exists(VISUAL_INDEX) and os.path.exists(VISUAL_NAMES):
+        try:
+            feature_list = pickle.load(open(VISUAL_INDEX, 'rb'))
+            filenames = pickle.load(open(VISUAL_NAMES, 'rb'))
+            
+            # Load Keras Model
+            base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(IMG_WIDTH, IMG_HEIGHT, 3))
+            base_model.trainable = False
+            model = Sequential([base_model, GlobalMaxPooling2D()])
+            
+            # Init Neighbors
+            neighbors = NearestNeighbors(n_neighbors=10, algorithm='brute', metric='euclidean')
+            neighbors.fit(feature_list)
+            print(" [AI] Visual Search Ready.")
+        except Exception as e:
+            print(f" [AI] Visual Load Error: {e}")
     else:
-        print("[AI] Warning: Index files not found. Run create_index.py first.")
+        print(" [AI] Visual Index missing. (Run create_index.py)")
 
+    # 2. LOAD TEXT RECOMMENDATIONS
+    if os.path.exists(TEXT_INDEX) and os.path.exists(TEXT_IDS):
+        try:
+            tfidf_matrix = pickle.load(open(TEXT_INDEX, 'rb'))
+            product_ids = pickle.load(open(TEXT_IDS, 'rb'))
+            print(" [AI] Text Recommendation Ready.")
+        except Exception as e:
+            print(f" [AI] Text Load Error: {e}")
+    else:
+        print(" [AI] Text Index missing. (Run create_text_index.py)")
+
+    # 3. CONNECT DATABASE (Optional)
+    if HAS_DB:
+        try:
+            db_engine = create_engine(DB_CONNECTION_STR)
+            print(" [AI] Database Connected.")
+        except Exception as e:
+            print(f" [AI] Database Warning: {e}")
+            db_engine = None
+    else:
+        print(" [AI] Database driver missing (mysql-connector-python). Hybrid logic disabled.")
+
+# Load everything on startup
 load_system()
 
-# --- INPUT MODELS ---
-class RecommendRequest(BaseModel):
-    filenames: list[str] # List of image paths the user viewed
-    product_ids: list[int] # List of ID's (for Pandas logic)
 
-# --- ENDPOINT 1: VISUAL SEARCH (Camera) ---
-@app.post("/search")
-async def search(image: UploadFile = File(...)):
+# --- ENDPOINT 1: VISUAL SEARCH (Image Upload) ---
+@app.route('/search', methods=['POST'])
+def search():
+    if model is None: 
+        return jsonify({"error": "Visual AI not loaded"}), 500
+    
+    if 'image' not in request.files:
+        return jsonify({"error": "No image uploaded"}), 400
+
     try:
-        # Read Image
-        contents = await image.read()
-        img = image.load_img(io.BytesIO(contents), target_size=(IMG_WIDTH, IMG_HEIGHT))
+        file = request.files['image']
+        img_bytes = io.BytesIO(file.read())
+        img = image.load_img(img_bytes, target_size=(IMG_WIDTH, IMG_HEIGHT))
         img_array = image.img_to_array(img)
         expanded_img_array = np.expand_dims(img_array, axis=0)
         preprocessed_img = preprocess_input(expanded_img_array)
         
-        # Get Features
         query_features = model.predict(preprocessed_img, verbose=0).flatten()
         query_features = query_features / np.linalg.norm(query_features)
         
-        # Find Matches
         distances, indices = neighbors.kneighbors([query_features])
         
         results = []
@@ -85,54 +125,56 @@ async def search(image: UploadFile = File(...)):
             similarity = max(0, 1 - (dist / 1.4))
             results.append({"filename": filenames[idx], "similarity": float(similarity)})
             
-        return results
+        return jsonify(results)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return jsonify({"error": str(e)}), 500
 
-# --- ENDPOINT 2: HYBRID RECOMMENDATIONS (Home Page) ---
-@app.post("/recommend")
-async def recommend(data: RecommendRequest):
-    print(f"\n[REQ] Processing recommendation for: {data.product_ids}")
-    
+
+# --- ENDPOINT 2: HYBRID RECOMMENDATION (Pandas + Visual Fallback) ---
+@app.route('/recommend', methods=['POST'])
+def recommend():
+    # Expects JSON: { "product_ids": [10, 20], "filenames": ["img1.jpg", "img2.jpg"] }
+    data = request.json
+    req_pids = data.get('product_ids', [])
+    req_files = data.get('filenames', [])
     recommendations = []
-    
+
+    print(f"\n[REQ] Processing Hybrid recommendation for IDs: {req_pids}")
+
     # STRATEGY A: Try Pandas (User Behavior) FIRST
-    try:
-        # 1. Fetch History Data
-        query = "SELECT user_id, product_id, count(*) as view_count FROM product_views GROUP BY user_id, product_id"
-        df = pd.read_sql(query, db_engine)
-        
-        if len(df) > 5: # Only run if we have enough data
-            user_item_matrix = df.pivot_table(index='user_id', columns='product_id', values='view_count').fillna(0)
-            item_similarity = cosine_similarity(user_item_matrix.T)
-            sim_df = pd.DataFrame(item_similarity, index=user_item_matrix.columns, columns=user_item_matrix.columns)
+    if db_engine and req_pids:
+        try:
+            # Fetch History Data
+            query = "SELECT user_id, product_id, count(*) as view_count FROM product_views GROUP BY user_id, product_id"
+            df = pd.read_sql(query, db_engine)
             
-            # Find similar items to the last viewed product
-            last_id = data.product_ids[0] if data.product_ids else None
-            
-            if last_id and last_id in sim_df.index:
-                similar_products = sim_df[last_id].sort_values(ascending=False).iloc[1:6]
-                # Convert Product IDs to Filenames (We need a DB lookup here, simplified for now)
-                # For this step, we will return IDs and let Laravel handle it, OR fallback to Visual if Pandas fails
-                print(f"[PANDAS] Found behavioral matches: {similar_products.index.tolist()}")
-                # Note: Returning IDs here would require Laravel to handle IDs. 
-                # To keep it simple, if Pandas works, we usually return IDs. 
-                # BUT, since your Frontend expects 'filenames', let's stick to Strategy B (Visual) for now 
-                # unless you update Laravel to accept IDs.
-    except Exception as e:
-        print(f"[PANDAS] Skipped (Not enough data or error): {e}")
+            if len(df) > 5: # Only run if we have enough data
+                user_item_matrix = df.pivot_table(index='user_id', columns='product_id', values='view_count').fillna(0)
+                item_similarity = cosine_similarity(user_item_matrix.T)
+                sim_df = pd.DataFrame(item_similarity, index=user_item_matrix.columns, columns=user_item_matrix.columns)
+                
+                # Find similar items to the last viewed product
+                last_id = req_pids[0]
+                
+                if last_id in sim_df.index:
+                    # Get top 5 similar products (excluding itself)
+                    similar_products = sim_df[last_id].sort_values(ascending=False).iloc[1:6]
+                    print(f"[PANDAS] Found behavioral matches: {similar_products.index.tolist()}")
+                    
+                    # Note: The logic to convert these IDs back to filenames or models happens in Laravel
+                    # We could return them here, but for now we fall through to Visual if this list is empty
+                    # or if you want to mix them.
+        except Exception as e:
+            print(f"[PANDAS] Skipped (Error): {e}")
 
     # STRATEGY B: Visual AI (The Fallback)
-    # If Pandas didn't find anything (or we stick to Visual for consistency), we use the visual style.
-    if not recommendations and data.filenames:
+    if not recommendations and req_files and filenames:
         print("[VISUAL] Using Visual AI fallback...")
         target_indices = []
-        for fname in data.filenames:
-            try:
-                if fname in filenames:
-                    target_indices.append(filenames.index(fname))
-            except: continue
-            
+        for fname in req_files:
+            if fname in filenames:
+                target_indices.append(filenames.index(fname))
+        
         if target_indices:
             selected_features = [feature_list[i] for i in target_indices]
             user_vector = np.mean(selected_features, axis=0)
@@ -142,10 +184,51 @@ async def recommend(data: RecommendRequest):
             
             for i in range(len(indices[0])):
                 idx = indices[0][i]
-                if filenames[idx] not in data.filenames:
+                if filenames[idx] not in req_files:
                     recommendations.append({"filename": filenames[idx]})
+
+    return jsonify(recommendations)
+
+
+# --- ENDPOINT 3: TEXT RECOMMENDATION (Product History IDs) ---
+# This is what your new FrontendController uses!
+@app.route('/recommend-text', methods=['POST'])
+def recommend_text():
+    if tfidf_matrix is None:
+        return jsonify([])
     
-    return recommendations
+    try:
+        data = request.json
+        history_ids = data.get('history_ids', [])
+        
+        # Find indices of viewed products
+        indices = [product_ids.index(pid) for pid in history_ids if pid in product_ids]
+        
+        if not indices:
+            return jsonify([])
+
+        # Average vector of user history
+        user_profile = np.asarray(tfidf_matrix[indices].mean(axis=0))
+
+        # Calculate similarity
+        cosine_sim = linear_kernel(user_profile, tfidf_matrix)
+
+        # Get top results
+        sim_scores = list(enumerate(cosine_sim[0]))
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+        
+        recommendations = []
+        for i, score in sim_scores:
+            pid = product_ids[i]
+            if pid not in history_ids: # Exclude seen
+                recommendations.append(pid)
+                if len(recommendations) >= 10: break
+                
+        return jsonify(recommendations)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='127.0.0.1', port=5000)
+    # Running in debug mode
+    app.run(host='127.0.0.1', port=5000, debug=True)

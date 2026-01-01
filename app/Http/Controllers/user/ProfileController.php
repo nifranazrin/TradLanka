@@ -72,18 +72,33 @@ class ProfileController extends Controller
     /**
      * Update Address (Handle Form Submit)
      */
+      /**
+     * Update Address (Handle Form Submit)
+     */
     public function updateAddress(Request $request)
     {
+        // 1. Validate all fields including the new ones
         $request->validate([
             'address1' => 'required|string|max:500',
+            'address2' => 'nullable|string|max:255',
             'city'     => 'required|string|max:255',
+            'state'    => 'required|string|max:255',
+            'zipcode'  => 'required|string|max:20',
+            'country'  => 'required|string|max:255',
             'phone'    => 'required|string|max:20',
         ]);
 
         $user = Auth::user();
+
+        // 2. Save all fields to the user profile
         $user->address1 = $request->address1;
-        $user->city = $request->city;
-        $user->phone = $request->phone;
+        $user->address2 = $request->address2;
+        $user->city     = $request->city;
+        $user->state    = $request->state;
+        $user->zipcode  = $request->zipcode;
+        $user->country  = $request->country;
+        $user->phone    = $request->phone;
+        
         $user->save();
 
         return redirect()->back()->with('success', 'Address updated successfully!');

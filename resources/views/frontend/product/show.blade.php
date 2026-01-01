@@ -118,11 +118,10 @@
                 </div>      
 
                 
-                {{-- FIND THIS BLOCK --}}
                         <div class="flex items-baseline gap-2 mb-4">
                             <span class="text-sm text-gray-500">Price:</span>
                             <div id="displayPrice" class="text-3xl font-bold text-[#e95b2c]">
-                                {{-- UPDATE THE LINE BELOW --}}
+                               
                                 {{ session('currency') == 'USD' ? '$' : 'Rs.' }} {{ number_format($product->price, 2) }}
                             </div>
                         </div>
@@ -319,9 +318,11 @@
 
 
 <script>
+    // 1. LIGHTBOX LOGIC
     const lightbox = document.getElementById('imageLightbox');
     const lightboxImg = document.getElementById('lightboxImg');
     const mainImage = document.getElementById('mainImage');
+
     if(mainImage) {
         mainImage.addEventListener('click', function() {
             lightboxImg.src = this.src;
@@ -329,124 +330,172 @@
             document.body.style.overflow = 'hidden';
         });
     }
+
     window.closeLightbox = function() {
         lightbox.classList.add('hidden');
         document.body.style.overflow = 'auto';
     };
 
-      document.addEventListener('DOMContentLoaded', function () {
-    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
-    const hasVariants = {{ $hasVariants ? 'true' : 'false' }};
-    const currencySymbol = "{{ session('currency') == 'USD' ? '$' : 'Rs.' }}"; 
+    // 2. MAIN PRODUCT LOGIC
+    document.addEventListener('DOMContentLoaded', function () {
+        const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+        const hasVariants = {{ $hasVariants ? 'true' : 'false' }};
+        const currencySymbol = "{{ session('currency') == 'USD' ? '$' : 'Rs.' }}"; 
         
         const thumbs = document.querySelectorAll('.gallery-thumb');
+        const variantBtns = document.querySelectorAll('.variantOption');
+        const priceDisplay = document.getElementById('displayPrice');
+        const stockDisplay = document.getElementById('stockDisplay');
+        const hiddenVariantInput = document.getElementById('selectedVariantId');
+        const qtyInput = document.getElementById('productQty');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        const buyNowBtn = document.getElementById('buyNowBtn');
+        
+        let currentStock = {{ $product->stock }}; 
+
+        // --- TradLanka Attractive Theme Settings ---
+        const tradLankaTheme = {
+            background: '#fdf6e3',      // Butter Cream
+            color: '#5b2c2c',           // Maroon Text
+            confirmButtonColor: '#5b2c2c',
+            iconColor: '#5b2c2c',
+            // Tailwind classes for bigger text
+            customClass: {
+                title: 'text-3xl font-bold', 
+                htmlContainer: 'text-xl',
+                confirmButton: 'px-8 py-3 text-lg rounded-lg'
+            }
+        };
+
+        // Thumbnail Switcher
         thumbs.forEach(thumb => {
             thumb.addEventListener('click', function() {
                 mainImage.src = this.dataset.src;
-                mainImage.style.opacity = 0;
-                setTimeout(() => mainImage.style.opacity = 1, 150);
-                thumbs.forEach(t => {
-                    t.classList.remove('border-[#5b2c2c]');
-                    t.classList.add('border-transparent');
-                });
-                this.classList.remove('border-transparent');
-                this.classList.add('border-[#5b2c2c]');
+                thumbs.forEach(t => t.classList.replace('border-[#5b2c2c]', 'border-transparent'));
+                this.classList.replace('border-transparent', 'border-[#5b2c2c]');
             });
         });
 
-        const variantBtns = document.querySelectorAll('.variantOption');
-        const variantBtns = document.querySelectorAll('.variantOption');
-            const priceDisplay = document.getElementById('displayPrice');
-            const stockDisplay = document.getElementById('stockDisplay');
-            const hiddenVariantInput = document.getElementById('selectedVariantId');
-            let currentStock = {{ $product->stock }};   
-
+        // Variant Selection
         variantBtns.forEach(btn => {
-        btn.addEventListener('click', function () {
-            variantBtns.forEach(b => {
-                b.classList.remove('bg-[#5b2c2c]', 'text-white', 'border-[#5b2c2c]', 'ring-2', 'ring-offset-1');
-                if(!b.disabled) b.classList.add('bg-white', 'text-gray-800', 'border-gray-300');
-            });
-
-                this.classList.remove('bg-white', 'text-gray-800', 'border-gray-300');
-            this.classList.add('bg-[#5b2c2c]', 'text-white', 'border-[#5b2c2c]', 'ring-2', 'ring-offset-1');
-            
-            const price = parseFloat(this.dataset.price);
-            const stock = parseInt(this.dataset.stock);
+            btn.addEventListener('click', function () {
+                variantBtns.forEach(b => b.classList.remove('bg-[#5b2c2c]', 'text-white', 'border-[#5b2c2c]', 'ring-2'));
+                this.classList.add('bg-[#5b2c2c]', 'text-white', 'border-[#5b2c2c]', 'ring-2');
+                
+                const price = parseFloat(this.dataset.price);
+                const stock = parseInt(this.dataset.stock);
 
                 priceDisplay.innerText = currencySymbol + ' ' + price.toLocaleString('en-US', {minimumFractionDigits: 2});
-            
-            hiddenVariantInput.value = this.dataset.id;
-            currentStock = stock;
-            
-            if(stock > 0) {
-                stockDisplay.innerHTML = `<span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">In Stock</span> <span class="text-xs text-gray-500 ml-2">(${stock} available)</span>`;
-            } else {
-                stockDisplay.innerHTML = `<span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded">Out of Stock</span>`;
-            }
+                hiddenVariantInput.value = this.dataset.id;
+                currentStock = stock;
             });
         });
 
-        const qtyInput = document.getElementById('productQty');
+        // Quantity Controls
         document.getElementById('increaseQty').onclick = () => {
             let val = parseInt(qtyInput.value);
             if(val < currentStock) qtyInput.value = val + 1;
-            else alert("Max stock reached!");
-        };
-        document.getElementById('decreaseQty').onclick = () => {
-            if(qtyInput.value > 1) qtyInput.value = parseInt(qtyInput.value) - 1;
+            else {
+                Swal.fire({
+                    ...tradLankaTheme,
+                    title: 'Stock Limit',
+                    text: 'Only ' + currentStock + ' items available.',
+                    icon: 'warning'
+                });
+            }
         };
 
-        function updateCartIcon(count) {
-            const badge = document.getElementById('cart-badge'); 
-            if(badge) { badge.innerText = count; badge.classList.remove('hidden'); }
-        }
+        document.getElementById('decreaseQty').onclick = () => {
+            let val = parseInt(qtyInput.value);
+            if(val > 1) qtyInput.value = val - 1;
+        };
 
         function handleAddToCart(btn, isBuyNow) {
+            // Check for Variant Selection
             if(hasVariants && !hiddenVariantInput.value) {
-                alert("Please select a size/option first!");
+                Swal.fire({
+                    ...tradLankaTheme,
+                    title: 'Pick a Size!',
+                    text: 'Please select an option before adding to cart.',
+                    icon: 'info'
+                });
                 document.getElementById('variantContainer').scrollIntoView({behavior: 'smooth'});
                 return;
             }
+
+            // Check Login
             if(!isLoggedIn) {
-                if(document.getElementById('authModal')) { document.getElementById('authModal').classList.remove('hidden'); }
-                else { alert("Please login first!"); window.location.href = "/login"; }
+                Swal.fire({
+                    ...tradLankaTheme,
+                    title: 'Login Required',
+                    text: 'Please login to start shopping.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Login Now'
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = "/login";
+                });
                 return;
             }
+
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             btn.disabled = true;
+
             fetch("{{ route('cart.add') }}", {
                 method: "POST",
-                headers: { "X-CSRF-TOKEN": "{{ csrf_token() }}", "Content-Type": "application/json", "Accept": "application/json" },
-                body: JSON.stringify({ product_id: btn.dataset.id, product_qty: qtyInput.value, product_variant_id: hiddenVariantInput.value || null })
+                headers: { 
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}", 
+                    "Content-Type": "application/json", 
+                    "Accept": "application/json" 
+                },
+                body: JSON.stringify({ 
+                    product_id: btn.dataset.id, 
+                    product_qty: qtyInput.value, 
+                    product_variant_id: hasVariants ? (hiddenVariantInput.value || null) : null 
+                })
             })
-
-            const currencySymbol = "{{ session('currency') == 'USD' ? '$' : 'Rs.' }}";
-                priceDisplay.innerText = currencySymbol + ' ' + price.toLocaleString('en-US', {minimumFractionDigits: 2});
-
             .then(res => res.json())
             .then(data => {
-                btn.innerHTML = originalText; btn.disabled = false;
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
+
                 if(data.status === 'success' || data.status === 'exists') {
-                    if(data.cart_count) updateCartIcon(data.cart_count);
-                    if(isBuyNow) { window.location.href = "{{ route('cart.show') }}"; } 
-                    else {
-                        const toast = document.getElementById('cartToast');
-                        document.getElementById('toastMessage').innerText = data.message;
-                        toast.classList.remove('hidden');
-                        setTimeout(() => toast.classList.add('hidden'), 3000);
+                    if(isBuyNow) { 
+                        window.location.href = "{{ route('cart.show') }}"; 
+                    } else {
+                        Swal.fire({
+                            ...tradLankaTheme,
+                            title: 'Success!',
+                            text: data.message,
+                            icon: 'success',
+                            timer: 2500,
+                            timerProgressBar: true
+                        });
                     }
-                } else { alert(data.message || 'Something went wrong'); }
+                } else { 
+                    Swal.fire({
+                        ...tradLankaTheme,
+                        title: 'Oops!',
+                        text: data.message || 'Something went wrong',
+                        icon: 'error'
+                    });
+                }
             })
-            .catch(err => { btn.innerHTML = originalText; btn.disabled = false; alert('Server Error.'); });
+            .catch(err => { 
+                btn.innerHTML = originalText; 
+                btn.disabled = false; 
+                Swal.fire({
+                    ...tradLankaTheme,
+                    title: 'Server Error',
+                    text: 'Could not connect to the server.',
+                    icon: 'error'
+                });
+            });
         }
-        const addToCartBtn = document.getElementById('addToCartBtn');
-        const buyNowBtn = document.getElementById('buyNowBtn');
+
         if(addToCartBtn) addToCartBtn.onclick = () => handleAddToCart(addToCartBtn, false);
         if(buyNowBtn) buyNowBtn.onclick = () => handleAddToCart(buyNowBtn, true);
     });
-
 </script>
-
 @endsection

@@ -17,7 +17,7 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-     protected $fillable = [
+   protected $fillable = [
     'name',
     'email',
     'password',
@@ -26,9 +26,14 @@ class User extends Authenticatable
     'city',
     'address1',
     'google_id',
-  ];
-
-
+    // Add these new fields below to allow them to save:
+    'fname',
+    'lname',
+    'address2',
+    'state',
+    'zipcode',
+    'country',
+];
     /**
      * The attributes that should be hidden for serialization.
      *

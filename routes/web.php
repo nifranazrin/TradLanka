@@ -57,8 +57,7 @@ use App\Http\Middleware\CustomerMiddleware;
 //imgage based search
 use App\Http\Controllers\ImageSearchController;
 
-
-
+use App\Http\Controllers\MailTestController;
 
 // =============================================================
 //                    FRONTEND ROUTES (Public)
@@ -73,6 +72,7 @@ Route::get('/contact', [FrontendController::class, 'contact'])->name('contact');
 Route::post('/contact/submit', [FrontendController::class, 'submitContact'])->name('contact.submit');
 Route::get('/track-order', [App\Http\Controllers\FrontendController::class, 'trackOrder'])->name('track.order');
 Route::post('/login/google', [GoogleController::class, 'handleGoogleLogin'])->name('login.google');
+Route::get('/test-order-email', [MailTestController::class, 'sendTestEmail']);
 // Example fix in web.php
 
 
@@ -170,6 +170,8 @@ Route::prefix('user')->name('user.')->middleware('auth')->group(function () {
     Route::get('/orders', [ProfileController::class, 'orders'])->name('orders.index');
     Route::get('/orders/{id}', [ProfileController::class, 'viewOrder'])->name('orders.show');
     Route::put('/orders/cancel/{id}', [ProfileController::class, 'cancelOrder'])->name('orders.cancel');
+
+
 });
 
 // =============================================================
@@ -380,4 +382,28 @@ Route::put('/orders/approve-cancel/{id}', [SellerOrderController::class, 'approv
 
     
 });
+
+// Route to export product data to JSON for Python
+Route::get('/export-products', function() {
+    // Fetch approved products
+    $products = \App\Models\Product::where('status', 'approved')
+        ->where('is_active', 1)
+        ->get()
+        ->map(function($p) {
+            return [
+                'id' => $p->id,
+                // Combine Name + Description + Category for better matching
+                'text' => $p->name . " " . $p->description . " " . ($p->category->name ?? ''),
+            ];
+        });
+
+    // Save to the python_ai folder
+    // Ensure the folder 'python_ai' exists in your root directory first!
+    \Illuminate\Support\Facades\File::put(base_path('ai_service/products.json'), $products->toJson());
+
+    return "Products exported to ai_service/products.json! Count: " . $products->count();
+});
+
+
+
 

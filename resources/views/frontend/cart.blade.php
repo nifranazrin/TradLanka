@@ -25,7 +25,7 @@
             {{-- DELETE BUTTON --}}
             <button id="deleteSelectedBtn"
                     class="bg-white text-[#5b2c2c] px-4 py-2 rounded shadow hover:bg-red-50 hover:text-red-600 transition"
-                    style="display: none;"> {{-- Hidden by default until items selected --}}
+                    style="display: none;"> 
                 <i class="fas fa-trash-alt fa-lg"></i> Delete Selected
             </button>
         </div>
@@ -38,11 +38,11 @@
         @else
 
         <div class="space-y-4" id="cartContainer">
+      
             @foreach ($cartItems as $item)
                 @if($item->product)
                     @php
-                        // --- LOGIC TO HANDLE VARIANTS vs SIMPLE PRODUCTS ---
-                        // If variant exists, use variant price & name. Else use product defaults.
+                        
                         $currentPrice = $item->variant ? $item->variant->price : $item->product->price;
                         $currentName  = $item->product->name;
                         
@@ -102,10 +102,10 @@
 
                             <p class="font-bold text-[#5b2c2c] text-lg">
                                    <span id="currency-symbol-{{ $item->id }}">{{ session('currency') == 'USD' ? '$' : 'Rs' }}</span>
-<span id="row-total-{{ $item->id }}">
-    {{ session('currency') == 'USD' ? number_format($rowTotal * 0.0032, 2) : number_format($rowTotal, 2) }}
-</span>
-                            </p>
+                            <span id="row-total-{{ $item->id }}">
+                                {{ session('currency') == 'USD' ? number_format($rowTotal * 0.0032, 2) : number_format($rowTotal, 2) }}
+                            </span>
+                        </p>
                         </div>
                     </div>
                 @endif
@@ -314,6 +314,13 @@ checkoutBtn.addEventListener('click', () => {
 
     // Initial Calculation on Load
     calculateTotals();
+
+    // Add listeners to each checkbox to recalculate total on click
+document.querySelectorAll('.cart-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+        calculateTotals();
+    });
+});
 });
 </script>
 @endsection

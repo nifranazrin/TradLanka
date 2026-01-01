@@ -15,6 +15,9 @@ use App\Notifications\SellerDashboardNotification;
 use App\Notifications\CustomerOrderNotification;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
+use App\Mail\OrderConfirmation;
+use Illuminate\Support\Facades\Mail;
+
 
 class CheckoutController extends Controller
 {
@@ -29,13 +32,15 @@ class CheckoutController extends Controller
             return redirect()->route('cart.show')->with('error', 'Please select items to checkout.');
         }
 
-        $cartItems = Cart::where('user_id', Auth::id())
-            ->whereIn('id', $selectedIds)
-            ->with(['product', 'variant'])
-            ->get();
+         $user = Auth::user(); 
 
-        return view('frontend.checkout', compact('cartItems'));
-    }
+    $cartItems = Cart::where('user_id', Auth::id())
+        ->whereIn('id', $selectedIds)
+        ->with(['product', 'variant'])
+        ->get();
+
+    return view('frontend.checkout', compact('cartItems', 'user'));
+}
 
     public function placeOrder(Request $request)
     {
@@ -147,6 +152,19 @@ class CheckoutController extends Controller
         try {
             DB::beginTransaction();
 
+            $user = Auth::user();
+            $user->update([
+                'fname'    => $formData['fname'],
+                'lname'    => $formData['lname'] ?? $user->lname,
+                'phone'    => $formData['full_phone'] ?? $formData['phone'],
+                'address1' => $formData['address1'],
+                'address2' => $formData['address2'] ?? null,
+                'city'     => $formData['city'],
+                'state'    => $formData['state'],
+                'zipcode'  => $formData['zipcode'],
+                'country'  => $formData['country'],
+            ]);
+
             $order = Order::create([
                 'user_id'      => Auth::id(),
                 'fname'        => $formData['fname'],
@@ -169,6 +187,18 @@ class CheckoutController extends Controller
             ]);
 
             Auth::user()->notify(new CustomerOrderNotification($order));
+
+           
+             // ✅ WRAP THIS IN A TRY-CATCH TO PREVENT CRASHES
+                try {
+                    // We load the relationships here to ensure data is ready
+                    $orderData = $order->load(['items.product', 'items.variant']);
+                    \Illuminate\Support\Facades\Mail::to($order->email)->send(new \App\Mail\OrderConfirmation($orderData));
+                } catch (\Exception $e) {
+                    // If the mail server is slow or fails, we log it but DON'T stop the order
+                    \Illuminate\Support\Facades\Log::error("Order Mail Error: " . $e->getMessage());
+                }
+
 
             $cartItems = Cart::whereIn('id', $selectedIds)->with(['product', 'variant'])->get();
             $sellersToNotify = [];
@@ -230,4 +260,5 @@ class CheckoutController extends Controller
             return redirect()->route('cart.show')->with('error', 'Payment Verification Failed.');
         }
     }
+
 }

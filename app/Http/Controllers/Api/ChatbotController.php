@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Support\Facades\Log;
 
 class ChatbotController extends Controller
 {
@@ -15,7 +16,11 @@ class ChatbotController extends Controller
     public function handle(Request $request)
     {
         $intent = $request->input('queryResult.intent.displayName');
-        $params = $request->input('queryResult.parameters');
+        $params = $request->input('queryResult.parameters', []);
+
+        // Optional debug logs (safe to remove later)
+        Log::info('Dialogflow Intent:', [$intent]);
+        Log::info('Dialogflow Params:', $params);
 
         switch ($intent) {
 
@@ -27,7 +32,8 @@ class ChatbotController extends Controller
 
             default:
                 return response()->json([
-                    "fulfillmentText" => "Sorry, I can help with order tracking, product details, or contacting support."
+                    "fulfillmentText" =>
+                        "Sorry, I can help with order tracking, product details, or contacting support."
                 ]);
         }
     }
@@ -37,23 +43,32 @@ class ChatbotController extends Controller
      */
     private function trackOrder(array $params)
     {
-        $trackingNo = $params['tracking_no'] ?? null;
+        // ✅ Robust parameter handling for Dialogflow
+        $trackingNo =
+            $params['tracking_no']
+            ?? $params['trackingNumber']
+            ?? $params['tracking-number']
+            ?? null;
 
         if (!$trackingNo) {
             return response()->json([
-                "fulfillmentText" => "Please enter a valid tracking number (Example: TRAD-XXXX)."
+                "fulfillmentText" =>
+                    "Please enter a valid tracking number (Example: TRAD-XXXX)."
             ]);
         }
+
+        $trackingNo = trim($trackingNo);
 
         $order = Order::where('tracking_no', $trackingNo)->first();
 
         if (!$order) {
             return response()->json([
-                "fulfillmentText" => "❌ Order not found. Please check your tracking number."
+                "fulfillmentText" =>
+                    "❌ Order not found. Please check your tracking number."
             ]);
         }
 
-        
+        // Order status mapping
         $statusMap = [
             0 => 'Order Placed',
             1 => 'Confirmed',
@@ -69,12 +84,19 @@ class ChatbotController extends Controller
 
         $statusText = $statusMap[$order->status] ?? 'Unknown Status';
 
+        // ✅ Currency handling (FIXED)
+        $currencySymbol = match ($order->currency) {
+            'USD' => '$',
+            'LKR' => 'Rs.',
+            default => $order->currency . ' ',
+        };
+
         return response()->json([
             "fulfillmentText" =>
                 "📦 Order: {$order->tracking_no}\n" .
                 "🚚 Status: {$statusText}\n" .
                 "📍 City: {$order->city}\n" .
-                "💰 Amount: Rs. " . number_format($order->total_price, 2)
+                "💰 Amount: {$currencySymbol}" . number_format($order->total_price, 2)
         ]);
     }
 
@@ -87,9 +109,12 @@ class ChatbotController extends Controller
 
         if (!$productName) {
             return response()->json([
-                "fulfillmentText" => "Please enter the product name you want details about."
+                "fulfillmentText" =>
+                    "Please enter the product name you want details about."
             ]);
         }
+
+        $productName = trim($productName);
 
         $product = Product::with('category')
             ->where('name', 'LIKE', '%' . $productName . '%')
@@ -97,14 +122,18 @@ class ChatbotController extends Controller
 
         if (!$product) {
             return response()->json([
-                "fulfillmentText" => "❌ Product not found. Please try another product name."
+                "fulfillmentText" =>
+                    "❌ Product not found. Please try another product name."
             ]);
         }
+
+        // Optional: if you later add multi-currency for products, this is ready
+        $currencySymbol = 'Rs.';
 
         return response()->json([
             "fulfillmentText" =>
                 "🛍 Product: {$product->name}\n" .
-                "💰 Price: Rs. " . number_format($product->price, 2) . "\n" .
+                "💰 Price: {$currencySymbol}" . number_format($product->price, 2) . "\n" .
                 "📦 Stock: {$product->stock}\n" .
                 "🏷 Category: {$product->category->name}"
         ]);
