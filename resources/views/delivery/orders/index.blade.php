@@ -65,8 +65,31 @@
 
 <div class="container-fluid px-4 py-5">
     <div class="mb-4">
-        <h2 class="h3 fw-bold text-dark">My Delivery Dashboard</h2>
-        <p class="text-muted">Manage your active and recently processed deliveries.</p>
+        <h2 class="h3 fw-bold text-dark">Active Task</h2>
+    </div>
+
+   
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-5">
+            <form action="{{ route('delivery.my-deliveries') }}" method="GET">
+                <div class="input-group shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                    <input type="text" name="search" class="form-control border-0 py-2 ps-3" 
+                           placeholder="Search by ID, Name, or City..." 
+                           value="{{ request('search') }}"
+                           style="background: #f8f9fa; font-size: 0.95rem;">
+                    
+                    <button class="btn px-4" type="submit" style="background-color: #5b2c2c; color: white; border: none;">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                    
+                    @if(request('search'))
+                        <a href="{{ route('delivery.my-deliveries') }}" class="btn btn-light d-flex align-items-center border-start">
+                            <i class="bi bi-x-lg text-danger"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </div>
     </div>
 
     <div class="card delivery-table-card">
@@ -84,7 +107,7 @@
                 <tbody>
                     @forelse($orders as $order)
                         @php
-                            /** ✅ STRICT CURRENCY LOGIC
+                            /** 
                              * Ensures symbol matches the actual order data
                              */
                             $dbCurrency = strtoupper(trim($order->currency));
@@ -107,14 +130,14 @@
                             @elseif($order->status == 5)
                                 <span class="badge bg-success text-white mt-1" style="font-size: 0.7rem;">DELIVERED</span>
                             @elseif($order->status == 9)
-                                {{-- ✅ Add Status 9 for "Reported/Awaiting Admin" --}}
+                                {{-- Add Status 9 for "Reported/Awaiting Admin" --}}
                                 <span class="badge bg-warning text-dark mt-1" style="font-size: 0.7rem;">REPORTED FAILED</span>
                             @elseif($order->status == 6)
                                 <span class="badge bg-danger text-white mt-1" style="font-size: 0.7rem;">CANCELLED (CLOSED)</span>
                             @endif
                             </td>
 
-                            {{-- ✅ UPDATED: CUSTOMER & CONTACT COLUMN --}}
+                            {{--  UPDATED: CUSTOMER & CONTACT COLUMN --}}
                                     <td>
                                         {{-- Customer Name --}}
                                         <div class="fw-bold text-dark">{{ $order->fname }} {{ $order->lname }}</div>

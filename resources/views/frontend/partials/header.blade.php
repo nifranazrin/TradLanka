@@ -24,15 +24,18 @@
       {{-- 1. LEFT SIDE: Logo + All Categories --}}
       <div class="flex items-center gap-6 flex-shrink-0">
         
-        {{-- Logo --}}
-        <a href="{{ route('home') }}" class="flex items-center gap-2">
-          {{-- Check if image exists, otherwise placeholder --}}
-          <img src="https://via.placeholder.com/40" alt="TradLanka"
-               class="h-10 w-10 rounded-full bg-white p-1" />
-          <h1 class="text-xl font-bold">
-            Trad<span class="text-yellow-400">Lanka</span>
-          </h1>
-        </a>
+             {{-- Logo Section --}}
+<a href="{{ route('home') }}" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+    {{-- Your actual logo file --}}
+    <img src="{{ asset('logo/tradlanka-logo.jpg') }}" 
+         alt="TradLanka Logo" 
+         class="h-10 w-10 rounded-full object-cover border-2 border-[#5b2c2c] bg-white shadow-sm shadow-maroon-100" />
+    
+    {{-- Brand Name --}}
+    <h1 class="text-2xl font-extrabold tracking-tight">
+        <span class="text-[#f5f0f0]">Trad</span><span class="text-yellow-500">Lanka</span>
+    </h1>
+</a>
 
         {{-- All Categories Dropdown --}}
         <div class="relative group z-50 hidden md:block">

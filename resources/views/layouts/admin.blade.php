@@ -238,6 +238,11 @@
         <span>Reports & Analysis</span>
         <i class="bi bi-chevron-down ms-auto small"></i>
     </a>
+
+     {{-- 8. Staff Chat (Replaces Settings) --}}
+<a href="{{ route('admin.chat.index') }}" class="{{ request()->is('admin/chat*') ? 'active' : '' }}">
+    <span><i class="bi bi-chat-dots"></i> Staff Chat</span>
+</a>
     
     {{-- Ensure the background is forced to match the sidebar --}}
     <ul class="collapse nav flex-column ms-3 {{ request()->is('admin/reports*') ? 'show' : '' }}" 

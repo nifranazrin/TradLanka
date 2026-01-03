@@ -264,6 +264,25 @@ if($seller){
         @endif
     </a>
 
+
+     {{-- Customer Reviews with Notification Badge --}}
+<a href="#" class="{{ request()->is('admin/reviews*') ? 'active' : '' }}">
+    <span><i class="bi bi-star-fill"></i> Customer Reviews</span>
+    @if(isset($notifCounts['review']) && $notifCounts['review'] > 0)
+        <span class="badge bg-danger">{{ $notifCounts['review'] }}</span>
+    @endif
+</a>
+
+{{-- Reports & Analytics with Notification Badge --}}
+<a href="#" class="{{ request()->is('admin/reports*') ? 'active' : '' }}">
+    <span><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</span>
+    @if(isset($notifCounts['report']) && $notifCounts['report'] > 0)
+        <span class="badge bg-danger">{{ $notifCounts['report'] }}</span>
+    @endif
+</a>
+
+
+
 </div>
 
 

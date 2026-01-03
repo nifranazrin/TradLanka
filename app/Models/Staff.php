@@ -8,7 +8,6 @@ use Illuminate\Notifications\Notifiable;
 
 class Staff extends Authenticatable
 {
-    // <--- 2. ADD 'Notifiable' INSIDE THIS LIST
     use HasFactory, Notifiable; 
 
     protected $fillable = [
@@ -16,7 +15,8 @@ class Staff extends Authenticatable
         'email',
         'password',
         'phone',      
-        'address',    
+        'address', 
+         'nic_number',   
         'role',
         'status',
         'image',  
@@ -25,5 +25,23 @@ class Staff extends Authenticatable
     public function products()
     {
         return $this->hasMany(\App\Models\Product::class, 'seller_id');
+    }
+
+    /**
+     * ✅ Relationship for messages RECEIVED by this staff member.
+     * Essential for unread badge counts.
+     */
+    public function messagesReceived()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    /**
+     * ✅ Relationship for messages SENT by this staff member.
+     * Essential for sorting the sidebar by "latest interaction".
+     */
+    public function messagesSent()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
     }
 }

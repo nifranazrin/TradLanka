@@ -135,11 +135,14 @@
             <div class="relative h-[500px] lg:h-auto rounded-2xl overflow-hidden shadow-lg border border-[#3e2525]" 
                  data-aos="fade-left" data-aos-duration="1000">
                 {{-- Updated to a real Colombo Embed Map --}}
-                <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m12!1m3!1d126743.5829045838!2d79.78616375630685!3d6.92183352723046!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae253d10f7a70ad%3A0x2db2c4080c01b663!2sColombo!5e0!3m2!1sen!2slk!4v1700000000000" 
-                    width="100%" height="100%" 
+                    <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126743.58285461942!2d79.78616393910393!3d6.921837369654158!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae2593cf65a1e9d%3A0xe13843d87595a17e!2sColombo!5e0!3m2!1sen!2slk!4v1715600000000!5m2!1sen!2slk" 
+                    width="100%" 
+                    height="100%" 
                     style="border:0; filter: grayscale(100%) invert(92%) contrast(83%);" 
-                    allowfullscreen="" loading="lazy">
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
                 <div class="absolute bottom-4 left-4 bg-white p-4 rounded-lg shadow-lg">
                     <p class="text-[#5b2c2c] font-bold text-sm">Find us in Colombo!</p>

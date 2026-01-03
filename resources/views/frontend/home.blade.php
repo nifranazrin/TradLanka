@@ -139,6 +139,13 @@
     border: none;
     cursor: pointer;
 }
+
+.floating-buttons {
+    position: fixed !important;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999999 !important; /* above everything */
+}
 </style>
 
 
@@ -504,22 +511,21 @@
 
         // Chatbot Toggle Logic
           const chatbotBtn = document.getElementById('chatbotBtn');
-    const chatbot = document.getElementById('tradlankaChatbot');
+       const chatbot = document.getElementById('tradlankaChatbot');
 
-    if (!chatbotBtn || !chatbot) {
-        console.error('Chatbot or button not found');
-        return;
+  if (!chatbotBtn || !chatbot) return;
+
+  chatbotBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    if (chatbot.hasAttribute('open')) {
+      chatbot.removeAttribute('open');
+    } else {
+      chatbot.setAttribute('open', '');
     }
+  });
 
-    chatbot.style.display = 'none'; // start hidden
-
-    chatbotBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        chatbot.style.display =
-            chatbot.style.display === 'none' ? 'block' : 'none';
-    });
 });
-
         // ============================================
         // UNIVERSAL ADD TO CART LOGIC
         // ============================================
@@ -643,7 +649,6 @@
                 });
             });
         });
-    });
 </script>
 
 @if(session('order_success'))

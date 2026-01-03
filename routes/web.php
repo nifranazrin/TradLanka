@@ -47,6 +47,7 @@ use App\Http\Controllers\Seller\ChatController as SellerChatController;
 use App\Http\Controllers\Delivery\DeliveryDashController;
 use App\Http\Controllers\Delivery\DeliveryOrderController;
 use App\Http\Controllers\Delivery\ChatController;
+use App\Http\Controllers\Delivery\DeliveryProfileController;
 
 // MIDDLEWARES
 use App\Http\Middleware\AdminMiddleware;
@@ -350,37 +351,46 @@ Route::put('/orders/approve-cancel/{id}', [SellerOrderController::class, 'approv
 
 });
 
-// =============================================================
-//                   DELIVERY DASHBOARD (Protected)
-// =============================================================
 
 
-    Route::prefix('delivery')->name('delivery.')->middleware([DeliveryPersonMiddleware::class])->group(function () {
+
+Route::prefix('delivery')->name('delivery.')->middleware([DeliveryPersonMiddleware::class])->group(function () {
     
-    // Dashboard
+    // Dashboard, Orders, and History
     Route::get('/dashboard', [DeliveryDashController::class, 'dashboard'])->name('dashboard');
-
-    // Active Orders List (Status 4)
     Route::get('/orders', [DeliveryOrderController::class, 'myDeliveries'])->name('my-deliveries');
-    
-    // ✅ ADDED: Task History (Status 5 & 6)
-    // This allows completed/failed orders to be separated from active tasks
     Route::get('/task-history', [DeliveryOrderController::class, 'taskHistory'])->name('task-history');
-    
-    // View Item Details
     Route::get('/orders/{id}', [DeliveryOrderController::class, 'show'])->name('orders.show');
+    Route::get('/performance-report', [DeliveryOrderController::class, 'downloadReport'])->name('report.download');
     
     // Update Actions
     Route::put('/mark-delivered/{id}', [DeliveryOrderController::class, 'markAsDelivered'])->name('mark-delivered');
     Route::put('/mark-failed/{id}', [DeliveryOrderController::class, 'markAsFailed'])->name('mark-failed');
-    
-    // Chat Routes
-    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-    Route::get('/chat/fetch/{receiverId}/{type}', [ChatController::class, 'fetchMessages'])->name('chat.fetch');
-    Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
-    Route::post('/chat/delete', [ChatController::class, 'deleteMessage'])->name('chat.delete');
 
     
+
+    Route::get('/profile', [DeliveryProfileController::class, 'index'])->name('profile');
+    
+    Route::put('/profile/update', [DeliveryProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/check-password', [DeliveryProfileController::class, 'checkPassword'])->name('check-password');
+
+    // Chat Routes
+   Route::prefix('chat')->name('chat.')->group(function () {
+    Route::get('/', [ChatController::class, 'index'])->name('index');
+    Route::get('/fetch/{receiverId}/{type}', [ChatController::class, 'fetchMessages'])->name('fetch');
+    Route::post('/send', [ChatController::class, 'sendMessage'])->name('send');
+    Route::post('/delete', [ChatController::class, 'deleteMessage'])->name('delete');
+    Route::get('/orders', [ChatController::class, 'getRecentOrders'])->name('orders');
+    
+    // Add these two to fix the 500 errors
+    Route::get('/profile/{type}/{id}', [ChatController::class, 'getProfile'])->name('profile');
+    Route::post('/mark-read/{id}/{type}', [ChatController::class, 'markAsRead'])->name('mark-read');
+        
+        // Renamed chat profile to avoid conflict with Rider Profile
+        Route::get('/staff-profile/{type}/{id}', [ChatController::class, 'getStaffProfile'])->name('staff_profile');
+        Route::post('/clear/{receiverId}/{type}', [ChatController::class, 'clearChat'])->name('clear');
+        Route::post('/mark-read/{id}/{type}', [ChatController::class, 'markAsRead'])->name('mark-read');
+    });
 });
 
 // Route to export product data to JSON for Python

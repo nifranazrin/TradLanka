@@ -130,68 +130,105 @@
                             </div>
                             
                             <div class="mt-8 text-center">
-    <div class="relative mb-6">
-        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
-        <div class="relative flex justify-center text-xs"><span class="px-2 bg-white text-gray-400">or login with</span></div>
-    </div>
-    
-    <div class="flex justify-center">
-        <div id="g_id_onload"
-             data-client_id="603543448678-jsm9dq38dkm60uh5tm0evlvd2bnhh5p7.apps.googleusercontent.com"
-             data-callback="handleCredentialResponse"
-             data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin" 
-             data-type="standard" 
-             data-size="large" 
-             data-theme="outline" 
-             data-text="signin_with" 
-             data-shape="pill" 
-             data-logo_alignment="left">
-        </div>
-    </div>
-</div>
+                                    <div class="relative mb-6">
+                                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                                        <div class="relative flex justify-center text-xs"><span class="px-2 bg-white text-gray-400">or login with</span></div>
+                                    </div>
+                                    
+                                    <div class="flex justify-center">
+                                        <div id="g_id_onload"
+                                            data-client_id="603543448678-jsm9dq38dkm60uh5tm0evlvd2bnhh5p7.apps.googleusercontent.com"
+                                            data-callback="handleCredentialResponse"
+                                            data-auto_prompt="false">
+                                        </div>
+                                        <div class="g_id_signin" 
+                                            data-type="standard" 
+                                            data-size="large" 
+                                            data-theme="outline" 
+                                            data-text="signin_with" 
+                                            data-shape="pill" 
+                                            data-logo_alignment="left">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {{-- REGISTER FORM --}}
-                        <div id="register-content" class="hidden">
-                            <div class="text-center mb-6">
-                                <h3 class="text-2xl font-extrabold text-[#5b2c2c]">Create Account</h3>
-                                <p class="text-sm text-gray-500 mt-1">Join the TradLanka family</p>
-                            </div>
-                            
-                            <form id="ajax-register-form" class="space-y-4">
-                                @csrf
-                                <div>
-                                    <input type="text" name="name" placeholder="Full Name" required class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white focus:border-[#5b2c2c] focus:ring-1 focus:ring-[#5b2c2c] outline-none transition placeholder-gray-400 text-sm">
-                                </div>
-                                <div>
-                                    <input type="email" name="email" placeholder="Email Address" required class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white focus:border-[#5b2c2c] focus:ring-1 focus:ring-[#5b2c2c] outline-none transition placeholder-gray-400 text-sm">
-                                </div>
-                                <div class="relative">
-                                    <input type="password" name="password" id="reg-password" placeholder="Password" required class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white focus:border-[#5b2c2c] focus:ring-1 focus:ring-[#5b2c2c] outline-none transition placeholder-gray-400 text-sm pr-10">
-                                    <span onclick="togglePassword('reg-password', 'reg-eye-svg')" class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-gray-400 hover:text-[#5b2c2c]">
-                                        <svg id="reg-eye-svg" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                    </span>
-                                </div>
-                                <div class="relative">
-                                    <input type="password" name="password_confirmation" id="reg-confirm" placeholder="Confirm Password" required class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white focus:border-[#5b2c2c] focus:ring-1 focus:ring-[#5b2c2c] outline-none transition placeholder-gray-400 text-sm pr-10">
-                                </div>
+                           {{-- REGISTER FORM --}}
+                            <div id="register-content" class="hidden flex flex-col items-center"> {{-- Flex container for centering --}}
                                 
-                                <button type="submit" class="w-full bg-[#5b2c2c] hover:bg-[#4a2424] text-white py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-lg transition transform active:scale-95 uppercase tracking-wide">
-                                    REGISTER
-                                </button>
-                            </form>
+                                {{-- Header Section --}}
+                                <div class="text-center mb-8 w-full px-6">
+                                    <h3 class="text-3xl font-extrabold text-[#5b2c2c] tracking-tight uppercase">Create Account</h3>
+                                    <p class="text-sm text-gray-500 mt-1 font-medium italic">Join the TradLanka family</p>
+                                </div>
 
-                            <div class="mt-6 text-center text-sm text-gray-600">
-                                Already have an account? 
-                                <a href="javascript:void(0);" onclick="switchTab('login')" class="text-[#5b2c2c] font-bold hover:underline">Login here</a>
+                                {{-- Form Container - Constrained width to prevent "Covering" the edges --}}
+                                <form id="ajax-register-form" class="w-full max-w-[340px] space-y-5 pb-8"> {{-- max-width centers the boxes --}}
+                                    @csrf
+                                    
+                                    {{-- Full Name --}}
+                                    <div class="flex flex-col space-y-1.5">
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
+                                        <div class="relative group">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 group-focus-within:text-[#5b2c2c]">
+                                                <i class="fas fa-user text-xs"></i>
+                                            </span>
+                                            <input type="text" name="name" placeholder="John Doe" required 
+                                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-[#5b2c2c] focus:ring-1 focus:ring-[#5b2c2c] outline-none transition placeholder-gray-300 text-sm">
+                                        </div>
+                                    </div>
+
+                                    {{-- Email Address --}}
+                                    <div class="flex flex-col space-y-1.5">
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
+                                        <div class="relative group">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 group-focus-within:text-[#5b2c2c]">
+                                                <i class="fas fa-envelope text-xs"></i>
+                                            </span>
+                                            <input type="email" name="email" placeholder="name@example.com" required 
+                                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-[#5b2c2c] focus:ring-1 focus:ring-[#5b2c2c] outline-none transition placeholder-gray-300 text-sm">
+                                        </div>
+                                    </div>
+
+                                    {{-- Password --}}
+                                    <div class="flex flex-col space-y-1.5">
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Password</label>
+                                        <div class="relative group">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 group-focus-within:text-[#5b2c2c]">
+                                                <i class="fas fa-lock text-xs"></i>
+                                            </span>
+                                            <input type="password" name="password" id="reg-password" placeholder="••••••••" required 
+                                                class="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:border-[#5b2c2c] focus:ring-1 focus:ring-[#5b2c2c] outline-none transition placeholder-gray-300 text-sm">
+                                            <span onclick="togglePassword('reg-password', 'reg-eye-svg')" class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-gray-400 hover:text-[#5b2c2c]">
+                                                <svg id="reg-eye-svg" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Confirm Password --}}
+                                    <div class="flex flex-col space-y-1.5">
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Confirm Password</label>
+                                        <div class="relative group">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 group-focus-within:text-[#5b2c2c]">
+                                                <i class="fas fa-shield-alt text-xs"></i>
+                                            </span>
+                                            <input type="password" name="password_confirmation" id="reg-confirm" placeholder="••••••••" required 
+                                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-[#5b2c2c] focus:ring-1 focus:ring-[#5b2c2c] outline-none transition placeholder-gray-300 text-sm">
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="w-full bg-[#5b2c2c] hover:bg-[#4a2424] text-white py-4 rounded-xl font-bold text-sm shadow-md hover:shadow-xl transition transform active:scale-95 uppercase tracking-widest mt-6">
+                                        CREATE ACCOUNT
+                                    </button>
+
+                                    <div class="mt-6 text-center text-sm text-gray-600 font-medium">
+                                        Already have an account? 
+                                        <a href="javascript:void(0);" onclick="switchTab('login')" class="text-[#5b2c2c] font-bold hover:underline">Sign In</a>
+                                    </div>
+                                </form>
                             </div>
-                        </div>
-
-                    </div>
-                </div>
+                      </div>
             </div>
         </div>
     </div>

@@ -2,119 +2,149 @@
 
 @section('content')
 <style>
-    .order-details-card { background: #ffffff; border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); border: none; }
-    .item-row { border-bottom: 1px solid #eee; padding: 15px 0; }
-    .item-row:last-child { border-bottom: none; }
-    .product-img { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; background-color: #f8f9fa; }
+    :root {
+        --trad-maroon: #5b2c2c;
+        --trad-gold: #d97706;
+    }
+    .main-wrapper { background-color: #f8f9fa; min-height: 100vh; padding-bottom: 50px; }
     
-    /* Highlight for International/USD rows */
-    .payment-alert { border-radius: 10px; padding: 15px; font-weight: 700; text-align: center; font-size: 1.1rem; }
-    .international-border { border: 3px solid #0d6efd !important; }
+    /* Card Styling */
+    .order-card { 
+        background: #ffffff; 
+        border-radius: 12px; 
+        border: none; 
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05); 
+        margin-bottom: 1.5rem;
+    }
+
+    /* Hero Section */
+    .payment-hero {
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        border: 1px solid transparent;
+    }
+    .cod-alert { background: #fff9db; border-color: #ffe066; color: #856404; }
+    .paid-alert { background: #ebfbee; border-color: #b2f2bb; color: #2b8a3e; }
+
+    /* Product Styling */
+    .product-img { 
+        width: 60px; height: 60px; 
+        object-fit: cover; 
+        border-radius: 8px; 
+        border: 1px solid #eee;
+    }
+
+    /* Button Styling - The Fix */
+    .action-container {
+        max-width: 400px; /* Limits the width so it's not too big */
+        margin: 2rem auto;
+    }
+    .btn-complete { 
+        background-color: #2b8a3e; 
+        color: white;
+        border: none; 
+        padding: 14px 28px; 
+        font-size: 1rem;
+        font-weight: 700;
+        border-radius: 10px;
+        width: 100%;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 6px rgba(43, 138, 62, 0.2);
+    }
+    .btn-complete:hover { background-color: #237032; transform: translateY(-2px); }
 </style>
 
 @php 
-    /** * ✅ ULTIMATE CURRENCY DETECTION
-     * We check the DB currency column, the payment mode string, AND the value.
-     */
     $dbCurrency = strtoupper(trim($order->currency));
     $payMode = strtoupper($order->payment_mode);
     $total = $order->total_price;
 
-    // Safety Override: Force USD if value is small (< 500) and online payment, or labeled USD
-    // This fixes the DB rows where 2.62 is labeled as LKR
     if ($dbCurrency === 'USD' || str_contains($payMode, '(USD)') || ($total < 500 && !str_contains($payMode, 'COD'))) {
-        $symbol = '$ ';
-        $isActuallyUSD = true;
+        $symbol = '$';
     } else {
-        $symbol = 'Rs. ';
-        $isActuallyUSD = false;
+        $symbol = 'Rs.';
     }
-
     $isCOD = str_contains(strtolower($order->payment_mode), 'cod');
 @endphp
 
-<div class="container-fluid px-3 py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="d-flex align-items-center">
-            <a href="{{ route('delivery.my-deliveries') }}" class="btn btn-light rounded-circle me-3 shadow-sm">
-                <i class="bi bi-arrow-left"></i>
-            </a>
-            <h2 class="h4 fw-bold mb-0">Order #{{ $order->tracking_no }}</h2>
+<div class="main-wrapper container-fluid px-4 py-4">
+    <div class="d-flex align-items-center mb-4">
+        <a href="{{ route('delivery.my-deliveries') }}" class="btn btn-outline-secondary btn-sm rounded-circle me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h5 fw-bold mb-0">Order #{{ $order->tracking_no }}</h1>
+            <small class="text-muted">Assigned to you</small>
         </div>
-        <a href="tel:{{ $order->phone }}" class="btn btn-primary rounded-pill px-3 shadow-sm">
-            <i class="bi bi-telephone-fill me-1 text-white"></i> Call Customer
+        <a href="tel:{{ $order->phone }}" class="btn btn-primary btn-sm ms-auto rounded-pill px-3">
+            <i class="bi bi-telephone-fill me-1"></i> Call Customer
         </a>
     </div>
 
-    {{-- ✅ RIDER PAYMENT INSTRUCTIONS --}}
-    @if($isCOD)
-        <div class="payment-alert bg-warning text-dark mb-4 border border-warning shadow-sm">
-            <i class="bi bi-cash-stack me-2"></i> CASH ON DELIVERY: COLLECT {{ $symbol }} {{ number_format($total, 2) }}
-        </div>
-    @else
-        <div class="payment-alert bg-success text-white mb-4 shadow-sm">
-            <i class="bi bi-check-circle-fill me-2"></i> ONLINE PAID: DO NOT COLLECT CASH
-        </div>
-    @endif
-
-    <div class="card order-details-card p-4 mb-4 {{ $isActuallyUSD ? 'international-border' : '' }}">
-        <h6 class="fw-bold text-muted text-uppercase small mb-3">Items Verification</h6>
-        
-        @foreach($order->items as $item)
-        <div class="item-row d-flex align-items-center">
-            <img src="{{ $item->product->image ? \Illuminate\Support\Facades\Storage::url(str_replace('public/', '', $item->product->image)) : asset('images/placeholder.png') }}" 
-                 onerror="this.src='{{ asset('images/placeholder.png') }}'"
-                 class="product-img me-3"
-                 alt="{{ $item->product->name }}">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
             
-            <div class="flex-grow-1">
-                <div class="fw-bold text-dark">{{ $item->product->name }}</div>
-                <div class="text-muted small">
-                    Qty: <span class="text-primary fw-bold">{{ $item->qty }}</span> 
-                    @if($item->variant) | <span class="badge bg-light text-dark">{{ $item->variant->unit_label }}</span> @endif
+            <div class="payment-hero shadow-sm {{ $isCOD ? 'cod-alert' : 'paid-alert' }} mb-4">
+                @if($isCOD)
+                    <div class="small fw-bold text-uppercase mb-1">Collect Cash on Delivery</div>
+                    <div class="h2 fw-bold mb-0">{{ $symbol }} {{ number_format($total, 2) }}</div>
+                @else
+                    <div class="small fw-bold text-uppercase mb-1">Already Paid Online</div>
+                    <div class="h2 fw-bold mb-0 text-success">{{ $symbol }} {{ number_format($total, 2) }}</div>
+                    <span class="badge bg-success mt-2">Do Not Collect Cash</span>
+                @endif
+            </div>
+
+            <div class="order-card p-4">
+                <div class="row">
+                    <div class="col-md-6 border-end">
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Customer Details</h6>
+                        <p class="mb-1 fw-bold">{{ $order->fname }} {{ $order->lname }}</p>
+                        <p class="text-muted small">{{ $order->phone }}</p>
+                    </div>
+                    <div class="col-md-6 ps-md-4">
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Delivery Address</h6>
+                        <p class="small mb-0">
+                            {{ $order->address1 }}<br>
+                            @if($order->address2) {{ $order->address2 }}<br> @endif
+                            <strong>{{ $order->city }}, {{ $order->state }}</strong>
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="fw-bold text-dark text-end">
-                {{ $symbol }}{{ number_format($item->price, 2) }}
+
+            <div class="order-card p-4">
+                <h6 class="text-muted small text-uppercase fw-bold mb-3">Items Verification ({{ $order->items->count() }})</h6>
+                @foreach($order->items as $item)
+                <div class="d-flex align-items-center py-3 {{ !$loop->last ? 'border-bottom' : '' }}">
+                    <img src="{{ $item->product->image ? \Illuminate\Support\Facades\Storage::url(str_replace('public/', '', $item->product->image)) : asset('images/placeholder.png') }}" class="product-img me-3">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">{{ $item->product->name }}</div>
+                        <div class="small text-muted">Qty: {{ $item->qty }} @if($item->variant) | {{ $item->variant->unit_label }} @endif</div>
+                    </div>
+                    <div class="fw-bold">{{ $symbol }}{{ number_format($item->price, 2) }}</div>
+                </div>
+                @endforeach
             </div>
-        </div>
-        @endforeach
 
-        <hr class="my-4">
+            <div class="action-container">
+                @if($order->status == 4)
+                    <form action="{{ route('delivery.mark-delivered', $order->id) }}" method="POST" onsubmit="return confirm('Confirm Delivery?')">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="btn-complete shadow">
+                            <i class="bi bi-check-circle-fill me-2"></i> COMPLETE DELIVERY
+                        </button>
+                    </form>
+                @else
+                    <div class="alert alert-secondary text-center rounded-3">
+                        <i class="bi bi-info-circle me-2"></i> This order is already processed.
+                    </div>
+                @endif
+            </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="text-muted">Payment Mode:</span>
-            <span class="badge {{ $isCOD ? 'bg-warning text-dark' : 'bg-primary text-white' }} px-3 py-2">
-                {{ strtoupper($order->payment_mode) }}
-            </span>
-        </div>
-        <div class="d-flex justify-content-between align-items-center">
-            <span class="h5 fw-bold mb-0">Total Value:</span>
-            <span class="h4 fw-bold {{ $isCOD ? 'text-danger' : 'text-success' }} mb-0">
-                {{ $symbol }}{{ number_format($total, 2) }}
-            </span>
         </div>
     </div>
-
-    @if($order->status == 4)
-        <form action="{{ route('delivery.mark-delivered', $order->id) }}" method="POST" onsubmit="return confirm('Confirm that you have delivered the package?')">
-            @csrf
-            @method('PUT')
-            <button type="submit" class="btn btn-success w-100 py-3 fw-bold rounded-3 shadow">
-                <i class="bi bi-check-circle me-2"></i> COMPLETE DELIVERY
-            </button>
-        </form>
-    @else
-        <div class="alert alert-secondary text-center fw-bold border-0 shadow-sm py-3">
-            <i class="bi bi-info-circle-fill me-2"></i> 
-            @if($order->status == 5)
-                DELIVERED ON {{ $order->updated_at->format('d M, Y') }}
-            @elseif($order->status == 6)
-                MARKED AS FAILED
-            @else
-                ORDER PROCESSED
-            @endif
-        </div>
-    @endif
 </div>
 @endsection
