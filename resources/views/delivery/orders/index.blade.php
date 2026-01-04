@@ -68,7 +68,6 @@
         <h2 class="h3 fw-bold text-dark">Active Task</h2>
     </div>
 
-   
     <div class="row mb-4">
         <div class="col-md-6 col-lg-5">
             <form action="{{ route('delivery.my-deliveries') }}" method="GET">
@@ -107,9 +106,6 @@
                 <tbody>
                     @forelse($orders as $order)
                         @php
-                            /** 
-                             * Ensures symbol matches the actual order data
-                             */
                             $dbCurrency = strtoupper(trim($order->currency));
                             $payMode = strtoupper($order->payment_mode);
                             $isUSD = ($dbCurrency === 'USD' || str_contains($payMode, '(USD)'));
@@ -125,39 +121,30 @@
                                     {{ $order->created_at->format('d M, Y') }}
                                 </div>
                                 
-                                 @if($order->status == 4)
-                                <span class="badge bg-info text-dark mt-1" style="font-size: 0.7rem;">OUT FOR DELIVERY</span>
-                            @elseif($order->status == 5)
-                                <span class="badge bg-success text-white mt-1" style="font-size: 0.7rem;">DELIVERED</span>
-                            @elseif($order->status == 9)
-                                {{-- Add Status 9 for "Reported/Awaiting Admin" --}}
-                                <span class="badge bg-warning text-dark mt-1" style="font-size: 0.7rem;">REPORTED FAILED</span>
-                            @elseif($order->status == 6)
-                                <span class="badge bg-danger text-white mt-1" style="font-size: 0.7rem;">CANCELLED (CLOSED)</span>
-                            @endif
+                                @if($order->status == 4)
+                                    <span class="badge bg-info text-dark mt-1" style="font-size: 0.7rem;">OUT FOR DELIVERY</span>
+                                @elseif($order->status == 10)
+                                    <span class="badge bg-primary text-white mt-1" style="font-size: 0.7rem;">ARRIVED AT DESTINATION</span>
+                                @elseif($order->status == 8 || $order->status == 9)
+                                    <span class="badge bg-warning text-dark mt-1" style="font-size: 0.7rem;">REPORTED FAILED</span>
+                                @endif
                             </td>
 
-                            {{--  UPDATED: CUSTOMER & CONTACT COLUMN --}}
-                                    <td>
-                                        {{-- Customer Name --}}
-                                        <div class="fw-bold text-dark">{{ $order->fname }} {{ $order->lname }}</div>
-                                        
-                                        {{-- Visible Phone Number --}}
-                                        <div class="mt-1">
-                                            <i class="bi bi-phone small text-muted"></i>
-                                            <strong class="text-dark small">{{ $order->phone }}</strong>
-                                        </div>
-
-                                        {{-- Contact Icons --}}
-                                        <div class="d-flex gap-2 mt-2">
-                                            <a href="tel:{{ $order->phone }}" class="btn btn-sm btn-outline-primary rounded-circle shadow-sm">
-                                                <i class="bi bi-telephone-fill"></i>
-                                            </a>
-                                            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->phone) }}" target="_blank" class="btn btn-sm btn-outline-success rounded-circle shadow-sm">
-                                                <i class="bi bi-whatsapp"></i>
-                                            </a>
-                                        </div>
-                                    </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ $order->fname }} {{ $order->lname }}</div>
+                                <div class="mt-1">
+                                    <i class="bi bi-phone small text-muted"></i>
+                                    <strong class="text-dark small">{{ $order->phone }}</strong>
+                                </div>
+                                <div class="d-flex gap-2 mt-2">
+                                    <a href="tel:{{ $order->phone }}" class="btn btn-sm btn-outline-primary rounded-circle shadow-sm">
+                                        <i class="bi bi-telephone-fill"></i>
+                                    </a>
+                                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->phone) }}" target="_blank" class="btn btn-sm btn-outline-success rounded-circle shadow-sm">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </a>
+                                </div>
+                            </td>
 
                             <td>
                                 <div class="small text-secondary" style="max-width: 220px; line-height: 1.2;">
@@ -182,20 +169,35 @@
                                         <i class="bi bi-eye"></i> View Items
                                     </a>
                                     
-                                    @if($order->status == 4)
-                                        <button type="button" class="btn btn-sm btn-success btn-action" onclick="confirmAction({{ $order->id }}, 'delivered')">
-                                            Complete
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-danger btn-action" onclick="confirmAction({{ $order->id }}, 'failed')">
-                                            Not Received
-                                        </button>
-                                        @elseif($order->status == 9)
-                                    <button class="btn btn-sm btn-warning btn-action text-dark" disabled>
-                                        <i class="bi bi-hourglass-split"></i> Awaiting Admin
-                                    </button>
+                                    @if($isUSD)
+                                        {{-- ✅ INTERNATIONAL STRIPE WORKFLOW --}}
+                                        @if($order->status == 4)
+                                            <button type="button" class="btn btn-sm btn-primary btn-action" onclick="updateMilestone({{ $order->id }}, 10, 'Arrived at Destination Country')">
+                                                <i class="bi bi-airplane me-1"></i> Arrived in Country
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger btn-action" onclick="confirmAction({{ $order->id }}, 'failed')">
+                                                Not Received
+                                            </button>
+                                        @elseif($order->status == 10)
+                                            <button type="button" class="btn btn-sm btn-success btn-action" onclick="confirmAction({{ $order->id }}, 'delivered')">
+                                                <i class="bi bi-check-circle me-1"></i> Final Delivery
+                                            </button>
+                                        @endif
                                     @else
-                                        <button class="btn btn-sm btn-secondary btn-action" disabled>
-                                            <i class="bi bi-lock-fill"></i> Processed
+                                        {{-- ✅ LOCAL COD WORKFLOW --}}
+                                        @if($order->status == 4)
+                                            <button type="button" class="btn btn-sm btn-success btn-action" onclick="confirmAction({{ $order->id }}, 'delivered')">
+                                                Complete
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger btn-action" onclick="confirmAction({{ $order->id }}, 'failed')">
+                                                Not Received
+                                            </button>
+                                        @endif
+                                    @endif
+
+                                    @if($order->status == 8 || $order->status == 9)
+                                        <button class="btn btn-sm btn-warning btn-action text-dark" disabled>
+                                            <i class="bi bi-hourglass-split"></i> Awaiting Admin
                                         </button>
                                     @endif
                                 </div>
@@ -205,7 +207,7 @@
                         <tr>
                             <td colspan="5" class="text-center p-5 text-muted">
                                 <i class="bi bi-truck-flatbed display-4 opacity-25"></i>
-                                <p class="mt-3">No orders found in your history.</p>
+                                <p class="mt-3">No active orders found.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -216,11 +218,33 @@
 </div>
 
 <script>
+    
+    // ✅ Corrected: Removed the extra '/delivery' from the URL path
+function updateMilestone(orderId, nextStatus, statusName) {
+    Swal.fire({
+        title: 'Update Milestone?',
+        text: `Confirm shipment has: "${statusName}"?`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Update',
+        customClass: {
+            popup: 'maroon-swal-popup',
+            confirmButton: 'maroon-swal-confirm',
+            cancelButton: 'maroon-swal-cancel'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            
+            submitForm(`/delivery/update-milestone/${orderId}`, 'PUT', { status: nextStatus });
+        }
+    });
+}
+    // ✅ Handle Final Actions (Delivered / Failed)
     function confirmAction(orderId, type) {
-       // Inside your <script> block
-            let config = type === 'delivered' 
-                ? { title: 'Confirm Delivery?', text: 'Mark as successfully delivered?', icon: 'question', btn: 'Yes, Delivered!' }
-                : { title: 'Report Delivery Failure?', text: 'This will be sent to Admin for final cancellation. Provide a reason:', icon: 'warning', btn: 'Report to Admin' };
+        let config = type === 'delivered' 
+            ? { title: 'Confirm Delivery?', text: 'Mark as successfully delivered?', icon: 'question', btn: 'Yes, Delivered!' }
+            : { title: 'Report Delivery Failure?', text: 'This will be sent to Admin for final review. Provide a reason:', icon: 'warning', btn: 'Report to Admin' };
 
         Swal.fire({
             title: config.title,
@@ -239,30 +263,35 @@
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                let form = document.createElement('form');
-                form.method = 'POST';
-                form.action = type === 'delivered' 
-                    ? `/delivery/mark-delivered/${orderId}` 
-                    : `/delivery/mark-failed/${orderId}`;
-                
-                let csrf = document.createElement('input');
-                csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = '{{ csrf_token() }}';
-                form.appendChild(csrf);
-
-                let method = document.createElement('input');
-                method.type = 'hidden'; method.name = '_method'; method.value = 'PUT';
-                form.appendChild(method);
-                
-                if(type === 'failed') {
-                    let reason = document.createElement('input');
-                    reason.type = 'hidden'; reason.name = 'reason'; reason.value = result.value || 'No reason provided';
-                    form.appendChild(reason);
-                }
-
-                document.body.appendChild(form);
-                form.submit();
+                let url = type === 'delivered' ? `/delivery/mark-delivered/${orderId}` : `/delivery/mark-failed/${orderId}`;
+                let data = type === 'failed' ? { reason: result.value || 'No reason provided' } : {};
+                submitForm(url, 'PUT', data);
             }
         });
+    }
+
+    // Helper to submit forms dynamically
+    function submitForm(action, method, data) {
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = action;
+        
+        let csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = '{{ csrf_token() }}';
+        form.appendChild(csrf);
+
+        let methodInput = document.createElement('input');
+        methodInput.type = 'hidden'; methodInput.name = '_method'; methodInput.value = method;
+        form.appendChild(methodInput);
+        
+        for (let key in data) {
+            let input = document.createElement('input');
+            input.type = 'hidden'; input.name = key; input.value = data[key];
+            form.appendChild(input);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
     }
 </script>
 @endsection

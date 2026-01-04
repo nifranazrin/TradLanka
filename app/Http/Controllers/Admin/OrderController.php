@@ -76,9 +76,8 @@ class OrderController extends Controller
     $payMode = strtoupper($order->payment_mode);
     $isCod = str_contains($payMode, 'COD');
 
-    // Admin can finalize if it's a Refund Request (8) or a Delivery Failure (9)
     if ($order->status == 8 || $order->status == 9) {
-        $previousStatus = $order->status; // Remember if it was a rider failure
+        $previousStatus = $order->status; 
 
         DB::beginTransaction();
         try {
@@ -88,12 +87,16 @@ class OrderController extends Controller
                 }
             }
 
-            // Update status to 6 (Closed)
-            $order->update(['status' => 6]); 
+            // ✅ CRITICAL UPDATE: 
+            // Setting 'rider_seen' to 0 triggers the red numerical badge 
+            // in the Rider's sidebar under 'Task History'.
+            $order->update([
+                'status' => 6, 
+                'rider_seen' => 0 
+            ]); 
 
             DB::commit();
 
-            // Custom Message Logic
             if ($previousStatus == 9) {
                 return back()->with('success', 'Confirmed: Delivery Cancelled. Stock Restored.');
             }

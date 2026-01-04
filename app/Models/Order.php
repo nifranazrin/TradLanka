@@ -45,6 +45,8 @@ class Order extends Model
         'delivery_boy_id',
         'cancel_reason',
         'currency', 
+
+        'rider_seen',
     ];
 
     /**
@@ -55,6 +57,8 @@ class Order extends Model
     protected $casts = [
         'total_price' => 'decimal:2',
         'status'      => 'integer',
+        // ✅ ADDED: Ensure it handles as boolean
+        'rider_seen'  => 'boolean', 
     ];
 
     /**

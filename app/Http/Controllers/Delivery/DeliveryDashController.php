@@ -3,66 +3,57 @@
 namespace App\Http\Controllers\Delivery;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request; 
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf; 
 
 class DeliveryDashController extends Controller
 {
-    /**
-     * Display the main delivery dashboard with real-time stats and charts.
-     */
     public function dashboard()
     {
         $riderId = Auth::guard('delivery')->id();
         $today = Carbon::today();
-        $oneMonthAgo = Carbon::now()->subDays(30);
-
-        // --- Today vs Total Stats ---
-        // Pending Tasks (Status 4)
-        $pendingToday = Order::where('delivery_boy_id', $riderId)->where('status', 4)->whereDate('updated_at', $today)->count();
-        $pendingTotal = Order::where('delivery_boy_id', $riderId)->where('status', 4)->count();
-
-        // Delivered Tasks (Status 5)
-        $deliveredToday = Order::where('delivery_boy_id', $riderId)->where('status', 5)->whereDate('updated_at', $today)->count();
-        $deliveredTotal = Order::where('delivery_boy_id', $riderId)->where('status', 5)->count();
-
-        // Failed Tasks (Status 6)
-        $failedToday = Order::where('delivery_boy_id', $riderId)->where('status', 6)->whereDate('updated_at', $today)->count();
-        $failedTotal = Order::where('delivery_boy_id', $riderId)->where('status', 6)->count();
-
-        // Recent table list and current cash held
-        $activeDeliveries = Order::where('delivery_boy_id', $riderId)->whereIn('status', [4, 6])->latest()->take(5)->get();
-        $cashToCollect = Order::where('delivery_boy_id', $riderId)->where('status', 4)->sum('total_price');
-
         
-        $monthlyData = Order::where('delivery_boy_id', $riderId)
-            ->where('updated_at', '>=', $oneMonthAgo)
-            ->whereIn('status', [5, 6])
-            ->select(
-                DB::raw('DATE(updated_at) as date'),
-                DB::raw('SUM(CASE WHEN status = 5 THEN 1 ELSE 0 END) as delivered'),
-                DB::raw('SUM(CASE WHEN status = 6 THEN 1 ELSE 0 END) as failed')
-            )
-            ->groupBy('date')
-            ->orderBy('date', 'ASC')
-            ->get();
+        // Dynamic analysis starting exactly Jan 01
+        $startDate = Carbon::create(2026, 1, 1);
+        $endDate = Carbon::now();
 
-        $dates = $monthlyData->pluck('date');
-        $deliveredSeries = $monthlyData->pluck('delivered');
-        $failedSeries = $monthlyData->pluck('failed');
+        // Stats: Today vs Total
+        $pendingTotal = Order::where('delivery_boy_id', $riderId)->whereIn('status', [4, 10])->count();
+        $deliveredTotal = Order::where('delivery_boy_id', $riderId)->where('status', 5)->count();
+        $failedTotal = Order::where('delivery_boy_id', $riderId)->whereIn('status', [6, 9])->count();
+
+        $pendingToday = Order::where('delivery_boy_id', $riderId)->whereIn('status', [4, 10])->whereDate('updated_at', $today)->count();
+        $deliveredToday = Order::where('delivery_boy_id', $riderId)->where('status', 5)->whereDate('updated_at', $today)->count();
+        $failedToday = Order::where('delivery_boy_id', $riderId)->whereIn('status', [6, 9])->whereDate('updated_at', $today)->count();
+
+        // Financial Logic: Unified COD Box
+        $deliveredCodTotal = Order::where('delivery_boy_id', $riderId)->where('status', 5)->sum('total_price');
+        $pendingCodTotal = Order::where('delivery_boy_id', $riderId)->whereIn('status', [4, 10])->sum('total_price');
+        
+        // Summing both for the header box
+        $fullCodPotential = $deliveredCodTotal + $pendingCodTotal;
+
+        // Recent Orders Table
+        $activeDeliveries = Order::where('delivery_boy_id', $riderId)
+            ->whereIn('status', [4, 10])
+            ->latest()->take(5)->get();
+
+        // Chart Data (Jan 01 to Now)
+        $dates = $deliveredSeries = $failedSeries = [];
+        $tempDate = $startDate->copy();
+        while ($tempDate <= $endDate) {
+            $dateStr = $tempDate->format('Y-m-d');
+            $dates[] = $tempDate->format('M d'); 
+            $deliveredSeries[] = Order::where('delivery_boy_id', $riderId)->where('status', 5)->whereDate('updated_at', $dateStr)->count();
+            $failedSeries[] = Order::where('delivery_boy_id', $riderId)->whereIn('status', [6, 9])->whereDate('updated_at', $dateStr)->count();
+            $tempDate->addDay();
+        }
 
         return view('delivery.dashboard', compact(
-            'pendingToday', 'pendingTotal', 
-            'deliveredToday', 'deliveredTotal', 
-            'failedToday', 'failedTotal', 
-            'activeDeliveries', 'cashToCollect',
+            'pendingToday', 'pendingTotal', 'deliveredToday', 'deliveredTotal', 'failedToday', 'failedTotal',
+            'deliveredCodTotal', 'pendingCodTotal', 'fullCodPotential', 'activeDeliveries',
             'dates', 'deliveredSeries', 'failedSeries'
         ));
     }
-
-   
 }

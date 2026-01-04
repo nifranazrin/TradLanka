@@ -15,6 +15,11 @@ class ChatController extends Controller
     {
         $riderId = Auth::guard('delivery')->id();
 
+        Message::where('receiver_id', $riderId)
+        ->where('receiver_type', 'delivery')
+        ->where('is_read', 0)
+        ->update(['is_read' => 1]);
+
         // 1. Admin Support
         $admin = Staff::where('role', 'admin')->first();
         $excludeIds = [$riderId];

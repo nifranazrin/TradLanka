@@ -20,7 +20,8 @@ class DeliveryOrderController extends Controller
 
         $query = Order::with(['items.product'])
             ->where('delivery_boy_id', $riderId)
-            ->where('status', 4); // Only active tasks
+              // ✅ Include 4 (Assigned) and 10 (Arrived in Country) as active tasks
+            ->whereIn('status', [4, 10]);// Only active tasks
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -36,32 +37,53 @@ class DeliveryOrderController extends Controller
         return view('delivery.orders.index', compact('orders'));
     }
 
-    /**
-     * Display completed and reported tasks in History.
-     */
     public function taskHistory(Request $request)
-    {
-        $riderId = Auth::guard('delivery')->id();
+{
+    $riderId = Auth::guard('delivery')->id();
 
-        $query = Order::with(['items.product'])
-            ->where('delivery_boy_id', $riderId)
-            // ✅ Included 8 (Pending) so it shows up in history while waiting for Admin
-            ->whereIn('status', [5, 6, 8, 9]); 
+    // Clear notifications for these orders
+    Order::where('delivery_boy_id', $riderId)
+        ->where('rider_seen', 0)
+        ->update(['rider_seen' => 1]);
 
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('tracking_no', 'LIKE', "%$search%")
-                  ->orWhere('fname', 'LIKE', "%$search%")
-                  ->orWhere('lname', 'LIKE', "%$search%")
-                  ->orWhere('city', 'LIKE', "%$search%");
-            });
-        }
+    $query = Order::with(['items.product'])
+        ->where('delivery_boy_id', $riderId)
+        ->whereIn('status', [5, 6, 8, 9]); // 5:Delivered, 6:Failed, 8:Pending Review, 9:Final Fail
 
-        $orders = $query->latest()->paginate(10)->appends(['search' => $request->search]);
-        return view('delivery.orders.history', compact('orders'));
+    if ($request->has('search') && !empty($request->search)) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('tracking_no', 'LIKE', "%$search%")
+              ->orWhere('fname', 'LIKE', "%$search%")
+              ->orWhere('lname', 'LIKE', "%$search%")
+              ->orWhere('city', 'LIKE', "%$search%");
+        });
     }
 
+    // Latest shows most recent first, but includes all dates
+    $orders = $query->latest()->paginate(10)->appends(['search' => $request->search]);
+    return view('delivery.orders.history', compact('orders'));
+}
+
+    /**
+ * ✅ NEW: Handle intermediate milestones for International/Stripe orders.
+ */
+public function updateMilestone(Request $request, $id)
+{
+    $riderId = Auth::guard('delivery')->id();
+    $order = Order::where('id', $id)
+        ->where('delivery_boy_id', $riderId)
+        ->firstOrFail();
+
+    // Move to Status 10 (Arrived at Destination Country)
+    // This allows the multi-step tracking you requested for USD orders
+      // Only allow specific milestones
+       $order->update([
+        'status' => 10 // Hardcode to Arrived in Destination Country
+    ]);
+
+    return redirect()->back()->with('success', 'International tracking milestone updated!');
+}
     /**
      * Generate and download the PDF performance report.
      */
@@ -146,5 +168,27 @@ class DeliveryOrderController extends Controller
         ]); 
 
         return redirect()->route('delivery.my-deliveries')->with('warning', 'Order reported to Admin for review.');
+    }
+
+    /**
+     *  NEW: Mark all notifications as read.
+     * This clears the bell dropdown and the sidebar red dots.
+     */
+    public function markAllRead()
+    {
+        $riderId = Auth::guard('delivery')->id();
+
+        // 1. Clear Order notifications (Sidebar circles + Bell)
+        Order::where('delivery_boy_id', $riderId)
+            ->where('rider_seen', 0)
+            ->update(['rider_seen' => 1]);
+
+        // 2. Clear Chat notifications (Sidebar circle + Bell)
+        \App\Models\Message::where('receiver_id', $riderId)
+            ->where('receiver_type', 'delivery')
+            ->where('is_read', 0)
+            ->update(['is_read' => 1]);
+
+        return back()->with('success', 'All notifications cleared');
     }
 }

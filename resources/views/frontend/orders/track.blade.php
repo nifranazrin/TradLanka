@@ -53,7 +53,7 @@
                     {{-- Status-based header message --}}
                     @if($order->status == '6')
                         <p class="text-danger fw-bold">This order has been cancelled and refunded.</p>
-                    @elseif($order->status >= 7)
+                    @elseif(in_array($order->status, ['7', '8', '9']))
                         <p class="text-warning fw-bold">Cancellation process is in progress.</p>
                     @else
                         <p>You will get your order within 2–4 working days.</p>
@@ -62,10 +62,9 @@
 
                 <div class="tracking-list">
                     
-                    {{-- 🛑 CANCELLATION JOURNEY (Shows only if status is 6, 7, or 8) --}}
+                    {{-- 🛑 CANCELLATION JOURNEY --}}
                     @if(in_array($order->status, ['6', '7', '8']))
                         
-                        {{-- 1. Cancellation Requested --}}
                         <div class="tracking-item active">
                             <div class="tracking-icon"><i class="fas fa-undo"></i></div>
                             <div>
@@ -74,7 +73,6 @@
                             </div>
                         </div>
 
-                        {{-- 2. Seller Approved (Status 8 or 6) --}}
                         <div class="tracking-item {{ ($order->status == '8' || $order->status == '6') ? 'active' : '' }}">
                             <div class="tracking-icon"><i class="fas fa-user-check"></i></div>
                             <div>
@@ -87,7 +85,6 @@
                             </div>
                         </div>
 
-                        {{-- 3. Final Refund (Status 6 Only) --}}
                         <div class="tracking-item {{ $order->status == '6' ? 'active' : '' }}">
                             <div class="tracking-icon"><i class="fas fa-hand-holding-usd"></i></div>
                             <div>
@@ -101,7 +98,7 @@
                         </div>
 
                     @else
-                        {{-- 🚚 NORMAL DELIVERY JOURNEY (Original Steps) --}}
+                        {{-- 🚚 NORMAL DELIVERY JOURNEY --}}
                         
                         {{-- 1. Order Placed --}}
                         <div class="tracking-item active">
@@ -130,8 +127,8 @@
                             </div>
                         </div>
 
-                        {{-- 4. At Head Office (Status 3 or 4) --}}
-                        <div class="tracking-item {{ ($order->status == 3 || $order->status == 4) ? 'active' : '' }}">
+                        {{-- 4. At Head Office (Status 3, 4, or 10) --}}
+                        <div class="tracking-item {{ ($order->status == 3 || $order->status >= 4) ? 'active' : '' }}">
                             <div class="tracking-icon"><i class="fas fa-warehouse"></i></div>
                             <div>
                                 <h6 class="fw-bold mb-0">At Head Office</h6>
@@ -139,13 +136,31 @@
                             </div>
                         </div>
 
-                        {{-- 5. Delivered (Status 5) --}}
-                        <div class="tracking-item {{ $order->status >= 5 ? 'active' : '' }}">
+                        {{-- ✅ 5. International Milestone (Status 10) --}}
+                        @php
+                            $payMode = strtoupper($order->payment_mode);
+                            $isInternational = (strtoupper($order->currency) === 'USD' || str_contains($payMode, 'STRIPE') || str_contains($payMode, 'USD'));
+                        @endphp
+
+                        @if($isInternational)
+                            <div class="tracking-item {{ ($order->status == 10 || $order->status == 5) ? 'active' : '' }}">
+                                <div class="tracking-icon"><i class="fas fa-plane-arrival"></i></div>
+                                <div>
+                                    <h6 class="fw-bold mb-0">Arrived at Destination Country</h6>
+                                    <p>{{ ($order->status == 10 || $order->status == 5) ? 'Package reached your country' : 'In transit to your country...' }}</p>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- 6. Final Delivered Step (Status 5) --}}
+                        <div class="tracking-item {{ $order->status == 5 ? 'active' : '' }}">
                             <div class="tracking-icon"><i class="fas fa-check-circle"></i></div>
                             <div>
                                 <h6 class="fw-bold mb-0">Delivered</h6>
-                                @if($order->status >= 5)
+                                @if($order->status == 5)
                                     <p class="done">Order Completed!</p>
+                                @else
+                                    <p class="text-muted italic">Waiting for final delivery...</p>
                                 @endif
                             </div>
                         </div>
@@ -157,21 +172,16 @@
     </div>
 </div>
 @endsection
+
 {{-- STYLES --}}
 <style>
 .track-page {
     min-height: 100vh;
-    background:
-        linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.25)),
-        url('/storage/images/background.jpg') center / cover no-repeat fixed;
+    background: linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.25)), url('/storage/images/background.jpg') center / cover no-repeat fixed;
     display: flex;
     flex-direction: column;
 }
 
-
-.tracking-item.active::before {
-    background: #5b2c2c;
-}
 .track-center {
     flex: 1;
     display: flex;
@@ -181,6 +191,7 @@
     gap: 22px;
     padding-bottom: 50px;
 }
+
 .track-card {
     width: 100%;
     max-width: 500px;
@@ -188,63 +199,21 @@
     border-radius: 20px;
     padding: 26px;
     box-shadow: 0 20px 40px rgba(0,0,0,.18);
-    transform: translateY(-15px);
 }
-.track-title {
-    text-align: center;
-    font-weight: 800;
-    color: #5b2c2c;
-}
-.track-subtitle {
-    text-align: center;
-    font-size: 14px;
-    color: #6b7280;
-    margin: 6px 0 18px;
-}
-.track-input {
-    display: flex;
-    border-radius: 999px;
-    overflow: hidden;
-    border: 2px solid #5b2c2c;
-}
-.track-input input {
-    flex: 1;
-    padding: 11px 14px;
-    border: none;
-}
-.track-input button {
-    background: #5b2c2c;
-    color: white;
-    padding: 0 22px;
-    border: none;
-    font-weight: 700;
-}
-.track-hint {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 18px;
-    color: #9ca3af;
-    font-size: 12px;
-}
-.track-hint span {
-    flex: 1;
-    height: 1px;
-    background: #e5e7eb;
-}
-.track-error {
-    margin-top: 10px;
-    text-align: center;
-    color: #dc2626;
-    font-size: 13px;
-}
+
+.track-title { text-align: center; font-weight: 800; color: #5b2c2c; }
+.track-subtitle { text-align: center; font-size: 14px; color: #6b7280; margin: 6px 0 18px; }
+
+.track-input { display: flex; border-radius: 999px; overflow: hidden; border: 2px solid #5b2c2c; }
+.track-input input { flex: 1; padding: 11px 14px; border: none; outline: none; }
+.track-input button { background: #5b2c2c; color: white; padding: 0 22px; border: none; font-weight: 700; }
+
+.track-hint { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: #9ca3af; font-size: 12px; }
+.track-hint span { flex: 1; height: 1px; background: #e5e7eb; }
+.track-error { margin-top: 10px; text-align: center; color: #dc2626; font-size: 13px; }
+
 .tracking-list { margin-top: 20px; }
-.tracking-item {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 26px;
-    position: relative;
-}
+.tracking-item { display: flex; gap: 15px; margin-bottom: 26px; position: relative; }
 .tracking-item::before {
     content: '';
     position: absolute;
@@ -255,6 +224,8 @@
     background: #e5e7eb;
 }
 .tracking-item:last-child::before { display: none; }
+.tracking-item.active::before { background: #5b2c2c; }
+
 .tracking-icon {
     width: 36px;
     height: 36px;
@@ -264,13 +235,12 @@
     align-items: center;
     justify-content: center;
     color: #9ca3af;
+    z-index: 1;
 }
-.tracking-item.active .tracking-icon {
-    background: #5b2c2c;
-    color: #fff;
-}
-.done {
-    color: #16a34a;
-    font-weight: 700;
-}
+
+.tracking-item.active .tracking-icon { background: #5b2c2c; color: #fff; }
+.done { color: #16a34a; font-weight: 700; }
+.italic { font-style: italic; font-size: 0.85rem; }
+.result-header { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+.result-header h5 span { color: #5b2c2c; font-weight: 800; }
 </style>

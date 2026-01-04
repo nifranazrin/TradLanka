@@ -353,6 +353,7 @@ Route::put('/orders/approve-cancel/{id}', [SellerOrderController::class, 'approv
 
 
 
+//DELIVERY
 
 Route::prefix('delivery')->name('delivery.')->middleware([DeliveryPersonMiddleware::class])->group(function () {
     
@@ -363,12 +364,14 @@ Route::prefix('delivery')->name('delivery.')->middleware([DeliveryPersonMiddlewa
     Route::get('/orders/{id}', [DeliveryOrderController::class, 'show'])->name('orders.show');
     Route::get('/performance-report', [DeliveryOrderController::class, 'downloadReport'])->name('report.download');
     
+    Route::put('/update-milestone/{id}', [DeliveryOrderController::class, 'updateMilestone'])
+    ->name('orders.update-milestone');
     // Update Actions
     Route::put('/mark-delivered/{id}', [DeliveryOrderController::class, 'markAsDelivered'])->name('mark-delivered');
     Route::put('/mark-failed/{id}', [DeliveryOrderController::class, 'markAsFailed'])->name('mark-failed');
+    Route::post('/notifications/mark-all-read', [DeliveryOrderController::class, 'markAllRead'])->name('notifications.markAllRead');
 
     
-
     Route::get('/profile', [DeliveryProfileController::class, 'index'])->name('profile');
     
     Route::put('/profile/update', [DeliveryProfileController::class, 'update'])->name('profile.update');
