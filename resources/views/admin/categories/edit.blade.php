@@ -28,9 +28,10 @@
                     {{-- Category Name --}}
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold text-dark">Category Name</label>
-                        <input type="text" name="name" class="form-control" 
-                               style="border-radius: 8px;"
-                               value="{{ old('name', $category->name) }}" required>
+                        {{-- 2. Add id="categoryName" to this input --}}
+                        <input type="text" id="categoryName" name="name" class="form-control" 
+                            style="border-radius: 8px;"
+                            value="{{ old('name', $category->name) }}" required>
                     </div>
 
                     {{-- Category Type (Parent) --}}
@@ -111,12 +112,13 @@
                 </div>
 
                 <div class="pt-3 border-top d-flex gap-2 justify-content-end">
-                    <a href="{{ route('admin.categories.index') }}" class="btn btn-light px-4 border">Cancel</a>
-                    <button type="submit" class="btn text-white px-4 shadow-sm" style="background-color: #800000;">
-                        <i class="bi bi-save me-1"></i> Update Category
-                    </button>
-                </div>
-            </form>
+                <a href="{{ route('admin.categories.index') }}" class="btn btn-light px-4 border">Cancel</a>
+                {{-- 3. Change type to "button" and add onclick function --}}
+                <button type="button" onclick="validateEditCategory()" class="btn text-white px-4 shadow-sm" style="background-color: #800000;">
+                    <i class="bi bi-save me-1"></i> Update Category
+                </button>
+            </div>
+        </form>
         </div>
     </div>
 </div>
@@ -141,6 +143,31 @@ function previewImage(event, previewId) {
             preview.src = fileUrl;
         }
     }
+}
+
+function validateEditCategory() {
+    const nameInput = document.getElementById('categoryName');
+    const nameValue = nameInput.value.trim();
+    const form = document.getElementById('editCategoryForm');
+
+    // 
+
+    // Check if the first character is uppercase (A-Z)
+    if (nameValue.length > 0 && !/^[A-Z]/.test(nameValue)) {
+        
+        // SweetAlert Trigger
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Category name must start with a Capital Letter (e.g., "Tea" instead of "tea").',
+            confirmButtonColor: '#800000', // Maroon theme matching
+        });
+        
+        return false; // Stop the update
+    }
+
+    // If valid, proceed with submission
+    form.submit();
 }
 </script>
 @endsection

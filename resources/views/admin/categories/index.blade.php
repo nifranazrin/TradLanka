@@ -157,15 +157,16 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <form action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="modal-body p-4">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Name</label>
-                            <input type="text" name="name" class="form-control" placeholder="Enter category name" 
-                                   value="{{ old('name') }}" required>
-                        </div>
+                 <form id="addCategoryForm" action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-body p-4">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Name</label>
+                                    {{-- 2. Add id="categoryName" to the input field --}}
+                                    <input type="text" id="categoryName" name="name" class="form-control" placeholder="Enter category name" 
+                                        value="{{ old('name') }}" required>
+                                </div>
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Category Type (Parent)</label>
@@ -214,10 +215,12 @@
                     </div>
                 </div>
 
-                <div class="modal-footer bg-light">
+                 <div class="modal-footer bg-light">
                     <button type="button" class="btn text-white px-4" data-bs-dismiss="modal"
                         style="background-color: #a81c1c; border: none;">Cancel</button>
-                    <button type="submit" class="btn px-4" style="background-color: #f4b400; color: #000; font-weight: 600;">
+                    
+                    {{-- 3. Change type="submit" to type="button" and add onclick function --}}
+                    <button type="button" onclick="validateCategory()" class="btn px-4" style="background-color: #f4b400; color: #000; font-weight: 600;">
                         Save Category
                     </button>
                 </div>
@@ -277,5 +280,30 @@
             });
         });
     });
+
+    function validateCategory() {
+    const nameInput = document.getElementById('categoryName');
+    const nameValue = nameInput.value.trim();
+    const form = document.getElementById('addCategoryForm');
+
+    // 
+
+    // Check if the first character is uppercase (A-Z)
+    if (nameValue.length > 0 && !/^[A-Z]/.test(nameValue)) {
+        
+        // Trigger SweetAlert for the error
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            text: 'Category name must start with a Capital Letter (e.g., "Tea" instead of "tea").',
+            confirmButtonColor: '#800000', // Matches your Maroon theme
+        });
+        
+        return false; // Stop the function
+    }
+
+    // If valid, submit the form manually
+    form.submit();
+}
 </script>
 @endsection

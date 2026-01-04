@@ -26,16 +26,21 @@ class CategoryController extends Controller
         return view('admin.categories.create', compact('categories'));
     }
 
+
+
     // Store new category
     public function store(Request $request)
     {
         // 1. Validation
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', 'regex:/^[A-Z]/'], 
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',       // Thumbnail
             'banner_image' => 'nullable|image|max:5120', // Banner (5MB)
             'parent_id' => 'nullable|exists:categories,id',
+          ], [
+            // Custom error message for the capital letter requirement
+            'name.regex' => 'The category name must start with a capital letter.'
         ]);
 
         $name = trim($request->name);

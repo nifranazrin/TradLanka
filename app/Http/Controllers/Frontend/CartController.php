@@ -95,6 +95,8 @@ class CartController extends Controller
         return view('frontend.cart', compact('cartItems'));
     }
 
+    
+
     /**
      * 3. UPDATE QUANTITY
      */
