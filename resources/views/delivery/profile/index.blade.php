@@ -30,7 +30,7 @@
 
                 <div class="row align-items-start">
                     <div class="col-md-3 text-center mb-4">
-                        <img id="preview" src="{{ $rider->profile_photo ? asset('storage/' . $rider->profile_photo) : 'https://via.placeholder.com/150' }}" 
+                         <img id="preview" src="{{ $rider->image ? asset('storage/' . $rider->image) : asset('images/default-user.png') }}"
                              class="rounded-circle shadow-sm mb-3" width="150" height="150">
                         <div>
                             <label for="image" class="btn btn-outline-maroon btn-sm">Change Photo</label>

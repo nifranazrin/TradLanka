@@ -48,7 +48,7 @@
             <h2 class="h3 fw-bold text-dark">Task History</h2>
             <p class="text-muted">Review your completed and failed delivery attempts.</p>
         </div>
-        {{-- ✅ DOWNLOAD BUTTON --}}
+        {{--  DOWNLOAD BUTTON --}}
         <a href="{{ route('delivery.report.download') }}" class="btn btn-primary d-flex align-items-center shadow-sm px-4 py-2" style="border-radius: 10px;">
             <i class="bi bi-file-earmark-pdf-fill me-2"></i> Download Performance Report
         </a>
@@ -94,7 +94,7 @@
                 <tbody>
                     @forelse($orders as $order)
                        @php
-                            // ✅ FIX: Defining $total to prevent "Undefined variable" error
+                            //  FIX: Defining $total to prevent "Undefined variable" error
                             $total = $order->total_price;
                             $payMode = strtoupper($order->payment_mode);
                             $dbCurrency = strtoupper(trim($order->currency));
@@ -104,11 +104,11 @@
                             $symbol = $isUSD ? '$ ' : 'Rs. ';
                         @endphp
 
-                        {{-- ✅ Removed the blue line class logic from the <tr> --}}
+                        {{--  Removed the blue line class logic from the <tr> --}}
                         <tr class="border-bottom {{ $isUSD ? 'international-highlight' : '' }}">
                             <td class="ps-4 py-4">
                                 <span class="tracking-no">#{{ $order->tracking_no }}</span>
-                                {{-- ✅ Global Sign remains as requested --}}
+                                {{--  Global Sign remains as requested --}}
                                 @if($isUSD)
                                     <i class="bi bi-globe-americas text-primary ms-1" title="International Order"></i>
                                 @endif
@@ -140,7 +140,7 @@
                             </td>
 
                             <td>
-                                {{-- ✅ Corrected $total display --}}
+                                {{--  Corrected $total display --}}
                                 <div class="fw-bold text-dark">{{ $symbol }}{{ number_format($total, 2) }}</div>
                                 <span class="small text-muted text-uppercase" style="font-size: 0.7rem;">{{ $order->payment_mode }}</span>
                             </td>

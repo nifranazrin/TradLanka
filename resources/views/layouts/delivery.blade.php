@@ -84,29 +84,34 @@
         <div class="nav-center">Delivery Management</div>
 
         <div class="nav-right">
-            <div class="dropdown text-white">
-                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle fs-4 me-2"></i>
-                    <span class="d-none d-sm-inline">{{ Auth::guard('delivery')->user()->name }}</span>
+    <div class="dropdown text-white">
+        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+           
+            <img src="{{ Auth::guard('delivery')->user()->image ? asset('storage/' . Auth::guard('delivery')->user()->image) : asset('images/default-user.png') }}" 
+                 class="rounded-circle me-2 border border-white" 
+                 style="width: 32px; height: 32px; object-fit: cover;"
+                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::guard('delivery')->user()->name) }}&background=800000&color=fff';">
+            
+            <span class="d-none d-sm-inline">{{ Auth::guard('delivery')->user()->name }}</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+            <li>
+                <a class="dropdown-item" href="{{ route('delivery.profile') }}">
+                    <i class="bi bi-person me-2"></i> My Profile
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                    <li>
-                        <a class="dropdown-item" href="{{ route('delivery.profile') }}">
-                            <i class="bi bi-person me-2"></i> My Profile
-                        </a>
-                    </li>
-                                        <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <form action="{{ route('staff.logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="dropdown-item text-danger">
-                                <i class="bi bi-box-arrow-right me-2"></i> Logout
-                            </button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
-        </div>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <form action="{{ route('staff.logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="dropdown-item text-danger">
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+</div>
     </nav>
 
     <div class="sidebar">

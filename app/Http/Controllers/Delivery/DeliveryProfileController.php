@@ -80,7 +80,7 @@ class DeliveryProfileController extends Controller
                 Storage::disk('public')->delete($rider->profile_photo);
             }
             $path = $request->file('image')->store('delivery_profiles', 'public');
-            $rider->profile_photo = $path;
+            $rider->image = $path;  
         }
 
         $rider->save();

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Delivery;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request; // ✅ Added missing Request import
+use Illuminate\Http\Request; 
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf; // ✅ Ensure DomPDF is imported correctly
+use Barryvdh\DomPDF\Facade\Pdf; 
 
 class DeliveryDashController extends Controller
 {
