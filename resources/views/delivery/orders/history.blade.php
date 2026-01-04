@@ -123,22 +123,26 @@
                             </td>
 
                             <td>
-                                @if($order->status == 5)
-                                    <span class="badge bg-success bg-opacity-10 text-success status-badge">
-                                        <i class="bi bi-check-circle me-1"></i> DELIVERED
-                                    </span>
-                                @elseif($order->status == 6 || $order->status == 9)
-                                    <span class="badge bg-danger bg-opacity-10 text-danger status-badge">
-                                        <i class="bi bi-x-circle me-1"></i> FAILED
-                                    </span>
-                                    @if($order->cancel_reason)
-                                        <div class="small text-danger mt-1 fw-bold" style="font-size: 0.7rem;">
-                                            Reason: {{ \Illuminate\Support\Str::limit($order->cancel_reason, 30) }}
-                                        </div>
-                                    @endif
-                                @endif
-                            </td>
-
+                                        @if($order->status == 5)
+                                            <span class="badge bg-success bg-opacity-10 text-success status-badge">
+                                                <i class="bi bi-check-circle me-1"></i> DELIVERED
+                                            </span>
+                                        @elseif($order->status == 8) {{-- ✅ NEW: Pending Approval State --}}
+                                            <span class="badge bg-warning bg-opacity-10 text-warning status-badge">
+                                                <i class="bi bi-hourglass-split me-1"></i> PENDING APPROVAL
+                                            </span>
+                                            <div class="small text-muted mt-1" style="font-size: 0.7rem;">Waiting for Admin review</div>
+                                        @elseif($order->status == 6 || $order->status == 9)
+                                            <span class="badge bg-danger bg-opacity-10 text-danger status-badge">
+                                                <i class="bi bi-x-circle me-1"></i> FAILED
+                                            </span>
+                                            @if($order->cancel_reason)
+                                                <div class="small text-danger mt-1 fw-bold" style="font-size: 0.7rem;">
+                                                    Reason: {{ \Illuminate\Support\Str::limit($order->cancel_reason, 30) }}
+                                                </div>
+                                            @endif
+                                        @endif
+                                    </td>
                             <td>
                                 {{--  Corrected $total display --}}
                                 <div class="fw-bold text-dark">{{ $symbol }}{{ number_format($total, 2) }}</div>

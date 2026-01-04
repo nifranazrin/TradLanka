@@ -38,8 +38,7 @@ class DeliveryDashController extends Controller
         $activeDeliveries = Order::where('delivery_boy_id', $riderId)->whereIn('status', [4, 6])->latest()->take(5)->get();
         $cashToCollect = Order::where('delivery_boy_id', $riderId)->where('status', 4)->sum('total_price');
 
-        // --- Monthly Chart Data (Fixes 'Undefined variable $dates' error) ---
-        // Grouping successes and failures by date for the line chart
+        
         $monthlyData = Order::where('delivery_boy_id', $riderId)
             ->where('updated_at', '>=', $oneMonthAgo)
             ->whereIn('status', [5, 6])
