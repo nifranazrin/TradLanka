@@ -8,7 +8,7 @@ import pandas as pd
 # AI & Math Imports
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from tensorflow.keras.preprocessing import image
-from tensorflow.keras.layers import GlobalMaxPooling2D
+from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.models import Sequential
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics.pairwise import linear_kernel, cosine_similarity
@@ -59,10 +59,11 @@ def load_system():
             # Load Keras Model
             base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(IMG_WIDTH, IMG_HEIGHT, 3))
             base_model.trainable = False
-            model = Sequential([base_model, GlobalMaxPooling2D()])
+            model = Sequential([base_model, GlobalAveragePooling2D()])
             
             # Init Neighbors
-            neighbors = NearestNeighbors(n_neighbors=10, algorithm='brute', metric='euclidean')
+             # Change n_neighbors from 10 to 50 for better filtering options
+            neighbors = NearestNeighbors(n_neighbors=50, algorithm='brute', metric='euclidean')
             neighbors.fit(feature_list)
             print(" [AI] Visual Search Ready.")
         except Exception as e:
@@ -95,7 +96,6 @@ def load_system():
 # Load everything on startup
 load_system()
 
-
 # --- ENDPOINT 1: VISUAL SEARCH (Image Upload) ---
 @app.route('/search', methods=['POST'])
 def search():
@@ -116,19 +116,27 @@ def search():
         query_features = model.predict(preprocessed_img, verbose=0).flatten()
         query_features = query_features / np.linalg.norm(query_features)
         
+        # kneighbors returns (distances, indices)
         distances, indices = neighbors.kneighbors([query_features])
         
         results = []
         for i in range(len(indices[0])):
             idx = indices[0][i]
-            dist = distances[0][i]
+            dist = float(distances[0][i]) # Capture the raw Euclidean distance
+            
+            # Use distance to calculate similarity
+            # Lower distance means higher similarity
             similarity = max(0, 1 - (dist / 1.4))
-            results.append({"filename": filenames[idx], "similarity": float(similarity)})
+            
+            results.append({
+                "filename": filenames[idx], 
+                "similarity": similarity,
+                "distance": dist # Include raw distance in result
+            })
             
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # --- ENDPOINT 2: HYBRID RECOMMENDATION (Pandas + Visual Fallback) ---
 @app.route('/recommend', methods=['POST'])

@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from tensorflow.keras.preprocessing import image
-from tensorflow.keras.layers import GlobalMaxPooling2D
+from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.models import Sequential
 from tqdm import tqdm
 
@@ -18,7 +18,7 @@ filenames_file = 'filenames.pkl'
 # --- MODEL SETUP ---
 base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(img_width, img_height, 3))
 base_model.trainable = False
-model = Sequential([base_model, GlobalMaxPooling2D()])
+model = Sequential([base_model, GlobalAveragePooling2D()])
 print("Model loaded successfully.")
 
 # --- HELPER FUNCTION ---

@@ -15,40 +15,52 @@ class ImageSearchController extends Controller
     }
 
     public function search(Request $request)
-    {
-        $request->validate([
-            'search_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5048',
-        ]);
+{
+    $request->validate([
+        'search_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5048',
+    ]);
 
-        try {
-            // 1. Send to Python
-            $response = Http::attach(
-                'image', file_get_contents($request->file('search_image')), 
-                $request->file('search_image')->getClientOriginalName()
-            )->post('http://127.0.0.1:5000/search');
+    try {
+        // 1. Send image to Flask API
+        $response = Http::attach(
+            'image', file_get_contents($request->file('search_image')), 
+            $request->file('search_image')->getClientOriginalName()
+        )->post('http://127.0.0.1:5000/search');
 
-            if ($response->failed()) return back()->with('error', 'AI Connection Failed');
+        if ($response->failed()) return back()->with('error', 'AI Connection Failed');
 
-            // 2. Get Paths
-            $paths = collect($response->json())->pluck('filename')->toArray();
+        // 2. Process results with Distance Threshold
+        $aiResults = $response->json();
+        $filteredPaths = [];
 
-            if (empty($paths)) return view('search.results', ['products' => collect()]);
+         // In ImageSearchController.php
+            foreach ($aiResults as $result) {
+                // Threshold of 1.05 ensures high-quality matches
+                if ($result['distance'] <= 1.05) {
+                    $filteredPaths[] = $result['filename'];
+                }
 
-            // 3. Find IDs (Main Images + Gallery Images)
-            $mainIds = Product::whereIn('image', $paths)->pluck('id');
-            $galleryIds = DB::table('product_images')->whereIn('path', $paths)->pluck('product_id');
-            $allIds = $mainIds->merge($galleryIds)->unique();
-
-            // 4. Load Products (With correct status check)
-            $products = Product::whereIn('id', $allIds)
-                ->whereIn('status', ['approved', 'reapproved'])
-                ->where('is_active', 1)
-                ->get();
-
-            return view('search.results', ['products' => $products]);
-
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
         }
+
+        if (empty($filteredPaths)) {
+            return view('search.results', ['products' => collect()]);
+        }
+
+        // 3. Find Product IDs based on filtered paths
+        $mainIds = Product::whereIn('image', $filteredPaths)->pluck('id');
+        $galleryIds = DB::table('product_images')->whereIn('path', $filteredPaths)->pluck('product_id');
+        $allIds = $mainIds->merge($galleryIds)->unique();
+
+        // 4. Load only approved and active products
+        $products = Product::whereIn('id', $allIds)
+            ->whereIn('status', ['approved', 'reapproved'])
+            ->where('is_active', 1)
+            ->get();
+
+        return view('search.results', ['products' => $products]);
+
+    } catch (\Exception $e) {
+        return back()->with('error', 'Search Error: ' . $e->getMessage());
     }
+}
 }
