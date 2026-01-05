@@ -70,10 +70,38 @@
 
     <div class="mb-4">
         <h2 class="h3 fw-bold text-dark mb-1">Order Management</h2>
+
         <p class="text-muted small">
             Receive orders, review items, pack and hand over to Head Office for delivery.
         </p>
     </div>
+
+           <div class="row mb-4 justify-content-center">
+    <div class="col-md-6"> {{-- Centered and optimized width --}}
+        <form action="{{ route('seller.orders.index') }}" method="GET">
+            <div class="input-group">
+                {{-- Input field matching product search style --}}
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Search Tracking #, Customer, or City..." 
+                       value="{{ request('search') }}"
+                       style="border-top-left-radius: 8px; border-bottom-left-radius: 8px;">
+                
+                {{-- Maroon Button matching your reference image --}}
+                <button class="btn" type="submit" 
+                        style="background-color: #5b2c2c; color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px; padding: 0 20px;">
+                    <i class="bi bi-search"></i>
+                </button>
+
+                {{-- Clear Search Button --}}
+                @if(request('search'))
+                    <a href="{{ route('seller.orders.index') }}" class="btn btn-outline-secondary ms-2 rounded-circle">
+                        <i class="bi bi-x"></i>
+                    </a>
+                @endif
+            </div>
+        </form>
+    </div>
+</div>
 
     {{-- SweetAlert: General success --}}
     @if(session('success'))
@@ -179,62 +207,80 @@
                             </div>
                         </td>
 
-                          {{-- STATUS --}}
-                                <td class="text-center">
-                                    @if($status === 0)
-                                        <span class="badge-custom badge-new">New Order</span>
-                                    @elseif($status === 1)
-                                        <span class="badge-custom badge-received">Received – Waiting to Pack</span>
-                                    @elseif($status === 2)
-                                        <span class="badge-custom badge-packed">Packed</span>
-                                    @elseif($status === 3)
-                                        <span class="badge-custom badge-delivered">At Head Office</span>
-                                    @elseif($status === 7)
-                                        <span class="badge-custom" style="background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;">
-                                            ⚠️ Cancellation Requested
-                                        </span>
-                                    @elseif($status === 8)
-                                        <span class="badge-custom" style="background: #f0fdf4; color: #166534; border: 1px solid #22c55e;">
-                                            ✅ Approved for Refund
-                                        </span>
-                                    @endif
-                                </td>
+                              {{-- STATUS COLUMN --}}
+                            <td class="text-center">
+                                @if($status === 0)
+                                    <span class="badge-custom badge-new">New Order</span>
+                                @elseif($status === 1)
+                                    <span class="badge-custom badge-received">Received – Waiting to Pack</span>
+                                @elseif($status === 2)
+                                    <span class="badge-custom badge-packed">Packed</span>
+                                @elseif($status === 3)
+                                    <span class="badge-custom badge-delivered">At Head Office</span>
+                                @elseif($status === 4)
+                                    <span class="badge-custom" style="background: #e0f2fe; color: #075985;">
+                                        <i class="bi bi-truck me-1"></i> Handed to Delivery
+                                    </span>
+                                @elseif($status === 5)
+                                    <span class="badge-custom" style="background: #dcfce7; color: #166534;">
+                                        <i class="bi bi-check-circle me-1"></i> Delivered
+                                    </span>
+                                @elseif($status === 10)
+                                    <span class="badge-custom" style="background: #ede9fe; color: #5b21b6;">
+                                        <i class="bi bi-airplane me-1"></i> Arrived in Destination Country
+                                    </span>
+                                @elseif($status === 6)
+                                    <span class="badge bg-dark text-white">Order Cancelled</span>
+                                @elseif($status === 7)
+                                    <span class="badge-custom" style="background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;">
+                                        ⚠️ Cancellation Requested
+                                    </span>
+                                @elseif($status === 8)
+                                    <span class="badge-custom" style="background: #f0fdf4; color: #166534; border: 1px solid #22c55e;">
+                                        ✅ Approved for Refund
+                                    </span>
+                                @else
+                                    <span class="badge bg-secondary">Status: {{ $status }}</span>
+                                @endif
+                            </td>
+                                                {{-- ACTION COLUMN --}}
+                            <td class="text-center">
+                                @php 
+                                    // Cast to string to handle both numeric IDs from Seller flow 
+                                    // and text-based statuses from Admin/Rider flow.
+                                    $rawStatus = (string) $order->status; 
+                                @endphp
 
-                           {{-- ACTION --}}
-<td class="text-center">
+                                {{-- 1. Seller Fulfillment Flow (Numeric 0, 1, 2) --}}
+                                @if($rawStatus === '0')
+                                    <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="status" value="1">
+                                        <button class="btn-action btn-receive">Receive Order</button>
+                                    </form>
+                                @endif
 
-    {{-- 1. Normal Fulfillment Flow (Status 0, 1, 2) --}}
-    @if($status === 0)
-        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-            @csrf
-            @method('PUT')
-            <input type="hidden" name="status" value="1">
-            <button class="btn-action btn-receive">Receive Order</button>
-        </form>
-    @endif
+                                @if($rawStatus === '1')
+                                    <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="status" value="2">
+                                        <button class="btn-action btn-pack">Pack Order</button>
+                                    </form>
+                                @endif
 
-    @if($status === 1)
-        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-            @csrf
-            @method('PUT')
-            <input type="hidden" name="status" value="2">
-            <button class="btn-action btn-pack">Pack Order</button>
-        </form>
-    @endif
+                                @if($rawStatus === '2')
+                                    <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="status" value="3">
+                                        <button class="btn-action btn-handover">Hand Over to Head Office</button>
+                                    </form>
+                                @endif
 
-    @if($status === 2)
-        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-            @csrf
-            @method('PUT')
-            <input type="hidden" name="status" value="3">
-            <button class="btn-action btn-handover">
-                Hand Over to Head Office
-            </button>
-        </form>
-    @endif
-
-                                {{-- 2. New Cancellation Approval Flow (Status 7, 8) --}}
-                                @if($status === 7)
+                                {{-- 2. Cancellation Flow (Numeric 7, 8) --}}
+                                @if($rawStatus === '7')
                                     <form method="POST" action="{{ route('seller.orders.approve_cancel', $order->id) }}">
                                         @csrf
                                         @method('PUT')
@@ -247,42 +293,54 @@
                                     </form>
                                 @endif
 
-                                @if($status === 8)
+                                @if($rawStatus === '8')
                                     <div class="p-2 rounded bg-light border border-success mb-2">
-                                        <small class="fw-bold text-success d-block">
-                                            ✅ Approved
-                                        </small>
-                                        <small class="text-muted fst-italic" style="font-size: 0.7rem;">
-                                            Waiting for Admin Refund
-                                        </small>
+                                        <small class="fw-bold text-success d-block">✅ Approved</small>
+                                        <small class="text-muted fst-italic" style="font-size: 0.7rem;">Waiting for Admin Refund</small>
                                     </div>
                                 @endif
 
-                                {{-- 3. Final Head Office Statuses (Status 3 or Status 6) --}}
-                                @if($status === 3)
-                                    <small class="fw-semibold fst-italic text-muted d-block mb-2">
-                                        Received by Head Office
+                                {{-- 3. Head Office & Delivery Managed Statuses (Numeric 3, 4, 5, 10 + Text) --}}
+                                @if($rawStatus === '3' || $rawStatus === 'at_head_office')
+                                    <small class="fw-semibold fst-italic text-muted d-block mb-2">Arrived at Head Office</small>
+                                @endif
+
+                                @if($rawStatus === '4' || $rawStatus === 'handed_over_delivery')
+                                    <small class="fw-bold text-primary d-block mb-2">
+                                        <i class="bi bi-truck"></i> Handed over to Delivery
                                     </small>
                                 @endif
 
-                                @if($status === 6)
+                                @if($rawStatus === '10' || $rawStatus === 'arrived_destination')
+                                    <small class="fw-bold text-info d-block mb-2">
+                                        <i class="bi bi-airplane"></i> Arrived at Destination
+                                    </small>
+                                @endif
+
+                                @if($rawStatus === '5' || $rawStatus === 'delivered')
+                                    <small class="fw-bold text-success d-block mb-2">✅ Successfully Delivered</small>
+                                @endif
+
+                                @if($rawStatus === '6' || $rawStatus === 'order_cancelled')
                                     <span class="badge bg-dark text-white d-block mb-2">ORDER CANCELLED</span>
                                 @endif
 
+                                {{-- Always show View Details button --}}
                                 <a href="{{ route('seller.orders.show', $order->id) }}"
                                 class="btn btn-outline-secondary btn-sm mt-2 w-100">
                                     View Details
                                 </a>
                             </td>
-                                                </tr>
+
+                        </tr>
                 @endforeach
                 </tbody>
             </table>
         </div>
-
-        <div class="p-3 border-top bg-light">
-            {{ $orders->links() }}
-        </div>
+                {{-- This generates the < 1 2 3 > page links you marked --}}
+                <div class="p-3 border-top bg-light d-flex justify-content-center">
+                    {{ $orders->links() }}
+                </div>
     </div>
 </div>
 

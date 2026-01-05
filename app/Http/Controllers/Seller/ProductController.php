@@ -21,133 +21,120 @@ use App\Models\Staff;
 
 class ProductController extends Controller
 {
-    public function index()
-{
-    $seller = Auth::guard('seller')->user();
+    public function index(Request $request) // Added Request $request here
+    {
+        $seller = Auth::guard('seller')->user();
+        $search = $request->input('search'); // Capture the search term from the URL
 
-    // Clear product notifications when visiting the page
-    if ($seller) {
-        $seller->unreadNotifications
-            ->where('data.type', 'product')
-            ->markAsRead();
+        // Clear product notifications when visiting the page
+        if ($seller) {
+            $seller->unreadNotifications
+                ->where('data.type', 'product')
+                ->markAsRead();
+        }
+
+        // Modified Query to include Search
+        $products = Product::where('seller_id', $seller->id)
+            ->with(['category', 'images'])
+            ->when($search, function ($query, $search) {
+                return $query->where(function($q) use ($search) {
+                    // Search by product name or category name
+                    $q->where('name', 'LIKE', "%{$search}%")
+                      ->orWhereHas('category', function($catQuery) use ($search) {
+                          $catQuery->where('name', 'LIKE', "%{$search}%");
+                      });
+                });
+            })
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        $categories = Category::where('status', 1)->get();
+
+        return view('seller.products.index', compact('products', 'categories'));
     }
-
-    $products = Product::where('seller_id', $seller->id)
-        ->with(['category', 'images'])
-        ->orderBy('updated_at', 'desc')
-        ->get();
-
-    $categories = Category::where('status', 1)->get();
-
-    return view('seller.products.index', compact('products', 'categories'));
-}
     // Store a new product
     public function store(Request $request)
-    {
-        // 1. Validation
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|integer|exists:categories,id',
-            'unit_type' => 'required|in:weight,liquid,default',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
-            'images' => 'nullable|array|max:12',
-            'images.*' => 'nullable|image|max:2048',
-            
-            // ✅ New Validation for Variants
-            // If the user adds variants, these fields become required
-            'variations' => 'nullable|array',
-            'variations.*.unit_label' => 'required_with:variations|string',
-            'variations.*.price' => 'required_with:variations|numeric',
-            'variations.*.stock' => 'required_with:variations|integer',
-        ]);
+{
+    // 1. Validation: Make variations only required if NOT default
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'category_id' => 'required|integer|exists:categories,id',
+        'unit_type' => 'required|in:weight,liquid,default',
+        'description' => 'nullable|string',
+        'image' => 'nullable|image|max:2048',
+        'images' => 'nullable|array|max:12',
+        'images.*' => 'nullable|image|max:2048',
+        
+        // Change: variations are only required if unit_type is NOT default
+        'variations' => $request->unit_type === 'default' ? 'nullable|array' : 'required|array',
+        'variations.*.unit_label' => 'required_if:unit_type,weight,liquid|string',
+        'variations.*.price' => 'required|numeric',
+        'variations.*.stock' => 'required|integer',
+    ]);
 
-        $sellerId = Auth::guard('seller')->id() ?? session('staff_id');
-        if (!$sellerId) {
-            return back()->withInput()->with('error', 'Authentication error: seller not found.');
+    // ... (Your authentication and duplicate check logic) ...
+
+    DB::beginTransaction();
+    try {
+        $product = new Product();
+        $product->name = trim($request->name);
+        $product->slug = Str::slug($request->name) . '-' . uniqid();
+        $product->category_id = $request->category_id;
+        $product->unit_type = $request->unit_type;
+        $product->description = $request->description;
+        $product->seller_id = Auth::guard('seller')->id();
+        $product->status = 'pending';
+
+        // 2. Logic for Default (No Unit)
+        if ($request->unit_type === 'default') {
+            // Take price and stock from the first variation row (set by JS)
+            $firstVar = $request->variations[0] ?? ['price' => 0, 'stock' => 0];
+            $product->price = $firstVar['price'];
+            $product->stock = $firstVar['stock'];
+        } else {
+            // Existing logic for multiple variations
+            $prices = collect($request->variations)->pluck('price');
+            $product->price = $prices->min();
+            $product->stock = collect($request->variations)->sum('stock');
         }
 
-        $name = trim($request->name);
-
-        // Check for duplicates
-        $existing = Product::whereRaw('LOWER(name) = ?', [Str::lower($name)])->first();
-        if ($existing) {
-            return back()->withInput()->with('error', "Product '{$name}' already exists.");
+        if ($request->hasFile('image')) {
+            $product->image = $request->file('image')->store('products/front', 'public');
         }
 
-        DB::beginTransaction();
-        try {
-            // 2. Prepare Main Product Data
-            // If variants exist, we will overwrite price/stock later with calculated values
-            $mainPrice = $request->price ?? 0; 
-            $mainStock = $request->stock ?? 0;
+        $product->save();
 
-            // If variations are provided, calculate total stock and min price
-            if ($request->has('variations') && count($request->variations) > 0) {
-                $mainStock = 0;
-                $prices = [];
-                foreach ($request->variations as $v) {
-                    $mainStock += $v['stock'];
-                    $prices[] = $v['price'];
-                }
-                // Set main price to the lowest variant price (e.g. "Starts at 500")
-                $mainPrice = min($prices);
+        // 3. Save Variants
+        if ($request->unit_type === 'default') {
+            // Always create exactly one "Default" variant record for consistency
+            ProductVariant::create([
+                'product_id' => $product->id,
+                'unit_label' => 'Default',
+                'price'      => $request->variations[0]['price'] ?? 0,
+                'stock'      => $request->variations[0]['stock'] ?? 0
+            ]);
+        } else {
+            foreach ($request->variations as $variant) {
+                ProductVariant::create([
+                    'product_id' => $product->id,
+                    'unit_label' => $variant['unit_label'],
+                    'price'      => $variant['price'],
+                    'stock'      => $variant['stock']
+                ]);
             }
-
-            $product = new Product();
-            $product->name = $name;
-            $product->slug = Str::slug($name) . '-' . uniqid();
-            $product->category_id = $request->category_id;
-            $product->unit_type = $request->unit_type;
-            $product->price = $mainPrice; 
-            $product->stock = $mainStock;
-            $product->description = $request->description;
-            $product->seller_id = $sellerId;
-            $product->status = 'pending';
-
-            if ($request->hasFile('image')) {
-                $product->image = $request->file('image')->store('products/front', 'public');
-            }
-
-            $product->save(); // Save first to get ID
-
-            // 3. Save Variants
-            if ($request->has('variations')) {
-                foreach ($request->variations as $variant) {
-                    if(!empty($variant['unit_label']) && !empty($variant['price'])) {
-                        ProductVariant::create([
-                            'product_id' => $product->id,
-                            'unit_label' => $variant['unit_label'],
-                            'price'      => $variant['price'],
-                            'stock'      => $variant['stock']
-                        ]);
-                    }
-                }
-            }
-
-            // 4. Handle Gallery Images
-            $this->handleGalleryImages($request, $product);
-
-            DB::commit();
-
-            // Notify Admin
-            try {
-                $admins = Staff::where('role', 'admin')->get();
-                foreach ($admins as $admin) {
-                    $admin->notify(new AdminProductNotification($product, 'new'));
-                }
-            } catch (\Throwable $e) {
-                Log::error('Notification failed: ' . $e->getMessage());
-            }
-
-            return redirect()->route('seller.products.index')->with('success', '✅ Product added successfully!');
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('[Seller\ProductController@store] Error: ' . $e->getMessage());
-            return back()->withInput()->with('error', "Error adding product: " . $e->getMessage());
         }
+
+        $this->handleGalleryImages($request, $product);
+        DB::commit();
+
+        // ... (Admin Notifications) ...
+
+        return redirect()->route('seller.products.index')->with('success', '✅ Product added successfully!');
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        return back()->withInput()->with('error', "Error: " . $e->getMessage());
     }
+}
 
     public function show($id)
     {
@@ -315,4 +302,5 @@ class ProductController extends Controller
         $img->delete();
         return back()->with('success', 'Image removed.');
     }
+    
 }

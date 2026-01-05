@@ -228,30 +228,46 @@
     <a href="{{ route('admin.orders.review') }}" class="{{ request()->is('admin/orders*') || request()->is('admin/review-orders*') ? 'active' : '' }}">
         <span><i class="bi bi-truck"></i> Orders</span>
     </a>
-      {{-- 7. Reports & Analysis Dropdown --}}
+    
+    {{-- 7. Reports & Analysis Dropdown --}}
 <div class="nav-item">
-    {{-- Update: Added 'sidebar-link-fixed' class for better targeting --}}
     <a href="#reportSubmenu" data-bs-toggle="collapse" 
-       class="d-flex align-items-center sidebar-link-fixed {{ request()->is('admin/reports*') ? 'active' : '' }}" 
+       class="d-flex align-items-center sidebar-link-fixed {{ request()->is('admin/reports*') || request()->is('admin/seller-analytics*') ? 'active' : '' }}" 
        style="text-decoration: none; padding: 10px 15px; color: rgb(36, 3, 3); display: block;">
         <i class="bi bi-bar-chart-line-fill me-2"></i> 
         <span>Reports & Analysis</span>
+        
+        {{-- Notification Badge for the Main Dropdown --}}
+        @php
+            $pendingReports = DB::table('submitted_reports')->where('status', 'pending')->count();
+        @endphp
+        @if($pendingReports > 0)
+            <span class="badge rounded-pill bg-danger ms-2" style="font-size: 10px;">{{ $pendingReports }}</span>
+        @endif
+        
         <i class="bi bi-chevron-down ms-auto small"></i>
     </a>
-
-     {{-- 8. Staff Chat (Replaces Settings) --}}
-<a href="{{ route('admin.chat.index') }}" class="{{ request()->is('admin/chat*') ? 'active' : '' }}">
-    <span><i class="bi bi-chat-dots"></i> Staff Chat</span>
-</a>
     
-    {{-- Ensure the background is forced to match the sidebar --}}
-    <ul class="collapse nav flex-column ms-3 {{ request()->is('admin/reports*') ? 'show' : '' }}" 
+    <ul class="collapse nav flex-column ms-3 {{ request()->is('admin/reports*') || request()->is('admin/seller-analytics*') ? 'show' : '' }}" 
         id="reportSubmenu" 
         style="background: transparent; list-style: none; padding: 0;">
         
-         <li class="nav-item">
+        {{-- New: Seller Submissions with Notification --}}
+        <li class="nav-item">
+            <a href="{{ route('admin.seller.analytics.index') }}" 
+               class="nav-link py-2 {{ request()->is('admin/seller-analytics*') ? 'fw-bold text-dark' : '' }}"
+               style="display: flex; align-items: center; text-decoration: none; color: #4d4a4a !important;"> 
+                <i class="bi bi-person-badge me-2"></i>
+                <span>Seller Submissions</span>
+                @if($pendingReports > 0)
+                    <span class="badge rounded-pill bg-danger ms-auto me-3" style="font-size: 9px;">{{ $pendingReports }}</span>
+                @endif
+            </a>
+        </li>
+
+        <li class="nav-item">
             <a href="{{ route('admin.reports.inventory') }}" 
-               class="nav-link py-2 {{ request()->is('admin/reports/inventory') ? 'fw-bold' : '' }}"
+               class="nav-link py-2 {{ request()->is('admin/reports/inventory') ? 'fw-bold text-dark' : '' }}"
                style="display: flex; align-items: center; text-decoration: none; color: #4d4a4a !important;"> 
                 <i class="bi bi-box-seam me-2"></i>
                 <span>Inventory & Stock</span>
@@ -259,7 +275,7 @@
         </li>
         <li class="nav-item">
             <a href="{{ route('admin.reports.sales') }}" 
-               class="nav-link py-2 {{ request()->is('admin/reports/sales') ? 'fw-bold' : '' }}"
+               class="nav-link py-2 {{ request()->is('admin/reports/sales') ? 'fw-bold text-dark' : '' }}"
                style="display: flex; align-items: center; text-decoration: none; color: #4d4a4a !important;"> 
                 <i class="bi bi-currency-dollar me-2"></i>
                 <span>Sales & Revenue</span>
@@ -267,6 +283,11 @@
         </li>
     </ul>
 </div>
+
+{{-- 8. Staff Chat (Replaces Settings) --}}
+<a href="{{ route('admin.chat.index') }}" class="{{ request()->is('admin/chat*') ? 'active' : '' }}">
+    <span><i class="bi bi-chat-dots"></i> Staff Chat</span>
+</a>
     {{-- 8. Settings --}}
     <a href="#" class="{{ request()->is('admin/settings*') ? 'active' : '' }}">
         <span><i class="bi bi-gear"></i> Settings</span>

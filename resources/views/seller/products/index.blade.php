@@ -50,6 +50,25 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-bold">My Products</h4>
+
+        {{-- Search Area (Marked Area) --}}
+        <div class="col-md-6">
+            <form action="{{ route('seller.products.index') }}" method="GET" class="d-flex">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Search product or category..." 
+                           value="{{ request('search') }}">
+                    <button class="btn btn-maroon" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    @if(request('search'))
+                        <a href="{{ route('seller.products.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </div>
         {{-- CHANGED: btn-dark to btn-maroon --}}
         <button class="btn btn-maroon" data-bs-toggle="modal" data-bs-target="#addProductModal">
             <i class="bi bi-plus-circle"></i> Add Product
@@ -261,21 +280,17 @@
         </div>
     </div>
 </div>
-
-{{-- JAVASCRIPT LOGIC --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     
-    // -----------------------------------------------------------------
-    // 1. SWEET ALERT LOGIC (With Butter Background & Maroon Button)
-    // -----------------------------------------------------------------
+    // --- 1. SWEET ALERT LOGIC ---
     @if(session('success'))
         Swal.fire({
             icon: 'success',
             title: 'Success!',
             text: "{{ session('success') }}",
-            background: '#fff9e6',  // Butter background
-            confirmButtonColor: '#800000', // Maroon button
+            background: '#fff9e6',
+            confirmButtonColor: '#800000',
             iconColor: '#28a745',
             timer: 4000,
             timerProgressBar: true
@@ -288,149 +303,163 @@ document.addEventListener('DOMContentLoaded', function () {
             title: 'Error!',
             text: "{{ session('error') }}",
             background: '#fff0f0',
-            confirmButtonColor: '#800000' // Maroon button
+            confirmButtonColor: '#800000'
         });
     @endif
 
-    // -----------------------------------------------------------------
-    // 2. VARIANT TABLE LOGIC
-    // -----------------------------------------------------------------
-    let variantIndex = 1;
+    // --- 2. SELECTORS & INITIALIZATION ---
+    const unitTypeSelect = document.querySelector('select[name="unit_type"]');
+    const tableHeaderSize = document.querySelector('#dynamic_field thead th:first-child');
     const variantTableBody = document.getElementById('variantTableBody');
     const addVariantBtn = document.getElementById('addVariantBtn');
+    const form = document.getElementById('addProductForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const nameInput = document.getElementById('productNameInput');
+    const galleryInput = document.getElementById('galleryInput');
+    const dropArea = document.getElementById('galleryDropArea');
+    const preview = document.getElementById('galleryPreview');
 
-    addVariantBtn.addEventListener('click', function() {
-        const row = document.createElement('tr');
-        row.id = `row-${variantIndex}`;
-        row.innerHTML = `
-            <td><input type="text" name="variations[${variantIndex}][unit_label]" placeholder="e.g. 500g" class="form-control form-control-sm" required /></td>
-            <td><input type="number" step="0.01" name="variations[${variantIndex}][price]" placeholder="Price" class="form-control form-control-sm" required /></td>
-            <td><input type="number" name="variations[${variantIndex}][stock]" placeholder="Qty" class="form-control form-control-sm" required /></td>
-            <td><button type="button" class="btn btn-danger btn-sm remove-row" data-id="${variantIndex}">&times;</button></td>
-        `;
-        variantTableBody.appendChild(row);
-        variantIndex++;
-    });
+    let variantIndex = 1;
+    const dt = new DataTransfer(); 
 
-    variantTableBody.addEventListener('click', function(e) {
-        if (e.target.classList.contains('remove-row')) {
-            const id = e.target.getAttribute('data-id');
-            document.getElementById(`row-${id}`).remove();
-        }
-    });
+    // --- 3. UNIT TYPE TOGGLE LOGIC (FIXED for Qty visibility) ---
+    function toggleVariations() {
+        if (!unitTypeSelect) return;
 
-    // -----------------------------------------------------------------
-// 3. IMAGE UPLOAD & VALIDATION LOGIC (FIXED)
-// -----------------------------------------------------------------
-const dropArea = document.getElementById('galleryDropArea');
-const galleryInput = document.getElementById('galleryInput');
-const preview = document.getElementById('galleryPreview');
-const form = document.getElementById('addProductForm');
-const nameInput = document.getElementById('productNameInput');
+        const isDefault = unitTypeSelect.value === 'default';
+        const rows = document.querySelectorAll('#variantTableBody tr');
 
-const dt = new DataTransfer();
+        if (isDefault) {
+            // Hide the "Size" Header and the "Add Another" button
+            if (tableHeaderSize) tableHeaderSize.style.display = 'none';
+            if (addVariantBtn) addVariantBtn.style.display = 'none';
 
-// CLICK → FILE PICKER
-dropArea.addEventListener('click', () => galleryInput.click());
-
-// FILE PICKER
-galleryInput.addEventListener('change', function () {
-    for (let i = 0; i < this.files.length; i++) {
-        dt.items.add(this.files[i]);
-    }
-    updatePreview();
-    this.value = ''; // allow re-select same file
-});
-
-// DRAG OVER
-dropArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropArea.classList.add('dragover');
-});
-
-// DRAG LEAVE
-dropArea.addEventListener('dragleave', () => {
-    dropArea.classList.remove('dragover');
-});
-
-// DROP
-dropArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropArea.classList.remove('dragover');
-
-    for (let i = 0; i < e.dataTransfer.files.length; i++) {
-        if (e.dataTransfer.files[i].type.startsWith('image/')) {
-            dt.items.add(e.dataTransfer.files[i]);
-        }
-    }
-    updatePreview();
-});
-
-// PREVIEW + REMOVE
-function updatePreview() {
-    preview.innerHTML = '';
-
-    [...dt.files].forEach((file, index) => {
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'relative';
-        wrapper.style.width = '60px';
-        wrapper.style.height = '60px';
-
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.className = 'rounded border';
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-
-        const btn = document.createElement('button');
-        btn.innerHTML = '&times;';
-        btn.className = 'btn btn-danger btn-sm p-0 rounded-circle';
-        btn.style.position = 'absolute';
-        btn.style.top = '-6px';
-        btn.style.right = '-6px';
-        btn.style.width = '20px';
-        btn.style.height = '20px';
-        btn.style.lineHeight = '18px';
-
-        btn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dt.items.remove(index);
-            updatePreview();
-        };
-
-        wrapper.appendChild(img);
-        wrapper.appendChild(btn);
-        preview.appendChild(wrapper);
-    });
-}
-
-// ✅ FIX: ATTACH FILES BEFORE SUBMIT
-form.addEventListener('submit', function () {
-    galleryInput.files = dt.files;
-        
-        // Capital Letter Validation
-        if (nameValue.length > 0 && nameValue.charAt(0) !== nameValue.charAt(0).toUpperCase()) {
-            e.preventDefault(); 
-            Swal.fire({
-                icon: 'warning',
-                title: 'Validation Error',
-                text: 'Product Name must start with a Capital Letter!',
-                background: '#fff9e6', // Butter background
-                confirmButtonColor: '#800000' // Maroon button
+            // Only allow ONE row for default units, hide only the first column (Size)
+            rows.forEach((row, index) => {
+                if (index > 0) {
+                    row.remove(); 
+                } else {
+                    const sizeTd = row.querySelector('td:first-child');
+                    const sizeInput = sizeTd.querySelector('input');
+                    
+                    sizeTd.style.display = 'none'; // Hide only Size
+                    sizeInput.value = 'Default'; // Auto-fill label for Controller
+                    sizeInput.removeAttribute('required'); // Prevent browser block
+                }
             });
-            return;
+        } else {
+            // Restore visibility for Weight/Liquid
+            if (tableHeaderSize) tableHeaderSize.style.display = '';
+            if (addVariantBtn) addVariantBtn.style.display = '';
+            
+            rows.forEach(row => {
+                const sizeTd = row.querySelector('td:first-child');
+                const sizeInput = sizeTd.querySelector('input');
+                
+                sizeTd.style.display = '';
+                sizeInput.setAttribute('required', 'required');
+                if (sizeInput.value === 'Default') sizeInput.value = '';
+            });
         }
+    }
 
-        if (dt.files.length > 0) {
-            galleryInput.files = dt.files;
-        }
-        
-        const btn = document.getElementById('submitBtn');
-        btn.innerText = 'Saving...';
-        btn.disabled = true;
-    });
+    if(unitTypeSelect) {
+        unitTypeSelect.addEventListener('change', toggleVariations);
+        toggleVariations(); // Run on load
+    }
+
+    // --- 4. VARIANT TABLE LOGIC (ADD/REMOVE) ---
+    if(addVariantBtn) {
+        addVariantBtn.addEventListener('click', function() {
+            const row = document.createElement('tr');
+            row.id = `row-${variantIndex}`;
+            row.innerHTML = `
+                <td><input type="text" name="variations[${variantIndex}][unit_label]" placeholder="e.g. 500g" class="form-control form-control-sm" required /></td>
+                <td><input type="number" step="0.01" name="variations[${variantIndex}][price]" placeholder="Price" class="form-control form-control-sm" required /></td>
+                <td><input type="number" name="variations[${variantIndex}][stock]" placeholder="Qty" class="form-control form-control-sm" required /></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-row" data-id="${variantIndex}">&times;</button></td>
+            `;
+            variantTableBody.appendChild(row);
+            variantIndex++;
+        });
+
+        variantTableBody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-row')) {
+                const id = e.target.getAttribute('data-id');
+                document.getElementById(`row-${id}`).remove();
+            }
+        });
+    }
+
+    // --- 5. IMAGE UPLOAD LOGIC ---
+    if(dropArea) {
+        dropArea.addEventListener('click', () => galleryInput.click());
+        galleryInput.addEventListener('change', function () {
+            for (let i = 0; i < this.files.length; i++) { dt.items.add(this.files[i]); }
+            updatePreview();
+            this.value = ''; 
+        });
+
+        dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('dragover'); });
+        dropArea.addEventListener('dragleave', () => { dropArea.classList.remove('dragover'); });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                if (e.dataTransfer.files[i].type.startsWith('image/')) { dt.items.add(e.dataTransfer.files[i]); }
+            }
+            updatePreview();
+        });
+    }
+
+    function updatePreview() {
+        preview.innerHTML = '';
+        [...dt.files].forEach((file, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.width = '60px'; wrapper.style.height = '60px';
+            wrapper.innerHTML = `
+                <img src="${URL.createObjectURL(file)}" class="rounded border w-100 h-100 object-fit-cover">
+                <button type="button" class="btn btn-danger btn-sm p-0 rounded-circle position-absolute" 
+                        style="top:-6px; right:-6px; width:20px; height:20px; line-height:18px;" 
+                        onclick="removeGalleryFile(${index})">&times;</button>
+            `;
+            preview.appendChild(wrapper);
+        });
+    }
+
+    window.removeGalleryFile = function(index) {
+        dt.items.remove(index);
+        updatePreview();
+    };
+
+    // --- 6. FORM SUBMIT HANDLER ---
+    if(form) {
+        form.addEventListener('submit', function (e) {
+            const nameValue = nameInput.value.trim();
+            
+            // Name Capitalization Check
+            if (nameValue.length > 0 && nameValue.charAt(0) !== nameValue.charAt(0).toUpperCase()) {
+                e.preventDefault(); 
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Validation Error',
+                    text: 'Product Name must start with a Capital Letter!',
+                    background: '#fff9e6',
+                    confirmButtonColor: '#800000'
+                });
+                return;
+            }
+
+            // Sync gallery files to hidden input
+            if (dt.files.length > 0) {
+                galleryInput.files = dt.files;
+            }
+            
+            submitBtn.innerText = 'Saving...';
+            submitBtn.disabled = true;
+        });
+    }
 });
 </script>
 

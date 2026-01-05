@@ -13,31 +13,41 @@ class SellerOrderController extends Controller
     /**
      * Seller Order List
      */
-    public function index()
+       public function index(Request $request) // Ensure Request is injected
 {
-    // ✅ Use the explicit 'seller' guard for both ID and User instance
     $sellerId = Auth::guard('seller')->id();
     $seller = Auth::guard('seller')->user();
+    $search = $request->input('search'); // Get search term
 
-    // Security Check: Redirect if not authenticated
     if (!$seller) {
         return redirect()->route('staff.login');
     }
 
-    // --- SAFE NOTIFICATION CLEARING ---
-    // Marks order notifications as read when the seller visits this list
-    $seller->unreadNotifications
-        ->where('data.type', 'order')
-        ->markAsRead();
+    // Mark notifications as read
+    $seller->unreadNotifications->where('data.type', 'order')->markAsRead();
 
-    // ✅ Relationship Check: 
-    // Ensure 'items' is defined in your Order model and 'product' in your OrderItem model
+    // Query with search filter
     $orders = Order::whereHas('items.product', function ($query) use ($sellerId) {
             $query->where('seller_id', $sellerId);
         })
         ->with(['items.product'])
-        ->latest()
-        ->paginate(10);
+        ->when($search, function ($query, $search) {
+            return $query->where(function($q) use ($search) {
+                $q->where('tracking_no', 'LIKE', "%{$search}%")
+                  ->orWhere('fname', 'LIKE', "%{$search}%")
+                  ->orWhere('lname', 'LIKE', "%{$search}%")
+                  ->orWhere('city', 'LIKE', "%{$search}%");
+            });
+        })
+          // PRIORITIZE STATUSES: 0, 1, and 2 will appear first
+        ->orderByRaw("CASE 
+            WHEN status = '0' THEN 1 
+            WHEN status = '1' THEN 2 
+            WHEN status = '2' THEN 3 
+            ELSE 4 END ASC")
+        ->orderBy('created_at', 'desc') // Then show the newest within those groups
+        ->paginate(10)
+        ->appends(['search' => $search]);
 
     return view('seller.orders.index', compact('orders'));
 }

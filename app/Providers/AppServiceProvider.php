@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Category; 
 use App\Models\Order;
 use App\Models\Message;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+
+        Paginator::useBootstrapFive();
         // 1. Existing Category Logic (Global)
         View::composer('*', function ($view) {
             $view->with('globalCategories', Category::whereNull('parent_id')
@@ -35,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
                     'products'  => $unread->where('data.type', 'product')->count(),
                     'orders'    => $unread->where('data.type', 'order')->count(),
                     'inquiries' => $unread->where('data.type', 'inquiry')->count(),
+                    'reviews'   => $unread->where('data.type', 'review')->count(),
                     'messages'  => $unread->where('data.type', 'message')->count(),
                     'total'     => $unread->count(),
                 ]);

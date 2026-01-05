@@ -265,22 +265,28 @@ if($seller){
     </a>
 
 
-     {{-- Customer Reviews with Notification Badge --}}
-<a href="#" class="{{ request()->is('admin/reviews*') ? 'active' : '' }}">
+    {{-- Customer Reviews with Notification Badge --}}
+<a href="{{ route('seller.reviews') }}" class="{{ request()->is('seller/reviews*') ? 'active' : '' }}">
     <span><i class="bi bi-star-fill"></i> Customer Reviews</span>
-    @if(isset($notifCounts['review']) && $notifCounts['review'] > 0)
-        <span class="badge bg-danger">{{ $notifCounts['review'] }}</span>
+    
+    {{-- Using the 'notif_counts' variable from your AppServiceProvider --}}
+    @if(isset($notif_counts['reviews']) && $notif_counts['reviews'] > 0)
+        <span class="badge bg-danger">{{ $notif_counts['reviews'] }}</span>
     @endif
 </a>
 
-{{-- Reports & Analytics with Notification Badge --}}
-<a href="#" class="{{ request()->is('admin/reports*') ? 'active' : '' }}">
+
+{{-- Reports & Analytics Link --}}
+<a href="{{ route('seller.reports.index') }}" 
+   class="{{ request()->is('seller/reports*') ? 'active' : '' }}">
     <span><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</span>
-    @if(isset($notifCounts['report']) && $notifCounts['report'] > 0)
-        <span class="badge bg-danger">{{ $notifCounts['report'] }}</span>
+    
+    {{-- Sellers usually don't have "Unread Reports", but if you have a 
+         notification system for generated reports, use the code below --}}
+    @if(isset($notif_counts['reports']) && $notif_counts['reports'] > 0)
+        <span class="badge bg-danger">{{ $notif_counts['reports'] }}</span>
     @endif
 </a>
-
 
 
 </div>

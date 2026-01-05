@@ -170,8 +170,8 @@
                     <td class="px-5 py-4">{{ $inq->first_name }} {{ $inq->last_name }}</td>
                     <td class="px-5 py-4 text-blue-600">{{ $inq->email }}</td>
                    <td class="px-5 py-4 max-w-xs truncate">
-    {{ Str::limit($inq->message,40) }}
-</td>
+                        {{ Str::limit($inq->message,40) }}
+                    </td>
 
                     <td class="px-5 py-4 text-center">
                         @if($inq->status=='pending')
@@ -188,6 +188,9 @@
                 @endforeach
             </tbody>
         </table>
+    </div>
+    <div class="mt-4 d-flex justify-content-center">
+        {{ $inquiries->links() }}
     </div>
 </div>
 

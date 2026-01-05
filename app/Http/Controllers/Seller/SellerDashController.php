@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\InquiryReplyMail;
 
+
 class SellerDashController extends Controller
 {
     /**
@@ -121,20 +122,46 @@ class SellerDashController extends Controller
      * Seller Inquiries (Global + Claimed)
      * =====================================
      */
-    public function inquiries()
-    {
-        $sellerId = Auth::guard('seller')->id();
+       public function inquiries()
+{
+    $sellerId = Auth::guard('seller')->id();
 
-        $inquiries = ContactMessage::where(function ($query) use ($sellerId) {
-                $query->where('seller_id', $sellerId)   // claimed by this seller
-                      ->orWhereNull('seller_id');       // global inquiries
-            })
-            ->latest()
-            ->paginate(10);
+    $inquiries = ContactMessage::where(function ($query) use ($sellerId) {
+            $query->where('seller_id', $sellerId)
+                  ->orWhereNull('seller_id');
+        })
+        // Keeps Pending at the top
+        ->orderByRaw("CASE WHEN status = 'pending' THEN 1 ELSE 2 END ASC")
+        ->latest()
+        ->paginate(10); // Use paginate to enable the < 1 2 3 > buttons
 
-        return view('seller.inquiries.index', compact('inquiries'));
+    return view('seller.inquiries.index', compact('inquiries'));
+}
+
+//Reviews
+
+public function reviews(Request $request)
+{
+    $sellerId = Auth::guard('seller')->id();
+    $starFilter = $request->input('rating');
+
+    // Filter reviews belonging to this seller
+    $query = \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {
+            $q->where('seller_id', $sellerId);
+        })
+        ->with(['product', 'user']) // Eager load for product slug and name
+        ->latest();
+
+    // Apply Star Rating Filter
+    if ($starFilter) {
+        $query->where('rating', $starFilter);
     }
 
+    // Fetch ALL results as requested
+    $reviews = $query->get();
+
+    return view('seller.reviews.index', compact('reviews'));
+}
     /**
      * ===============================
      * Mark ALL notifications as read
@@ -270,4 +297,7 @@ class SellerDashController extends Controller
         return redirect()->back()
             ->with('success', 'Inquiry marked as replied!');
     }
+
+
+   
 }

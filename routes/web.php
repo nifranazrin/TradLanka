@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\StaffManagementController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SellerAnalyticsController;
 
 // SELLER CONTROLLERS
 use App\Http\Controllers\StaffRegistrationController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\Seller\SellerProfileController;
 use App\Http\Controllers\Seller\ProductController;
 use App\Http\Controllers\Seller\SellerOrderController;
 use App\Http\Controllers\Seller\ChatController as SellerChatController;
+use App\Http\Controllers\Seller\SellerReportController;
 
 // DELIVERY CONTROLLERS
 use App\Http\Controllers\Delivery\DeliveryDashController;
@@ -238,11 +240,7 @@ Route::get('/staff-management', [App\Http\Controllers\Admin\StaffManagementContr
 Route::put('/staff-management/{id}/toggle', [App\Http\Controllers\Admin\StaffManagementController::class, 'toggleStatus'])
     ->name('staff.toggle');
 
-    // Unified Admin Notifications
-    Route::get('/notifications/{id}/read', [UserApprovalController::class, 'readNotification'])->name('notifications.read');
-    Route::get('/notifications/mark-all', [UserApprovalController::class, 'markAllRead'])->name('notifications.markAllRead');
-});
-// MOVE THIS TO THE TOP (Before the seller group)
+    // MOVE THIS TO THE TOP (Before the seller group)
 Route::get('/set-currency/{currency}', function ($currency) {
     if (in_array($currency, ['LKR', 'USD'])) {
         session(['currency' => $currency]);
@@ -251,18 +249,40 @@ Route::get('/set-currency/{currency}', function ($currency) {
 });
 
 
-//REPORTS
-    // web.php
-Route::prefix('admin')->name('admin.')->middleware([AdminMiddleware::class])->group(function () {
-    
-    // ... all your other admin routes ...
-
-    Route::prefix('reports')->group(function () {
-        Route::get('/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
-        Route::get('/sales', [ReportController::class, 'salesReport'])->name('reports.sales');
-    });
+// MOVE THIS TO THE TOP (Before the seller group)
+Route::get('/set-currency/{currency}', function ($currency) {
+    if (in_array($currency, ['LKR', 'USD'])) {
+        session(['currency' => $currency]);
+    }
+    return redirect()->back();
 });
-   
+
+Route::get('/notifications/{id}/read', [UserApprovalController::class, 'readNotification'])->name('notifications.read');
+    Route::get('/notifications/mark-all', [UserApprovalController::class, 'markAllRead'])->name('notifications.markAllRead');
+
+
+// =============================================================
+    //                    ADMIN REPORTS & ANALYTICS
+    // =============================================================
+    
+   Route::prefix('reports')->group(function () {
+    Route::get('/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
+    Route::get('/sales', [ReportController::class, 'salesReport'])->name('reports.sales');
+});
+
+// Seller-Submitted Analytics (Uses SellerAnalyticsController)
+Route::prefix('seller-analytics')->name('seller.analytics.')->group(function () {
+    // List of all submitted reports
+    Route::get('/', [SellerAnalyticsController::class, 'index'])->name('index');
+
+    // FIXED: Changed 'showReport' to 'viewReport' to match your file
+    Route::get('/view/{id}', [SellerAnalyticsController::class, 'viewReport'])->name('show');
+});
+
+ });
+     
+
+
 // =============================================================
 //                    SELLER DASHBOARD (Protected)
 // =============================================================
@@ -282,6 +302,26 @@ Route::get('/dashboard/chart-data', [SellerDashController::class, 'getChartData'
         return redirect('/seller/login');
     })->name('logout');
 
+    // --- CHAT SYSTEM (Synchronized with Delivery Logic) ---
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [SellerChatController::class, 'index'])->name('index');
+        Route::get('/fetch/{receiverId}/{type}', [SellerChatController::class, 'fetchMessages'])->name('fetch');
+        Route::post('/send', [SellerChatController::class, 'sendMessage'])->name('send');
+        Route::post('/delete', [SellerChatController::class, 'deleteMessage'])->name('delete');
+        Route::get('/orders', [SellerChatController::class, 'getRecentOrders'])->name('orders');
+        
+        // This fixes the "Select Contact" header
+        Route::get('/profile/{type}/{id}', [SellerChatController::class, 'getProfile'])->name('profile');
+        
+        // This clears the red unread badges
+        Route::post('/mark-read/{id}/{type}', [SellerChatController::class, 'markAsRead'])->name('mark-read');
+        
+        Route::post('/clear/{receiverId}/{type}', [SellerChatController::class, 'clearChat'])->name('clear');
+    }); 
+
+    Route::get('notifications/{id}/read', [SellerDashController::class, 'readNotification'])->name('notifications.read');
+    Route::post('notifications/mark-all-read', [SellerDashController::class, 'markAllRead'])->name('notifications.markAllRead');
+
     // Inquiries
     Route::get('/inquiries', [SellerDashController::class, 'inquiries'])->name('inquiries');
     Route::post('/inquiries/{id}/reply', [SellerDashController::class, 'markReplied'])->name('inquiries.reply');
@@ -294,7 +334,7 @@ Route::get('/dashboard/chart-data', [SellerDashController::class, 'getChartData'
     Route::get('/orders/{order}/pdf', [SellerOrderController::class, 'downloadPdf'])->name('orders.pdf');
 
     // Inside the 'seller.' route name group
-Route::put('/orders/approve-cancel/{id}', [SellerOrderController::class, 'approveCancellation'])->name('orders.approve_cancel');
+   Route::put('/orders/approve-cancel/{id}', [SellerOrderController::class, 'approveCancellation'])->name('orders.approve_cancel');
 
     // Products
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -309,37 +349,16 @@ Route::put('/orders/approve-cancel/{id}', [SellerOrderController::class, 'approv
     Route::put('/profile/update', [SellerProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [SellerProfileController::class, 'updatePassword'])->name('profile.password');
 
-    Route::get('/chat', [SellerChatController::class, 'index'])->name('chat.index');
+    //Review
+    Route::get('/reviews', [App\Http\Controllers\Seller\SellerDashController::class, 'reviews'])->name('reviews');
 
-    // 2. Fetch Messages (AJAX)
-    Route::get('/chat/fetch/{id}/{type}', [SellerChatController::class, 'fetchMessages'])->name('chat.fetch');
-
-    // 3. Send Message / Upload Media
-    Route::post('/chat/send', [SellerChatController::class, 'sendMessage'])->name('chat.send');
-
-    // 4. Delete Single Message
-    Route::post('/chat/delete', [SellerChatController::class, 'deleteMessage'])->name('chat.delete');
-
-    // 5. Fetch Profile for Modal (Fixes "Undefined" error)
-    Route::get('/chat/profile/{type}/{id}', [SellerChatController::class, 'getStaffProfile'])->name('chat.profile');
-
-    // 6. Clear Entire Conversation
-    Route::post('/chat/clear/{id}/{type}', [SellerChatController::class, 'clearConversation'])->name('chat.clear');
-
-    // 7. Fetch Recent Orders (Mapped to fname, lname, address1)
-    Route::get('/chat/orders', [SellerChatController::class, 'getRecentOrders'])->name('chat.orders');
-
-
-    // ✅ NOTIFICATIONS (FIXED)
-    Route::post(
-        'notifications/mark-all-read',
-        [SellerDashController::class, 'markAllRead']
-    )->name('notifications.markAllRead');
-
-    Route::get(
-        'notifications/{id}/read',
-        [SellerDashController::class, 'readNotification']
-    )->name('notifications.read');
+    //report
+    Route::get('/reports', [SellerReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/inventory', [SellerReportController::class, 'inventoryResults'])->name('reports.inventory');
+    Route::get('/reports/inventory/pdf', [SellerReportController::class, 'downloadPDF'])->name('reports.pdf');
+    
+    // This MUST match the name in your Blade form: route('seller.reports.submit')
+    Route::post('/reports/submit', [SellerReportController::class, 'submitToAdmin'])->name('reports.submit');
 
 
     // AJAX Password Check
@@ -418,5 +437,6 @@ Route::get('/export-products', function() {
 });
 
 
+ 
 
 

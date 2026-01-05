@@ -5,154 +5,163 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use App\Models\Message;
-use App\Models\Staff;
+use App\Models\Staff; 
 use App\Models\Order;
-use App\Notifications\SellerDashboardNotification;
 
 class ChatController extends Controller
 {
-    /**
-     * 1. Show Chat Dashboard
-     */
     public function index()
-    {
-        // Fetches admin and riders for the sidebar
-        $admin  = Staff::where('role', 'admin')->first();
-        $riders = Staff::where('role', 'delivery')->get();
-
-        return view('seller.chat.index', compact('admin', 'riders'));
-    }
-
-    /**
-     * 2. Fetch Messages (AJAX)
-     */
-    public function fetchMessages($receiverId, $type)
     {
         $sellerId = Auth::guard('seller')->id();
 
-        // Retrieves messages excluding those deleted by the seller
-        $messages = Message::where(function ($q) use ($sellerId, $receiverId, $type) {
-                $q->where('sender_id', $sellerId)
-                  ->where('sender_type', 'seller')
-                  ->where('receiver_id', $receiverId)
-                  ->where('receiver_type', $type)
-                  ->where('deleted_by_sender', false);
+        // Mark incoming messages as read for this seller immediately
+        Message::where('receiver_id', $sellerId)
+            ->where('receiver_type', 'seller')
+            ->where('is_read', 0)
+            ->update(['is_read' => 1]);
+
+        // 1. Admin Support
+        $admin = Staff::where('role', 'admin')->first();
+        $excludeIds = [$sellerId];
+        
+        if ($admin) {
+            $excludeIds[] = $admin->id;
+            $admin->unread_count = Message::where('sender_id', $admin->id)
+                ->where('receiver_id', $sellerId)
+                ->where('is_read', false)
+                ->count();
+        }
+
+        // 2. Active Chats (Mirroring Delivery logic: Sellers or Riders you've talked to)
+        // We rename this to $activeSellers to match your Blade's current variable naming
+        $activeSellers = Staff::whereIn('role', ['seller', 'delivery'])
+            ->whereNotIn('id', $excludeIds)
+            ->where(function($q) use ($sellerId) {
+                $q->whereHas('messagesSent', function($sq) use ($sellerId) { 
+                    $sq->where('receiver_id', $sellerId); 
+                })
+                ->orWhereHas('messagesReceived', function($sq) use ($sellerId) { 
+                    $sq->where('sender_id', $sellerId); 
+                });
             })
-            ->orWhere(function ($q) use ($sellerId, $receiverId, $type) {
-                $q->where('sender_id', $receiverId)
-                  ->where('sender_type', $type)
-                  ->where('receiver_id', $sellerId)
-                  ->where('receiver_type', 'seller')
-                  ->where('deleted_by_receiver', false);
-            })
-            ->with('replyTo')
-            ->orderBy('created_at', 'asc')
+            ->addSelect(['last_interaction' => Message::select('created_at')
+                ->where(function($q) use ($sellerId) {
+                    $q->whereColumn('sender_id', 'staff.id')->where('receiver_id', $sellerId);
+                })->orWhere(function($q) use ($sellerId) {
+                    $q->whereColumn('receiver_id', 'staff.id')->where('sender_id', $sellerId);
+                })->latest()->take(1)
+            ])
+            ->orderByDesc('last_interaction')
             ->get();
+
+        $activeIds = $activeSellers->pluck('id')->toArray();
+        
+        // 3. All Other Staff (Start new chats via search)
+        $allOtherStaff = Staff::whereNotIn('id', array_merge($excludeIds, $activeIds))
+            ->whereIn('role', ['seller', 'delivery'])
+            ->get();
+
+        // 4. Calculate Unread Counts for Active Contacts
+        foreach($activeSellers as $contact) {
+            $contact->unread_count = Message::where('sender_id', $contact->id)
+                ->where('receiver_id', $sellerId)
+                ->where('is_read', false)
+                ->count();
+        }
+
+        return view('seller.chat.index', compact('activeSellers', 'allOtherStaff', 'admin'));
+    }
+
+    // Identical to Delivery: Fixes the "Select Contact" header by returning user info
+    public function getProfile($type, $id)
+    {
+        $user = Staff::findOrFail($id);
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'role' => $user->role,
+            'image' => $user->image,
+            'email' => $user->email,
+            'phone' => $user->phone
+        ]);
+    }
+
+    public function fetchMessages($receiverId, $type)
+    {
+        $sellerId = Auth::guard('seller')->id();
+        $messages = Message::where(function($q) use ($sellerId, $receiverId) {
+            $q->where('sender_id', $sellerId)->where('receiver_id', $receiverId);
+        })->orWhere(function($q) use ($sellerId, $receiverId) {
+            $q->where('sender_id', $receiverId)->where('receiver_id', $sellerId);
+        })->orderBy('created_at', 'asc')->get();
 
         return response()->json($messages);
     }
 
-    /**
-     * 3. Send Message (Handles Text, Files, and Order Cards)
-     */
-  public function sendMessage(Request $request)
-{
-    $request->validate([
-        'receiver_id'   => 'required',
-        'receiver_type' => 'required|in:admin,delivery',
-        'message'       => 'nullable|string',
-        'attachments.*' => 'nullable|image|max:2048', // Matches JS key
-    ]);
+    public function sendMessage(Request $request)
+    {
+        $sellerId = Auth::guard('seller')->id();
+        
+        $message = new Message();
+        $message->sender_id = $sellerId;
+        $message->sender_type = 'seller';
+        $message->receiver_id = $request->receiver_id;
+        $message->receiver_type = $request->receiver_type;
+        $message->message = $request->message;
 
-    $msg = new Message();
-    $msg->sender_id     = Auth::guard('seller')->id();
-    $msg->sender_type   = 'seller';
-    $msg->receiver_id   = $request->receiver_id;
-    $msg->receiver_type = $request->receiver_type;
-    $msg->message       = $request->message;
-
-    // Handles multi-file attachments
-    if ($request->hasFile('attachments')) {
-        $paths = [];
-        foreach ($request->file('attachments') as $file) {
-            $paths[] = $file->store('chats', 'public');
+        if ($request->hasFile('attachments')) {
+            $paths = [];
+            foreach ($request->file('attachments') as $file) {
+                $paths[] = $file->store('chat_attachments', 'public');
+            }
+            $message->attachment = json_encode($paths);
         }
-        // Store as JSON if multiple, or just the first string
-        $msg->attachment = count($paths) === 1 ? $paths[0] : json_encode($paths);
+
+        $message->save();
+        return response()->json(['status' => 'success']);
     }
 
-    $msg->save();
-    return response()->json(['status' => 'success', 'message' => $msg]);
-}
-
-    /**
-     * 4. Delete Message (Supports "For Me" and "Everyone")
-     */
- public function deleteMessage(Request $request)
-{
-    $request->validate([
-        'id'   => 'required|integer',
-        'type' => 'required|in:me,everyone'
-    ]);
-
-    $msg = Message::findOrFail($request->id);
-    $sellerId = Auth::guard('seller')->id();
-
-    // Identify if the current seller is the sender or receiver of this specific message
-    $isSender   = ($msg->sender_id == $sellerId && $msg->sender_type == 'seller');
-    $isReceiver = ($msg->receiver_id == $sellerId && $msg->receiver_type == 'seller');
-
-    if ($request->type === 'everyone') {
-        // Delete for everyone: Only the original sender can trigger this
-        if ($isSender) {
-            $msg->is_deleted_everyone = true;
-            $msg->message = "This message was deleted";
-            $msg->attachment = null;
-            $msg->save();
-        }
-    } else {
-        // Delete for me: Hide the message ONLY for the person who clicked delete
-        if ($isSender) {
-            $msg->deleted_by_sender = true;
-        } elseif ($isReceiver) {
-            $msg->deleted_by_receiver = true;
-        }
-        $msg->save();
-    }
-
-    return response()->json(['status' => 'success']);
-}
-    /**
-     * 5. Fetch Recent Orders (Fixed for fname, lname, address1)
-     */
+    // Maps to 'chat.orders' - Synchronized with Seller Privacy
     public function getRecentOrders()
     {
         $sellerId = Auth::guard('seller')->id();
-
-        // Fetches last 10 orders where seller has products
-        $orders = Order::whereHas('items.product', fn ($q) =>
-                $q->where('seller_id', $sellerId)
-            )
-            ->select('id', 'tracking_no', 'fname', 'lname', 'address1', 'phone') // Use exact DB columns
-            ->latest()
-            ->take(10)
-            ->get();
-
-        return response()->json($orders);
+        // Return only orders where this seller's products are present
+        return response()->json(
+            Order::whereHas('items.product', fn($q) => $q->where('seller_id', $sellerId))
+                ->latest()
+                ->take(10)
+                ->get()
+        );
     }
 
-    /**
-     * 6. Get Profile Info
-     */
-    public function getStaffProfile($type, $id)
+    public function markAsRead($id, $type)
     {
-        $staff = Staff::where('id', $id)
-                      ->where('role', $type)
-                      ->select('id','name','email','phone','image','role')
-                      ->firstOrFail();
+        Message::where('sender_id', $id)
+            ->where('receiver_id', Auth::guard('seller')->id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+        return response()->json(['status' => 'success']);
+    }
 
-        return response()->json($staff);
+    public function deleteMessage(Request $request)
+    {
+        $msg = Message::findOrFail($request->id);
+        // Matching Delivery logic: Simple delete
+        $msg->delete(); 
+        return response()->json(['status' => 'success']);
+    }
+
+    // Added ClearChat to match your current Seller routes
+    public function clearChat($receiverId, $type)
+    {
+        $sellerId = Auth::guard('seller')->id();
+        Message::where(function($q) use ($sellerId, $receiverId) {
+            $q->where('sender_id', $sellerId)->where('receiver_id', $receiverId);
+        })->orWhere(function($q) use ($sellerId, $receiverId) {
+            $q->where('sender_id', $receiverId)->where('receiver_id', $sellerId);
+        })->delete(); 
+        
+        return response()->json(['status' => 'success']);
     }
 }

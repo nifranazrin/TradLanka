@@ -83,8 +83,10 @@ class SellerProfileController extends Controller
                 Storage::disk('public')->delete($seller->profile_photo);
             }
             $path = $request->file('image')->store('seller_profiles', 'public');
-            $seller->profile_photo = $path;
+            $seller->image = $path;  
         }
+
+
 
         $seller->save();
 

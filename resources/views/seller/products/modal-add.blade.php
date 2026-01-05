@@ -43,8 +43,9 @@
                     </div>
 
                     {{-- DYNAMIC VARIANTS SECTION (REQUIRED FOR CONTROLLER) --}}
-                    <div class="mb-4 p-3 border rounded bg-light">
+                      <div id="variations-container" class="mb-4 p-3 border rounded bg-light">
                         <label class="fw-bold mb-2">Product Variations (Sizes & Prices)</label>
+                        </div>
                         <div class="alert alert-info py-1 px-2 mb-2 small">
                             <i class="bi bi-info-circle"></i> Add at least one size. The main price is auto-calculated.
                         </div>
@@ -122,12 +123,49 @@
 {{-- JAVASCRIPT --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    
-    // --- 1. VARIANT LOGIC (Add Rows) ---
-    let variantIndex = 1;
+    // Selectors
+    const unitTypeSelect = document.querySelector('select[name="unit_type"]');
+    const variationsSection = document.getElementById('variantTable').closest('.mb-4');
     const variantTableBody = document.getElementById('variantTableBody');
     const addVariantBtn = document.getElementById('addVariantBtn');
+    const form = document.getElementById('addProductForm');
+    const submitBtn = document.getElementById('addProductSubmit');
+    const nameInput = document.getElementById('productNameInput');
+    
+    let variantIndex = 1;
+    const dt = new DataTransfer(); // Holds gallery images
 
+    // --- 1. UNIT TYPE TOGGLE LOGIC ---
+    // Fixes the issue where 'default' still asks for sizes
+    function toggleVariations() {
+        if (!unitTypeSelect) return;
+
+        if (unitTypeSelect.value === 'default') {
+            // Hide section and disable 'required' to bypass browser validation
+            variationsSection.style.display = 'none';
+            variationsSection.querySelectorAll('input').forEach(input => {
+                input.removeAttribute('required');
+                // Auto-fill hidden values to ensure the controller receives data
+                if(input.name.includes('unit_label')) input.value = 'Default';
+                if(input.name.includes('price')) input.value = input.value || '0';
+                if(input.name.includes('stock')) input.value = input.value || '0';
+            });
+        } else {
+            // Show section and re-enable requirements for physical units
+            variationsSection.style.display = 'block';
+            variationsSection.querySelectorAll('input').forEach(input => {
+                input.setAttribute('required', 'required');
+                if(input.value === 'Default') input.value = ''; // Clear placeholder if switching back
+            });
+        }
+    }
+
+    if(unitTypeSelect) {
+        unitTypeSelect.addEventListener('change', toggleVariations);
+        toggleVariations(); // Run on initial load
+    }
+
+    // --- 2. VARIANT ADD/REMOVE LOGIC ---
     if(addVariantBtn) {
         addVariantBtn.addEventListener('click', function() {
             const row = document.createElement('tr');
@@ -142,48 +180,35 @@ document.addEventListener('DOMContentLoaded', function () {
             variantIndex++;
         });
 
-        // Remove Row Logic
         variantTableBody.addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-row')) {
                 const id = e.target.getAttribute('data-id');
-                document.getElementById(`row-${id}`).remove();
+                const row = document.getElementById(`row-${id}`);
+                if (row) row.remove();
             }
         });
     }
 
-    // --- 2. IMAGE UPLOAD LOGIC ---
+    // --- 3. IMAGE UPLOAD LOGIC ---
     const dropArea = document.getElementById('galleryDropArea');
     const galleryInput = document.getElementById('galleryInput');
     const preview = document.getElementById('galleryPreview');
-    const form = document.getElementById('addProductForm');
-    const submitBtn = document.getElementById('addProductSubmit');
-    
-    // DataTransfer object to hold files
-    const dt = new DataTransfer();
 
     if(dropArea) {
-        // Click to open file dialog
         dropArea.addEventListener('click', () => galleryInput.click());
-
-        // Handle File Selection
         galleryInput.addEventListener('change', function() {
-            for (let i = 0; i < this.files.length; i++) {
-                dt.items.add(this.files[i]);
-            }
+            for (let i = 0; i < this.files.length; i++) { dt.items.add(this.files[i]); }
             updatePreview();
-            this.value = ''; // Clear input to allow re-selecting same file
+            this.value = ''; 
         });
 
-        // Drag & Drop Effects
         dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.style.borderColor = 'blue'; });
         dropArea.addEventListener('dragleave', () => { dropArea.style.borderColor = '#dee2e6'; });
         dropArea.addEventListener('drop', (e) => {
             e.preventDefault();
             dropArea.style.borderColor = '#dee2e6';
             for (let i = 0; i < e.dataTransfer.files.length; i++) {
-                if (e.dataTransfer.files[i].type.startsWith('image/')) {
-                    dt.items.add(e.dataTransfer.files[i]);
-                }
+                if (e.dataTransfer.files[i].type.startsWith('image/')) { dt.items.add(e.dataTransfer.files[i]); }
             }
             updatePreview();
         });
@@ -193,25 +218,18 @@ document.addEventListener('DOMContentLoaded', function () {
         preview.innerHTML = '';
         [...dt.files].forEach((file, index) => {
             let div = document.createElement('div');
-            div.style.position = 'relative';
-            div.style.width = '70px';
-            div.style.height = '70px';
+            div.className = 'position-relative';
+            div.style.width = '70px'; div.style.height = '70px';
 
             let img = document.createElement('img');
             img.src = URL.createObjectURL(file);
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            img.className = 'rounded border';
+            img.className = 'rounded border w-100 h-100 object-fit-cover';
 
             let btn = document.createElement('button');
             btn.innerHTML = '&times;';
             btn.className = 'btn btn-danger btn-sm p-0 rounded-circle position-absolute';
-            btn.style.top = '-5px';
-            btn.style.right = '-5px';
-            btn.style.width = '20px';
-            btn.style.height = '20px';
-            btn.style.lineHeight = '18px';
+            btn.style.top = '-5px'; btn.style.right = '-5px';
+            btn.style.width = '20px'; btn.style.height = '20px';
             
             btn.onclick = (e) => {
                 e.preventDefault(); 
@@ -219,34 +237,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 updatePreview();
             };
 
-            div.appendChild(img);
-            div.appendChild(btn);
-            preview.appendChild(div);
+            div.appendChild(img); div.appendChild(btn); preview.appendChild(div);
         });
     }
 
-    // --- 3. FORM SUBMIT HANDLER ---
+    // --- 4. FORM SUBMIT HANDLER ---
     if(form) {
         form.addEventListener('submit', function(e) {
+            const nameValue = nameInput.value.trim();
             
             // Name Capitalization Check
-            const nameInput = document.getElementById('productNameInput');
-            const nameValue = nameInput.value.trim();
             if (nameValue.length > 0 && nameValue.charAt(0) !== nameValue.charAt(0).toUpperCase()) {
                 e.preventDefault();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    text: 'Product Name must start with a Capital Letter!',
-                    confirmButtonColor: '#212529'
-                });
+                Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Product Name must start with a Capital Letter!', confirmButtonColor: '#212529' });
                 return;
             }
 
             // Sync DataTransfer files to Input
-            if (dt.files.length > 0) {
-                galleryInput.files = dt.files;
-            }
+            if (dt.files.length > 0) { galleryInput.files = dt.files; }
 
             // Button Loading State
             submitBtn.innerText = 'Saving...';
