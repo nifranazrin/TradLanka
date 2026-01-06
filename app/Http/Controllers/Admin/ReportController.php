@@ -5,50 +5,79 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
-use App\Models\Product;
+use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
     /**
-     * ✅ REPORT 1: Inventory & Stock Recovery
-     * Tracks current levels and items returned from failed deliveries
+     * Private helper to fetch and calculate report data.
+     * This ensures the dashboard and the PDF always show the same numbers.
      */
-    public function inventoryReport()
+    private function getReportData(Request $request)
     {
-        // Get all products to show current stock levels
-        $currentStock = Product::select('id', 'name', 'stock', 'price')
-            ->orderBy('stock', 'asc') // Low stock first
-            ->get();
+        $pendingStatuses = [0, 1, 2, 3, 4, 10]; 
+        $successStatus = 5; 
+        $failedStatus = 6;  
 
-        // Get orders that were finalized as "Failed/Cancelled" (Status 6)
-        // This shows the history of stock being put back into the system
-        $recoveredOrders = Order::with('items.product')
-            ->where('status', 6)
-            ->whereNotNull('cancel_reason') 
-            ->latest()
-            ->paginate(15);
+        $query = Order::query();
 
-        return view('admin.reports.inventory', compact('currentStock', 'recoveredOrders'));
+        // Apply single-day filter if present
+        if ($request->filled('filter_date')) {
+            $query->whereDate('created_at', $request->filter_date);
+        }
+
+        $allOrders = $query->latest()->get();
+
+        return [
+            // LKR Data
+            'successLKR' => $allOrders->where('status', $successStatus)->where('currency', 'LKR')->sum('total_price'),
+            'successLKRCount' => $allOrders->where('status', $successStatus)->where('currency', 'LKR')->count(),
+            'pendingLKR' => $allOrders->whereIn('status', $pendingStatuses)->where('currency', 'LKR')->sum('total_price'),
+            'pendingLKRCount' => $allOrders->whereIn('status', $pendingStatuses)->where('currency', 'LKR')->count(),
+            
+            // USD Data
+            'successUSD' => $allOrders->where('status', $successStatus)->where('currency', 'USD')->sum('total_price'),
+            'successUSDCount' => $allOrders->where('status', $successStatus)->where('currency', 'USD')->count(),
+            'pendingUSD' => $allOrders->whereIn('status', $pendingStatuses)->where('currency', 'USD')->sum('total_price'),
+            'pendingUSDCount' => $allOrders->whereIn('status', $pendingStatuses)->where('currency', 'USD')->count(),
+            
+            // Payment Mode Pipeline (Pending Only)
+            'totalCOD' => $allOrders->whereIn('status', $pendingStatuses)
+                ->filter(fn($o) => stripos($o->payment_mode, 'COD') !== false)->count(),
+            'totalStripe' => $allOrders->whereIn('status', $pendingStatuses)
+                ->filter(fn($o) => stripos($o->payment_mode, 'Stripe') !== false)->count(),
+            
+            // Failure Data
+            'failedCount' => $allOrders->where('status', $failedStatus)->count(),
+            'totalRefundValueLKR' => $allOrders->where('status', $failedStatus)->where('currency', 'LKR')->sum('total_price'),
+            
+            // Table List (Finalized Outcomes)
+            'tableOrders' => $allOrders->whereIn('status', [$successStatus, $failedStatus]),
+            'filterDate' => $request->filter_date
+        ];
     }
 
-            public function salesReport(Request $request)
-        {
-            // Fetch all successfully delivered (Status 5) or Paid orders
-            $orders = Order::whereIn('status', [5, 4, 3])->get();
+    /**
+     * Display the Sales Report Dashboard.
+     */
+    public function salesReport(Request $request)
+    {
+        $data = $this->getReportData($request);
+        return view('admin.reports.sales', $data);
+    }
 
-            // Grouping Sales by Currency
-            $totalLKR = $orders->filter(function($order) {
-                return str_contains(strtoupper($order->payment_mode), 'LKR') || $order->currency == 'LKR';
-            })->sum('total_price');
-
-            $totalUSD = $orders->filter(function($order) {
-                return str_contains(strtoupper($order->payment_mode), 'USD') || $order->currency == 'USD';
-            })->sum('total_price');
-
-            // Grouping by Payment Method
-            $stripeSales = $orders->filter(fn($o) => !str_contains(strtoupper($o->payment_mode), 'COD'))->sum('total_price');
-            $codSales = $orders->filter(fn($o) => str_contains(strtoupper($o->payment_mode), 'COD'))->sum('total_price');
-
-            return view('admin.reports.sales', compact('totalLKR', 'totalUSD', 'stripeSales', 'codSales', 'orders'));
-        }
+    /**
+     * Download the Sales Report as a PDF.
+     */
+    public function downloadPDF(Request $request)
+    {
+        $data = $this->getReportData($request);
+        
+        // Generate PDF using the separate slimmed-down blade file
+        $pdf = Pdf::loadView('admin.reports.sales_pdf', $data)->setPaper('a4', 'portrait');
+        
+        $filename = 'Sales-Report-' . ($data['filterDate'] ?? 'All-Time') . '.pdf';
+        return $pdf->download($filename);
+    }
 }

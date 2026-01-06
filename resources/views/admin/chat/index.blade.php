@@ -1,227 +1,407 @@
 @extends('layouts.admin')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-{{-- CHAT STYLES (Same as Seller side for consistency) --}}
 <style>
-    /* Layout */
-    .chat-container { height: calc(100vh - 120px); background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; }
+    /* Layout and Containers */
+    .chat-wrapper { display:flex; justify-content:center; padding:20px; background:#f4f7f6; min-height:85vh; }
+    .chat-container { width:100%; max-width:1200px; height:80vh; background:#fff; border-radius:15px; display:flex; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,.15); }
     
-    /* Sidebar */
-    .chat-sidebar { width: 300px; border-right: 1px solid #e5e7eb; background: #f9fafb; display: flex; flex-direction: column; }
-    .chat-header { padding: 20px; background: #212529; color: white; font-weight: bold; } /* Dark for Admin */
-    .contact-list { flex: 1; overflow-y: auto; }
-    .contact-item { padding: 15px 20px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; }
-    .contact-item:hover, .contact-item.active { background: #e9ecef; }
-    .contact-avatar { width: 40px; height: 40px; border-radius: 50%; background: #ccc; margin-right: 12px; object-fit: cover; }
-    .contact-info h6 { margin: 0; font-size: 14px; font-weight: 600; color: #333; }
-    .contact-info p { margin: 0; font-size: 12px; color: #777; }
+    /* Sidebar styling */
+    .chat-sidebar { width:320px; border-right:1px solid #e5e7eb; background:#fff; display:flex; flex-direction:column; }
+    /* Maroon Header */
+    .chat-header { height:65px; padding:0 20px; display:flex; align-items:center; background:#6b2f2f; color:#fff; font-weight:700; justify-content: space-between; }
+    .contact-list { flex:1; overflow-y:auto; }
+    .contact-item { display:flex; gap:12px; padding:14px 18px; cursor:pointer; border-bottom:1px solid #f1f5f9; transition: 0.2s; position: relative; align-items: center; }
+    .contact-item:hover { background:#fdf2f2; }
+    .contact-item.active { background:#fff8f8; border-left:4px solid #6b2f2f; }
+    
+    .avatar-wrapper { width:45px; height:45px; border-radius:50%; object-fit:cover; border: 1px solid #ddd; background: #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+    .contact-avatar { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Search Bar */
+    .search-box { padding: 10px 15px; border-bottom: 1px solid #eee; }
+    .search-input { border-radius: 20px; font-size: 13px; background: #f8f9fa; border: 1px solid #e9ecef; padding: 5px 15px; width: 100%; outline: none; }
+    .contact-item.new-contact { display: none !important; }
+    .searching .contact-item.new-contact { display: flex !important; }
+
+    .unread-badge { background: #ff0000; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 50%; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; position: absolute; right: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
     /* Chat Area */
-    .chat-area { flex: 1; display: flex; flex-direction: column; background: #fff; }
-    .chat-top-bar { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; background: #fff; }
-    .messages-box { flex: 1; padding: 20px; overflow-y: auto; background: #fdfdfd; display: flex; flex-direction: column; gap: 15px; }
-    
-    /* Message Bubbles (Colors flipped for Admin context) */
-    .message { max-width: 70%; padding: 10px 15px; border-radius: 12px; font-size: 14px; position: relative; word-wrap: break-word; }
-    .message.sent { align-self: flex-end; background: #212529; color: white; border-bottom-right-radius: 2px; } /* Admin Sent = Dark */
-    .message.received { align-self: flex-start; background: #e5e7eb; color: #333; border-bottom-left-radius: 2px; } /* Seller Sent = Gray */
-    .message img { max-width: 100%; border-radius: 8px; margin-top: 5px; }
-    .message-time { font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: right; display: block; }
+    .chat-area { flex:1; display:flex; flex-direction:column; background: #fff; }
+    .chat-top-bar { height:65px; padding:0 20px; display:flex; align-items:center; justify-content: space-between; border-bottom:1px solid #e5e7eb; }
+    .messages-box { flex:1; padding:20px; overflow-y:auto; background:#f9fafb; display: flex; flex-direction: column; }
+    .msg-row { display:flex; margin-bottom:12px; width: 100%; position: relative; }
+    .msg-row.sent { justify-content:flex-end; }
+    .msg-row.received { justify-content:flex-start; }
 
-    /* Input */
-    .chat-input-area { padding: 15px; border-top: 1px solid #eee; background: #fff; display: flex; align-items: center; gap: 10px; }
-    .chat-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
-    .btn-icon { width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .btn-send { background: #212529; color: white; }
+    .message { max-width:70%; padding:10px 14px; border-radius:15px; font-size:13.5px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    /* Maroon Sent Bubbles */
+    .sent .message { background:#6b2f2f; color:#fff; border-bottom-right-radius: 2px; }
+    .received .message { background:#fff; color:#111827; border-bottom-left-radius: 2px; border: 1px solid #e5e7eb; }
+    .message-time { font-size:10px; opacity:0.6; text-align:right; margin-top:5px; }
     
-    /* Helpers */
-    #fileInput { display: none; }
-    .file-preview { display: none; position: absolute; bottom: 70px; left: 20px; background: white; padding: 5px; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 8px; }
-    .file-preview img { width: 60px; height: 60px; object-fit: cover; }
+    .order-attachment { background: #fff !important; color: #333 !important; border-radius: 10px; padding: 12px; border-left: 5px solid #db8522; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: left; }
+    .chat-input-form { padding:15px 20px; border-top:1px solid #e5e7eb; }
+    .input-wrapper { display:flex; gap:12px; align-items:center; background:#f1f5f9; border-radius:25px; padding:8px 18px; }
+    .chat-input { flex:1; border:none; background:transparent; outline:none; resize:none; font-size: 14px; }
+    .btn-send-chat { background:#22c55e; color:#fff; width:40px; height:40px; border-radius:50%; border:none; display: flex; align-items: center; justify-content: center; }
 </style>
 
-<div class="container-fluid px-4 py-4" style="height: 100vh;">
-    
+<div class="chat-wrapper">
     <div class="chat-container">
-        
-        {{-- 1. LEFT SIDEBAR: SELLER LIST --}}
-        <div class="chat-sidebar">
-            <div class="chat-header">
-                <i class="bi bi-people-fill me-2"></i> Seller List
+        <div class="chat-sidebar" id="sidebarContainer">
+            <div class="chat-header"><span>Staff Hub</span></div>
+            
+            <div class="search-box">
+                <input type="text" id="contactSearch" class="search-input" placeholder="Search staff..." onkeyup="filterContacts()">
             </div>
-            <div class="contact-list">
-                @if($sellers->count() > 0)
-                    @foreach($sellers as $seller)
-                    <div class="contact-item" onclick="selectSeller({{ $seller->id }}, '{{ $seller->name }}', this)">
-                        {{-- Avatar Logic --}}
-                        @php 
-                            $avatar = $seller->image ? asset('storage/'.$seller->image) : asset('images/default-user.png');
-                        @endphp
-                        <img src="{{ $avatar }}" class="contact-avatar">
-                        
-                        <div class="contact-info">
-                            <h6>{{ $seller->name }}</h6>
-                            <p class="text-truncate" style="max-width: 180px;">{{ $seller->email }}</p>
-                        </div>
+
+            <div class="contact-list" id="contactList">
+                {{-- Active Chats --}}
+                @foreach($activeContacts as $contact)
+                <div class="contact-item" id="contact-{{ $contact->role }}-{{ $contact->id }}" onclick="selectContact({{ $contact->id }}, '{{ $contact->role }}')">
+                    <div class="avatar-wrapper">
+                        <img src="{{ $contact->image ? asset('storage/'.$contact->image) : asset('images/default-user.png') }}" 
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($contact->name) }}&background=6b2f2f&color=fff';" class="contact-avatar">
                     </div>
-                    @endforeach
-                @else
-                    <div class="p-4 text-center text-muted">No sellers found.</div>
-                @endif
+                    <div class="flex-grow-1">
+                        <strong>{{ $contact->name }}</strong>
+                        <div style="font-size:11px;color:#6b7280">{{ ucfirst($contact->role) }}</div>
+                    </div>
+                    @if(isset($contact->unread_count) && $contact->unread_count > 0)
+                        <span class="unread-badge" id="badge-{{ $contact->role }}-{{ $contact->id }}">{{ $contact->unread_count }}</span>
+                    @endif
+                </div>
+                @endforeach
+
+                {{-- All Other Staff (Hidden until search) --}}
+                @foreach($allOtherStaff as $staff)
+                <div class="contact-item new-contact" id="contact-{{ $staff->role }}-{{ $staff->id }}" onclick="selectContact({{ $staff->id }}, '{{ $staff->role }}')">
+                    <div class="avatar-wrapper">
+                        <img src="{{ $staff->image ? asset('storage/'.$staff->image) : asset('images/default-user.png') }}" 
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($staff->name) }}&background=eee&color=333';" class="contact-avatar">
+                    </div>
+                    <div class="flex-grow-1">
+                        <strong>{{ $staff->name }}</strong>
+                        <div style="font-size:11px;color:#6b7280">Start Chat ({{ ucfirst($staff->role) }})</div>
+                    </div>
+                </div>
+                @endforeach
             </div>
         </div>
 
-        {{-- 2. RIGHT CHAT AREA --}}
         <div class="chat-area">
-            
-            {{-- Top Bar --}}
             <div class="chat-top-bar">
-                <h5 class="mb-0 fw-bold" id="chatTitle">Select a Seller to Chat</h5>
-            </div>
-
-            {{-- Messages Box --}}
-            <div class="messages-box" id="messagesBox">
-                <div class="text-center text-muted mt-5">
-                    <i class="bi bi-chat-square-text fs-1"></i>
-                    <p class="mt-2">Select a seller from the left sidebar to start chatting.</p>
+                <div class="d-flex align-items-center gap-3" style="cursor:pointer" onclick="viewProfile()">
+                    <div class="avatar-wrapper">
+                        <img id="chatAvatar" src="{{ asset('images/default-user.png') }}" class="contact-avatar">
+                    </div>
+                    <div>
+                        <div id="chatTitle" style="font-weight:700">Select Staff</div>
+                        <div id="chatSubtitle" style="font-size:11px; color:#6b2f2f">Click to view details</div>
+                    </div>
                 </div>
+                <button class="btn btn-sm btn-outline-danger border-0" onclick="clearChat()">
+                    <i class="bi bi-trash"></i> Clear Chat
+                </button>
             </div>
 
-            {{-- Image Preview --}}
-            <div class="file-preview" id="filePreview">
-                <img id="previewImg" src="">
-                <div style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:18px; height:18px; font-size:10px; text-align:center; cursor:pointer;" onclick="clearFile()">&times;</div>
-            </div>
+            <div class="messages-box" id="messagesBox"></div>
 
-            {{-- Input Area (Hidden initially) --}}
-            <form id="chatForm" class="chat-input-area" enctype="multipart/form-data" style="display:none;">
+            <form id="chatForm" class="chat-input-form" style="display: none;">
                 @csrf
-                <input type="hidden" name="receiver_id" id="receiverId">
-
-                {{-- Attachment --}}
-                <button type="button" class="btn-icon" style="background:#f0f0f0;" onclick="document.getElementById('fileInput').click()">
-                    <i class="bi bi-paperclip"></i>
-                </button>
-                <input type="file" id="fileInput" name="attachment" accept="image/*" onchange="showPreview(this)">
-
-                {{-- Text Input --}}
-                <input type="text" name="message" id="messageInput" class="chat-input" placeholder="Type a reply..." autocomplete="off">
-
-                {{-- Send Button --}}
-                <button type="submit" class="btn-icon btn-send">
-                    <i class="bi bi-send-fill"></i>
-                </button>
+                <div class="input-wrapper">
+                    <button type="button" class="btn text-secondary p-0" onclick="document.getElementById('fileInput').click()">
+                        <i class="bi bi-image" style="font-size:20px"></i>
+                    </button>
+                    <button type="button" class="btn text-secondary p-0" onclick="openOrderModal()">
+                        <i class="bi bi-cart-check" style="font-size:20px"></i>
+                    </button>
+                    <input type="file" id="fileInput" class="d-none" multiple onchange="uploadMedia(this)">
+                    <textarea id="messageInput" class="chat-input" placeholder="Type a message..." rows="1"></textarea>
+                    <button type="submit" class="btn-send-chat"><i class="bi bi-send-fill"></i></button>
+                </div>
             </form>
         </div>
-
     </div>
 </div>
 
-{{-- JAVASCRIPT LOGIC --}}
+{{-- Modals --}}
+<div class="modal fade" id="profileModal" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content text-center p-4"><img id="pModalImg" src="" class="rounded-circle mx-auto mb-3" style="width:80px;height:80px;object-fit:cover"><h5 id="pModalName" class="mb-0"></h5><p id="pModalRole" class="text-muted small"></p><hr><div class="text-start"><p class="small mb-1"><b>Email:</b> <span id="pModalEmail"></span></p><p class="small"><b>Phone:</b> <span id="pModalPhone"></span></p></div></div></div></div>
+<div class="modal fade" id="orderModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-light"><h5>Select Order to Share</h5></div><div class="modal-body" id="orderList" style="max-height: 400px; overflow-y: auto;"></div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    let currentSellerId = null;
-    const messagesBox = document.getElementById('messagesBox');
-    const chatForm = document.getElementById('chatForm');
+let currentReceiverId = null;
+let currentReceiverType = null;
+let activeUser = {};
+let replyToId = null;
 
-    // 1. SELECT SELLER FUNCTION
-    function selectSeller(id, name, element) {
-        currentSellerId = id;
-        document.getElementById('receiverId').value = id;
-        document.getElementById('chatTitle').innerHTML = `<i class="bi bi-shop me-2"></i> ${name}`;
-        document.getElementById('chatForm').style.display = 'flex'; // Show input
+/**
+ * ✅ 1. Filter Contacts (WhatsApp Style)
+ * Shows active chats by default, reveals new staff during search.
+ */
+function filterContacts() {
+    let input = document.getElementById('contactSearch').value.toLowerCase();
+    let container = document.getElementById('sidebarContainer');
+    let contacts = document.querySelectorAll('.contact-item');
 
-        // Highlight Active
-        document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('active'));
-        element.classList.add('active');
-
-        loadMessages();
+    if (input.length > 0) {
+        container.classList.add('searching');
+    } else {
+        container.classList.remove('searching');
     }
 
-    // 2. LOAD MESSAGES
-    function loadMessages() {
-        if(!currentSellerId) return;
+    contacts.forEach(item => {
+        let name = item.querySelector('strong').innerText.toLowerCase();
+        if (input.length > 0) {
+            item.style.setProperty('display', name.includes(input) ? 'flex' : 'none', 'important');
+        } else {
+            item.style.removeProperty('display');
+        }
+    });
+}
 
-        fetch(`{{ url('/admin/chat/fetch') }}/${currentSellerId}`)
-            .then(res => res.json())
-            .then(data => {
-                messagesBox.innerHTML = '';
-                
-                if(data.length === 0) {
-                    messagesBox.innerHTML = '<p class="text-center text-muted mt-5">No messages yet.</p>';
-                    return;
-                }
+/**
+ * ✅ 2. Select Contact & Load Profile
+ */
+function selectContact(id, type) {
+    currentReceiverId = id; 
+    currentReceiverType = type;
+    
+    // UI Updates
+    document.querySelectorAll('.contact-item').forEach(e => e.classList.remove('active'));
+    let target = document.getElementById(`contact-${type}-${id}`);
+    if(target) target.classList.add('active');
+    
+    document.getElementById('chatForm').style.display = 'block';
 
-                data.forEach(msg => {
-                    // Logic: If sender_type is 'admin', it's SENT by ME.
-                    const isSent = msg.sender_type === 'admin';
-                    const bubbleClass = isSent ? 'sent' : 'received';
-                    const date = new Date(msg.created_at);
-                    const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Remove unread badge visually
+    const badge = document.getElementById(`badge-${type}-${id}`);
+    if(badge) badge.remove();
 
-                    let attachmentHtml = '';
-                    if(msg.attachment) {
-                        attachmentHtml = `<a href="/storage/${msg.attachment}" target="_blank"><img src="/storage/${msg.attachment}"></a>`;
-                    }
-
-                    const html = `
-                        <div class="message ${bubbleClass}">
-                            ${msg.message ? `<p class="mb-1">${msg.message}</p>` : ''}
-                            ${attachmentHtml}
-                            <span class="message-time">${timeString}</span>
-                        </div>
-                    `;
-                    messagesBox.innerHTML += html;
-                });
-                scrollToBottom();
-            });
-    }
-
-    // 3. SEND MESSAGE
-    chatForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        // Ensure receiver_id is set
-        if(!document.getElementById('receiverId').value) return;
-
-        fetch("{{ route('admin.chat.send') }}", {
-            method: "POST",
-            body: formData,
-            headers: { "X-CSRF-TOKEN": "{{ csrf_token() }}" }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'success') {
-                document.getElementById('messageInput').value = '';
-                clearFile();
-                loadMessages();
-            }
-        });
+    // Mark as read in DB
+    fetch(`/admin/chat/mark-read/${id}/${type}`, { 
+        method: 'POST', 
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } 
     });
 
-    // 4. HELPERS
-    function showPreview(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('previewImg').src = e.target.result;
-                document.getElementById('filePreview').style.display = 'block';
+    // Fetch Full Profile Info
+    fetch(`/admin/chat/profile/${type}/${id}`).then(r => r.json()).then(data => {
+        activeUser = data; // ✅ Store full user object for modal
+        document.getElementById('chatTitle').innerText = data.name;
+        document.getElementById('chatSubtitle').innerText = "Click to view details";
+        
+        const avatar = document.getElementById('chatAvatar');
+        avatar.src = data.image ? `/storage/${data.image}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=6b2f2f&color=fff`;
+        
+        loadMessages();
+    });
+}
+
+/**
+ * ✅ 3. Load Messages (Refresh History)
+ * Correctly parses JSON attachments and shows Maroon theme bubbles.
+ */
+function loadMessages() {
+    if(!currentReceiverId) return;
+    
+    fetch(`/admin/chat/fetch/${currentReceiverId}/${currentReceiverType}`)
+    .then(r => r.json())
+    .then(data => {
+        const box = document.getElementById('messagesBox');
+        box.innerHTML = '';
+        
+        data.forEach(m => {
+            const isSent = m.sender_type === 'admin';
+            const row = document.createElement('div');
+            row.className = 'msg-row ' + (isSent ? 'sent' : 'received');
+            
+            let messageText = (m.message && m.message !== 'null') ? m.message : '';
+            let attachmentHtml = '';
+
+            // Handle Multi-file attachments exactly like Delivery
+            if(m.attachment) {
+                try {
+                    const files = JSON.parse(m.attachment);
+                    if(Array.isArray(files)){
+                        files.forEach(path => { 
+                            attachmentHtml += `<img src="/storage/${path}" style="max-width:200px; border-radius:10px; display:block; margin-bottom:5px; cursor:pointer;" onclick="window.open('/storage/${path}')">`; 
+                        });
+                    } else { 
+                        attachmentHtml = `<img src="/storage/${m.attachment}" style="max-width:200px; border-radius:10px; display:block; margin-bottom:5px;">`; 
+                    }
+                } catch(e) { 
+                    attachmentHtml = `<img src="/storage/${m.attachment}" style="max-width:200px; border-radius:10px; display:block; margin-bottom:5px;">`; 
+                }
             }
-            reader.readAsDataURL(input.files[0]);
+
+            // Options Menu (Sync with Delivery Logic)
+            const menuHtml = `
+                <div class="dropdown d-inline float-end ms-2">
+                    <i class="bi bi-three-dots-vertical cursor-pointer" data-bs-toggle="dropdown" style="font-size:12px; opacity:0.5"></i>
+                    <ul class="dropdown-menu shadow-sm border-0">
+                        <li><a class="dropdown-item small" onclick="replyMessage(${m.id}, '${messageText.substring(0,20).replace(/'/g, "\\'")}')">Reply</a></li>
+                        <li><a class="dropdown-item small text-danger" onclick="deleteMsg(${m.id}, 'me')">Delete for me</a></li>
+                        ${isSent ? `<li><a class="dropdown-item small text-danger fw-bold" onclick="deleteMsg(${m.id}, 'everyone')">Delete for everyone</a></li>` : ''}
+                    </ul>
+                </div>`;
+
+            row.innerHTML = `<div class="message">${menuHtml}${attachmentHtml}${messageText}<div class="message-time">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div>`;
+            box.appendChild(row);
+        });
+        box.scrollTop = box.scrollHeight;
+    });
+}
+
+/**
+ * ✅ 4. Universal Send Function
+ * Used for Text, Orders, and Files.
+ */
+function sendMessage(msg, file = null) {
+    if ((!msg && !file) || !currentReceiverId) return;
+    
+    let formData = new FormData();
+    formData.append('receiver_id', currentReceiverId); 
+    formData.append('receiver_type', currentReceiverType);
+    
+    if (msg) formData.append('message', msg); // ✅ Now correctly sends Order Cards
+    if (file) formData.append('attachments[]', file);
+    if (replyToId) formData.append('reply_to_id', replyToId);
+
+    fetch("{{ route('admin.chat.send') }}", { 
+        method: 'POST', 
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, 
+        body: formData 
+    }).then(() => {
+        const input = document.getElementById('messageInput'); 
+        input.value = ''; 
+        input.placeholder = "Type a message..."; 
+        replyToId = null; 
+        loadMessages();
+    });
+}
+
+/**
+ * ✅ 5. Management Actions (Clear & Delete)
+ * Matches Delivery "Hard Delete" logic
+ */
+function clearChat() {
+    if(!currentReceiverId) return;
+
+    Swal.fire({ 
+        title: 'Clear Chat?', 
+        text: "This will delete all messages for both parties permanently.", 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#6b2f2f', // Maroon theme
+        confirmButtonText: 'Yes, All Delete!'
+    }).then(res => {
+        if(res.isConfirmed) {
+            fetch(`/admin/chat/clear/${currentReceiverId}/${currentReceiverType}`, { 
+                method: 'POST', 
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } 
+            }).then(response => response.json()).then(data => {
+                if(data.status === 'success') {
+                    document.getElementById('messagesBox').innerHTML = ''; // Wipe UI
+                    Swal.fire('Cleared!', 'The history has been wiped.', 'success');
+                }
+            });
         }
-    }
-    function clearFile() {
-        document.getElementById('fileInput').value = '';
-        document.getElementById('filePreview').style.display = 'none';
-    }
-    function scrollToBottom() {
-        messagesBox.scrollTop = messagesBox.scrollHeight;
-    }
+    });
+}
 
-    // Auto Refresh
-    setInterval(() => { if(currentSellerId) loadMessages(); }, 4000);
+function deleteMsg(msgId, deleteType) {
+    Swal.fire({ 
+        title: 'Are you sure?', 
+        text: "Delete this message?", 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#6b2f2f' 
+    }).then(res => {
+        if (res.isConfirmed) {
+            fetch("{{ route('admin.chat.delete') }}", { 
+                method: 'POST', 
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ id: msgId, type: deleteType }) 
+            }).then(() => loadMessages());
+        }
+    });
+}
 
+/**
+ * ✅ 6. Profile View Logic
+ */
+function viewProfile() { 
+    if(!activeUser || !activeUser.id) return; 
+    
+    // ✅ Fills the profile modal with fetched activeUser data
+    document.getElementById('pModalImg').src = document.getElementById('chatAvatar').src; 
+    document.getElementById('pModalName').innerText = activeUser.name; 
+    document.getElementById('pModalRole').innerText = activeUser.role.charAt(0).toUpperCase() + activeUser.role.slice(1); 
+    document.getElementById('pModalEmail').innerText = activeUser.email || 'N/A'; 
+    document.getElementById('pModalPhone').innerText = activeUser.phone || 'N/A'; 
+    
+    new bootstrap.Modal(document.getElementById('profileModal')).show(); 
+}
+
+/**
+ * ✅ 7. Order Sharing Logic
+ */
+function openOrderModal() {
+    fetch("{{ route('admin.chat.orders') }}").then(r => r.json()).then(orders => {
+        const orderList = document.getElementById('orderList');
+        orderList.innerHTML = '';
+        orders.forEach(o => {
+            // ✅ Only use the first name (o.fname) to avoid "null" or last names
+            let firstName = o.fname; 
+            
+            orderList.innerHTML += `
+                <div class="p-3 border-bottom cursor-pointer hover-bg-light" 
+                     onclick="shareOrder('${o.tracking_no}', '${firstName.replace(/'/g, "\\'")}', '${o.address1.replace(/'/g, "\\'")}', '${o.phone}')">
+                    <b>Order #${o.tracking_no}</b><br>
+                    <small class="text-muted">Customer: ${firstName}</small>
+                </div>`;
+        });
+        new bootstrap.Modal(document.getElementById('orderModal')).show();
+    });
+}
+
+function shareOrder(tracking, name, address, phone) {
+    const orderHtml = `<div class="order-attachment"><b>📦 Shared Order Details</b><p><b>ID:</b> #${tracking}</p><p><b>Customer:</b> ${name}</p><p><b>Phone:</b> ${phone}</p><p><b>Address:</b> ${address}</p></div>`;
+    sendMessage(orderHtml, null); 
+    bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
+}
+
+/**
+ * ✅ 8. Helpers & Event Listeners
+ */
+function replyMessage(id, text) { 
+    replyToId = id; 
+    const input = document.getElementById('messageInput'); 
+    input.placeholder = `Replying to: "${text}..."`; 
+    input.focus(); 
+}
+
+function uploadMedia(input) { 
+    if (input.files && input.files[0]) { 
+        Array.from(input.files).forEach(f => sendMessage(null, f)); 
+    } 
+    input.value = ''; 
+}
+
+// Handle Enter Key Press
+document.getElementById('messageInput').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const val = this.value; if(val.trim()) sendMessage(val);
+    }
+});
+
+// Refresh history every 5 seconds
+setInterval(loadMessages, 5000);
 </script>
 
 @endsection

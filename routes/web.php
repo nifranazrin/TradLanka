@@ -35,6 +35,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\StaffManagementController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SellerAnalyticsController;
+use App\Http\Controllers\Admin\AdminReviewController;
 
 // SELLER CONTROLLERS
 use App\Http\Controllers\StaffRegistrationController;
@@ -178,108 +179,89 @@ Route::prefix('user')->name('user.')->middleware('auth')->group(function () {
 });
 
 // =============================================================
-//                    ADMIN DASHBOARD (Protected)
+//               CURRENCY & GLOBAL SETTINGS (TOP)
 // =============================================================
+Route::get('/set-currency/{currency}', function ($currency) {
+    if (in_array($currency, ['LKR', 'USD'])) {
+        session(['currency' => $currency]);
+    }
+    return redirect()->back();
+});
 
-Route::prefix('admin')->name('admin.')->middleware([AdminMiddleware::class])->group(function () {
+// =============================================================
+//               ADMIN DASHBOARD (Protected)
+// =============================================================
+Route::prefix('admin')->name('admin.')->middleware(['auth', AdminMiddleware::class])->group(function () {
 
     Route::get('/dashboard', [AdminDashController::class, 'dashboard'])->name('dashboard');
 
-    // Resources
+    // --- Resources ---
     Route::resource('categories', CategoryController::class);
 
-    // Banner Management
+    // --- Banner Management ---
     Route::get('/website-content/banner', [BannerController::class, 'edit'])->name('banner.edit');
     Route::put('/website-content/banner', [BannerController::class, 'update'])->name('banner.update');
 
-   
-    // Unified User (Staff) Approvals
+    // --- User (Staff/Seller) Approvals & Notifications ---
     Route::get('/user-requests', [UserApprovalController::class, 'index'])->name('seller.requests');
     Route::post('/user-requests/{id}/approve', [UserApprovalController::class, 'approve'])->name('seller.approve');
     Route::post('/user-requests/{id}/reject', [UserApprovalController::class, 'reject'])->name('seller.reject');
     Route::put('/user-requests/{id}/toggle-status', [UserApprovalController::class, 'toggleStatus'])->name('seller.toggleStatus');
     Route::post('/user-requests/{id}/restore', [UserApprovalController::class, 'restore'])->name('seller.restore');
+    Route::post('/send-staff-credentials', [UserApprovalController::class, 'sendCredentialsEmail'])->name('staff.sendEmail');
+    Route::get('/notifications/{id}/read', [UserApprovalController::class, 'readNotification'])->name('notifications.read');
+    Route::get('/notifications/mark-all', [UserApprovalController::class, 'markAllRead'])->name('notifications.markAllRead');
 
-    //cancel
-    Route::put('orders/finalize-refund/{id}', [OrderController::class, 'finalizeRefund'])
-          ->name('orders.finalize_refund');
-    
-    // Product Management
+    // --- Staff Management ---
+    Route::get('/staff-management', [StaffManagementController::class, 'index'])->name('staff.index');
+    Route::put('/staff-management/{id}/toggle', [StaffManagementController::class, 'toggleStatus'])->name('staff.toggle');
+
+    // --- Order Management ---
+    Route::get('review-orders', [OrderController::class, 'reviewOrders'])->name('orders.review');
+    Route::get('review-orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+    Route::put('assign-order/{id}', [OrderController::class, 'assignOrder'])->name('orders.assign');
+    Route::put('orders/finalize-refund/{id}', [OrderController::class, 'finalizeRefund'])->name('orders.finalize_refund');
+
+    // --- Product Management ---
     Route::get('/products', [AdminProductController::class, 'index'])->name('products.index');
     Route::get('/products/{id}', [AdminProductController::class, 'show'])->name('products.show');
     Route::post('/products/{id}/approve', [AdminProductController::class, 'approve'])->name('products.approve');
     Route::post('/products/{id}/reject', [AdminProductController::class, 'reject'])->name('products.reject');
 
-    // Profile & Security
+    //Review
+    Route::get('/reviews', [App\Http\Controllers\Admin\AdminReviewController::class, 'index'])->name('reviews');
+
+    // --- Profile & Security ---
     Route::get('/profile', [AdminProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile/update', [AdminProfileController::class, 'update'])->name('profile.update');
-    Route::post('/profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password');
-   
-    // Inside Admin Group chat
-        Route::get('/chat', [AdminChatController::class, 'index'])->name('chat.index');
-        Route::get('/chat/fetch/{sellerId}', [AdminChatController::class, 'fetchMessages'])->name('chat.fetch');
-        Route::post('/chat/send', [AdminChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('/check-password', [AdminProfileController::class, 'checkPassword'])->name('check-password');
 
-        // Your new Review and Assignment routes
-        Route::get('review-orders', [App\Http\Controllers\Admin\OrderController::class, 'reviewOrders'])
-            ->name('orders.review'); // Removed "admin." because the group adds it automatically
-            
-        Route::put('assign-order/{id}', [App\Http\Controllers\Admin\OrderController::class, 'assignOrder'])
-            ->name('orders.assign'); // Removed "admin."
+    // --- Chat System ---
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [AdminChatController::class, 'index'])->name('index');
+        Route::post('/clear/{receiverId}/{type}', [AdminChatController::class, 'clearConversation'])->name('clear');
+        Route::get('/fetch/{receiverId}/{type}', [AdminChatController::class, 'fetchMessages'])->name('fetch');
+        Route::get('/profile/{type}/{id}', [AdminChatController::class, 'getProfile'])->name('profile');
+        Route::post('/mark-read/{id}/{type}', [AdminChatController::class, 'markAsRead'])->name('mark-read');
+        Route::post('/send', [AdminChatController::class, 'sendMessage'])->name('send');
+        Route::post('/delete', [AdminChatController::class, 'deleteMessage'])->name('delete');
+        Route::get('/orders', [AdminChatController::class, 'getRecentOrders'])->name('orders');
+    });
 
-    Route::get('review-orders/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('orders.show');
+    // --- Reports & Analytics ---
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/inventory', [ReportController::class, 'inventoryReport'])->name('inventory');
+        Route::get('/sales', [ReportController::class, 'salesReport'])->name('sales');
+        // ✅ This matches: route('admin.reports.sales.pdf')
+        Route::get('/sales/pdf', [ReportController::class, 'downloadPDF'])->name('sales.pdf');
+    });
 
-     // CORRECT in web.php
-Route::post('/send-staff-credentials', [UserApprovalController::class, 'sendCredentialsEmail'])
-    ->name('staff.sendEmail'); 
-
-    // Staff Management Routes
-Route::get('/staff-management', [App\Http\Controllers\Admin\StaffManagementController::class, 'index'])
-    ->name('staff.index');
-
-Route::put('/staff-management/{id}/toggle', [App\Http\Controllers\Admin\StaffManagementController::class, 'toggleStatus'])
-    ->name('staff.toggle');
-
-    // MOVE THIS TO THE TOP (Before the seller group)
-Route::get('/set-currency/{currency}', function ($currency) {
-    if (in_array($currency, ['LKR', 'USD'])) {
-        session(['currency' => $currency]);
-    }
-    return redirect()->back();
+    // --- Seller Analytics ---
+    Route::prefix('seller-analytics')->name('seller.analytics.')->group(function () {
+        Route::get('/', [SellerAnalyticsController::class, 'index'])->name('index');
+        Route::get('/view/{id}', [SellerAnalyticsController::class, 'viewReport'])->name('show');
+    });
 });
-
-
-// MOVE THIS TO THE TOP (Before the seller group)
-Route::get('/set-currency/{currency}', function ($currency) {
-    if (in_array($currency, ['LKR', 'USD'])) {
-        session(['currency' => $currency]);
-    }
-    return redirect()->back();
-});
-
-Route::get('/notifications/{id}/read', [UserApprovalController::class, 'readNotification'])->name('notifications.read');
-    Route::get('/notifications/mark-all', [UserApprovalController::class, 'markAllRead'])->name('notifications.markAllRead');
-
-
-// =============================================================
-    //                    ADMIN REPORTS & ANALYTICS
-    // =============================================================
-    
-   Route::prefix('reports')->group(function () {
-    Route::get('/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
-    Route::get('/sales', [ReportController::class, 'salesReport'])->name('reports.sales');
-});
-
-// Seller-Submitted Analytics (Uses SellerAnalyticsController)
-Route::prefix('seller-analytics')->name('seller.analytics.')->group(function () {
-    // List of all submitted reports
-    Route::get('/', [SellerAnalyticsController::class, 'index'])->name('index');
-
-    // FIXED: Changed 'showReport' to 'viewReport' to match your file
-    Route::get('/view/{id}', [SellerAnalyticsController::class, 'viewReport'])->name('show');
-});
-
- });
      
 
 

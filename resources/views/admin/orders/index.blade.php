@@ -120,7 +120,8 @@
                                     @endif
                                 </div>
                                 <div class="small text-muted mt-1">
-                                    <i class="bi bi-calendar3 me-1"></i>{{ $order->created_at->format('d M, Y | h:i A') }}
+                                    <i class="bi bi-calendar3 me-1"></i>
+                                    {{ $order->created_at->timezone('Asia/Colombo')->format('d M, Y | h:i A') }}
                                 </div>
                                 <div class="mt-2 d-flex align-items-center">
                                     @if($isActuallyCod)

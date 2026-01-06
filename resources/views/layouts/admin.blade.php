@@ -171,25 +171,30 @@
 
         {{-- Profile --}}
         <div class="dropdown">
-            <a href="#" class="text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                @if($admin && $admin->image)
-                    <img src="{{ asset('storage/' . $admin->image) }}" class="rounded-circle me-1" width="30" height="30" style="object-fit:cover;">
-                @else
-                    <i class="bi bi-person-circle me-1"></i>
-                @endif
-                {{ $admin->name ?? 'Admin' }}
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end shadow">
-                <li><a class="dropdown-item" href="{{ route('admin.profile.index') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form action="{{ route('staff.logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
-                    </form>
-                </li>
-            </ul>
-        </div>
+    {{-- Added d-flex and align-items-center to the link below --}}
+    <a href="#" class="text-white text-decoration-none dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+        @if($admin && $admin->image)
+            {{-- Added me-2 for spacing --}}
+            <img src="{{ asset('storage/' . $admin->image) }}" class="rounded-circle me-2" width="30" height="30" style="object-fit:cover;">
+        @else
+            <i class="bi bi-person-circle me-2"></i>
+        @endif
+        
+        {{-- The name will now sit perfectly centered next to the image --}}
+        <span>{{ $admin->name ?? 'Admin' }}</span>
+    </a>
+    
+    <ul class="dropdown-menu dropdown-menu-end shadow">
+        <li><a class="dropdown-item" href="{{ route('admin.profile.index') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <form action="{{ route('staff.logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+            </form>
+        </li>
+    </ul>
+</div>
     </div>
 </div>
 
@@ -228,8 +233,13 @@
     <a href="{{ route('admin.orders.review') }}" class="{{ request()->is('admin/orders*') || request()->is('admin/review-orders*') ? 'active' : '' }}">
         <span><i class="bi bi-truck"></i> Orders</span>
     </a>
+
+    {{-- 7. Reviews --}}
+<a href="{{ route('admin.reviews') }}" class="{{ request()->routeIs('admin.reviews') ? 'active' : '' }}">
+    <span><i class="bi bi-star"></i> Reviews</span>
+</a>
     
-    {{-- 7. Reports & Analysis Dropdown --}}
+    {{-- 8. Reports & Analysis Dropdown --}}
 <div class="nav-item">
     <a href="#reportSubmenu" data-bs-toggle="collapse" 
        class="d-flex align-items-center sidebar-link-fixed {{ request()->is('admin/reports*') || request()->is('admin/seller-analytics*') ? 'active' : '' }}" 
@@ -258,21 +268,13 @@
                class="nav-link py-2 {{ request()->is('admin/seller-analytics*') ? 'fw-bold text-dark' : '' }}"
                style="display: flex; align-items: center; text-decoration: none; color: #4d4a4a !important;"> 
                 <i class="bi bi-person-badge me-2"></i>
-                <span>Seller Submissions</span>
+                <span>Inventory reports</span>
                 @if($pendingReports > 0)
                     <span class="badge rounded-pill bg-danger ms-auto me-3" style="font-size: 9px;">{{ $pendingReports }}</span>
                 @endif
             </a>
         </li>
 
-        <li class="nav-item">
-            <a href="{{ route('admin.reports.inventory') }}" 
-               class="nav-link py-2 {{ request()->is('admin/reports/inventory') ? 'fw-bold text-dark' : '' }}"
-               style="display: flex; align-items: center; text-decoration: none; color: #4d4a4a !important;"> 
-                <i class="bi bi-box-seam me-2"></i>
-                <span>Inventory & Stock</span>
-            </a>
-        </li>
         <li class="nav-item">
             <a href="{{ route('admin.reports.sales') }}" 
                class="nav-link py-2 {{ request()->is('admin/reports/sales') ? 'fw-bold text-dark' : '' }}"
@@ -284,15 +286,17 @@
     </ul>
 </div>
 
-{{-- 8. Staff Chat (Replaces Settings) --}}
+{{-- 8. Staff Chat --}}
 <a href="{{ route('admin.chat.index') }}" class="{{ request()->is('admin/chat*') ? 'active' : '' }}">
     <span><i class="bi bi-chat-dots"></i> Staff Chat</span>
+    
+    @if(isset($admin_notif_counts['messages']) && $admin_notif_counts['messages'] > 0)
+        <span class="badge bg-danger rounded-pill" style="font-size: 10px; padding: 3px 6px;">
+            {{ $admin_notif_counts['messages'] }}
+        </span>
+    @endif
 </a>
-    {{-- 8. Settings --}}
-    <a href="#" class="{{ request()->is('admin/settings*') ? 'active' : '' }}">
-        <span><i class="bi bi-gear"></i> Settings</span>
-    </a>
-
+    
     {{-- 9. Web Content --}}
     <a href="{{ route('admin.banner.edit') }}" class="{{ request()->is('admin/banner*') || request()->is('admin/website-content*') ? 'active' : '' }}">
         <span><i class="bi bi-pencil-square"></i> Web Content</span>
