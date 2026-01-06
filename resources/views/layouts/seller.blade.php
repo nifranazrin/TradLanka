@@ -208,23 +208,32 @@ if($seller){
             </ul>
         </div>
 
-        {{-- PROFILE --}}
-        <div class="dropdown">
-            <a href="#" class="text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="bi bi-person-circle me-1"></i> {{ $seller->name }}
-            </a>
+    {{-- PROFILE --}}
+<div class="dropdown">
+    <a href="#" class="text-white text-decoration-none dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+        @if($seller && $seller->image)
+            {{-- Shows the uploaded profile image --}}
+            <img src="{{ asset('storage/' . $seller->image) }}" 
+                 class="rounded-circle me-2" 
+                 style="width: 30px; height: 30px; object-fit: cover; border: 1px solid #fff;">
+        @else
+            {{-- Fallback to icon if no image is uploaded --}}
+            <i class="bi bi-person-circle me-1"></i> 
+        @endif
+        {{ $seller->name }}
+    </a>
 
-            <ul class="dropdown-menu dropdown-menu-end shadow">
-                <li><a class="dropdown-item" href="{{ route('seller.profile') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form method="POST" action="{{ route('seller.logout') }}">
-                        @csrf
-                        <button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
-                    </form>
-                </li>
-            </ul>
-        </div>
+    <ul class="dropdown-menu dropdown-menu-end shadow">
+        <li><a class="dropdown-item" href="{{ route('seller.profile') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <form method="POST" action="{{ route('seller.logout') }}">
+                @csrf
+                <button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+            </form>
+        </li>
+    </ul>
+</div>
 
     </div>
 </div>

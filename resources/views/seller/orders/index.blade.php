@@ -66,95 +66,94 @@
     }
 </style>
 
-<div class="container-fluid px-4 py-5">
+                <div class="container-fluid px-4 py-5">
 
-    <div class="mb-4">
-        <h2 class="h3 fw-bold text-dark mb-1">Order Management</h2>
+                    <div class="mb-4">
+                        <h2 class="h3 fw-bold text-dark mb-1">Order Management</h2>
 
-        <p class="text-muted small">
-            Receive orders, review items, pack and hand over to Head Office for delivery.
-        </p>
-    </div>
+                        <p class="text-muted small">
+                            Receive orders, review items, pack and hand over to Head Office for delivery.
+                        </p>
+                    </div>
 
-           <div class="row mb-4 justify-content-center">
-    <div class="col-md-6"> {{-- Centered and optimized width --}}
-        <form action="{{ route('seller.orders.index') }}" method="GET">
-            <div class="input-group">
-                {{-- Input field matching product search style --}}
-                <input type="text" name="search" class="form-control" 
-                       placeholder="Search Tracking #, Customer, or City..." 
-                       value="{{ request('search') }}"
-                       style="border-top-left-radius: 8px; border-bottom-left-radius: 8px;">
-                
-                {{-- Maroon Button matching your reference image --}}
-                <button class="btn" type="submit" 
-                        style="background-color: #5b2c2c; color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px; padding: 0 20px;">
-                    <i class="bi bi-search"></i>
-                </button>
+                        <div class="row mb-4 justify-content-center">
+                    <div class="col-md-6"> {{-- Centered and optimized width --}}
+                        <form action="{{ route('seller.orders.index') }}" method="GET">
+                            <div class="input-group">
+                                {{-- Input field matching product search style --}}
+                                <input type="text" name="search" class="form-control" 
+                                    placeholder="Search Tracking #, Customer, or City..." 
+                                    value="{{ request('search') }}"
+                                    style="border-top-left-radius: 8px; border-bottom-left-radius: 8px;">
+                                
+                                {{-- Maroon Button matching your reference image --}}
+                                <button class="btn" type="submit" 
+                                        style="background-color: #5b2c2c; color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px; padding: 0 20px;">
+                                    <i class="bi bi-search"></i>
+                                </button>
 
-                {{-- Clear Search Button --}}
-                @if(request('search'))
-                    <a href="{{ route('seller.orders.index') }}" class="btn btn-outline-secondary ms-2 rounded-circle">
-                        <i class="bi bi-x"></i>
-                    </a>
-                @endif
-            </div>
-        </form>
-    </div>
-</div>
+                                {{-- Clear Search Button --}}
+                                @if(request('search'))
+                                    <a href="{{ route('seller.orders.index') }}" class="btn btn-outline-secondary ms-2 rounded-circle">
+                                        <i class="bi bi-x"></i>
+                                    </a>
+                                @endif
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-    {{-- SweetAlert: General success --}}
-    @if(session('success'))
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: "{{ session('success') }}",
-                background: '#381313',
-                color: '#facc15',
-                confirmButtonColor: '#facc15'
-            });
-        </script>
-    @endif
+                    {{-- SweetAlert: General success --}}
+                    @if(session('success'))
+                        <script>
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: "{{ session('success') }}",
+                                background: '#381313',
+                                color: '#facc15',
+                                confirmButtonColor: '#facc15'
+                            });
+                        </script>
+                    @endif
 
-    {{-- SweetAlert: Handover success --}}
-    @if(session('handover_success'))
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'Handed Over',
-                text: "{{ session('handover_success') }}",
-                background: '#381313',
-                color: '#facc15',
-                confirmButtonColor: '#facc15'
-            });
-        </script>
-    @endif
+                    {{-- SweetAlert: Handover success --}}
+                    @if(session('handover_success'))
+                        <script>
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Handed Over',
+                                text: "{{ session('handover_success') }}",
+                                background: '#381313',
+                                color: '#facc15',
+                                confirmButtonColor: '#facc15'
+                            });
+                        </script>
+                    @endif
 
-    <div class="order-card">
-        <div class="table-responsive">
-            <table class="table custom-table mb-0">
-                <thead>
-                    <tr>
-                        <th width="25%">Order</th>
-                        <th width="20%">Customer</th>
-                        <th width="25%">Delivery Address</th>
-                        <th width="15%" class="text-center">Status</th>
-                        <th width="15%" class="text-center">Action</th>
-                    </tr>
-                </thead>
+                    <div class="order-card">
+                        <div class="table-responsive">
+                            <table class="table custom-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th width="25%">Order</th>
+                                        <th width="20%">Customer</th>
+                                        <th width="25%">Delivery Address</th>
+                                        <th width="15%" class="text-center">Status</th>
+                                        <th width="15%" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
 
-                <tbody>
-                @foreach($orders as $order)
-                    @php $status = (int) $order->status; 
-                    $isUSD = str_contains($order->payment_mode, 'USD');
-                    @endphp
+                                <tbody>
+                                @foreach($orders as $order)
+                                    @php $status = (int) $order->status; 
+                                    $isUSD = str_contains($order->payment_mode, 'USD');
+                                    @endphp
 
-                    {{-- Add a light blue background and a thick blue left border for USD orders --}}
-    <tr style="{{ $isUSD ? 'background-color: #f0f9ff; border-left: 5px solid #0284c7;' : '' }}">
+                                <tr style="{{ $isUSD ? 'background-color: #f0f9ff; border-left: 5px solid #0284c7;' : '' }}">
 
-                    <tr>
-                        {{-- ORDER --}}
+                                    <tr>
+                                        {{-- ORDER --}}
                                             <td>
                                                 <strong>{{ $order->tracking_no }}</strong>
 
@@ -164,9 +163,11 @@
                                                         <i class="bi bi-globe me-1"></i> INTERNATIONAL
                                                     </span>
                                                 @endif
-                                                <div class="small text-muted">
-                                                    {{ $order->created_at->format('d M Y, h:i A') }}
-                                                </div>
+                                                
+                                                {{-- FIX 2: Corrected Time for Sri Lanka --}}
+                                            <div class="small text-muted">
+                                                {{ $order->created_at->timezone('Asia/Colombo')->format('d M Y, h:i A') }}
+                                            </div>
 
                                                 <div class="mt-2">
                                                     @if(str_contains(strtolower($order->payment_mode), 'cod'))
@@ -230,9 +231,9 @@
                                         <i class="bi bi-airplane me-1"></i> Arrived in Destination Country
                                     </span>
                                 @elseif($status === 6)
-                                    <span class="badge bg-dark text-white">Order Cancelled</span>
+                                    <span class="badge-custom" style="background: #b82222; color: #f1e8e4;">Order Cancelled</span>
                                 @elseif($status === 7)
-                                    <span class="badge-custom" style="background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;">
+                                    <span class="badge-custom" style="background: #fef3c7; color: #940606; border: 1px solid #f59e0b;">
                                         ⚠️ Cancellation Requested
                                     </span>
                                 @elseif($status === 8)
@@ -243,96 +244,61 @@
                                     <span class="badge bg-secondary">Status: {{ $status }}</span>
                                 @endif
                             </td>
-                                                {{-- ACTION COLUMN --}}
-                            <td class="text-center">
-                                @php 
-                                    // Cast to string to handle both numeric IDs from Seller flow 
-                                    // and text-based statuses from Admin/Rider flow.
-                                    $rawStatus = (string) $order->status; 
-                                @endphp
 
-                                {{-- 1. Seller Fulfillment Flow (Numeric 0, 1, 2) --}}
-                                @if($rawStatus === '0')
-                                    <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="status" value="1">
-                                        <button class="btn-action btn-receive">Receive Order</button>
-                                    </form>
-                                @endif
 
-                                @if($rawStatus === '1')
-                                    <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="status" value="2">
-                                        <button class="btn-action btn-pack">Pack Order</button>
-                                    </form>
-                                @endif
+                          {{-- ACTION COLUMN --}}
+                                <td class="text-center">
+                                    @php 
+                                        $rawStatus = (string) $order->status; 
+                                    @endphp
 
-                                @if($rawStatus === '2')
-                                    <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="status" value="3">
-                                        <button class="btn-action btn-handover">Hand Over to Head Office</button>
-                                    </form>
-                                @endif
+                                    {{-- 1. Seller Fulfillment Flow (Keep active buttons for 0, 1, 2) --}}
+                                    @if($rawStatus === '0')
+                                        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="status" value="1">
+                                            <button class="btn-action btn-receive">Receive Order</button>
+                                        </form>
+                                    @elseif($rawStatus === '1')
+                                        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="status" value="2">
+                                            <button class="btn-action btn-pack">Pack Order</button>
+                                        </form>
+                                    @elseif($rawStatus === '2')
+                                        <form method="POST" action="{{ route('seller.orders.update', $order->id) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="status" value="3">
+                                            <button class="btn-action btn-handover">Hand Over to Head Office</button>
+                                        </form>
+                                    @endif
 
-                                {{-- 2. Cancellation Flow (Numeric 7, 8) --}}
-                                @if($rawStatus === '7')
-                                    <form method="POST" action="{{ route('seller.orders.approve_cancel', $order->id) }}">
-                                        @csrf
-                                        @method('PUT')
-                                        <button type="submit" class="btn-action fw-bold shadow-sm" style="background: #dc2626; color: #fff;">
-                                            Approve Cancellation
-                                        </button>
-                                        <p class="text-danger mt-1 fw-bold" style="font-size: 0.65rem; line-height: 1;">
-                                            *Sends to Head Office for Refund
-                                        </p>
-                                    </form>
-                                @endif
+                                    {{-- 2. Cancellation Flow (Approve Button for status 7) --}}
+                                    @if($rawStatus === '7')
+                                        <form method="POST" action="{{ route('seller.orders.approve_cancel', $order->id) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="btn-action fw-bold shadow-sm" style="background: #dc2626; color: #fff;">
+                                                Approve Cancellation
+                                            </button>
+                                            <p class="text-danger mt-1 fw-bold" style="font-size: 0.65rem; line-height: 1;">
+                                                *Sends to Head Office for Refund
+                                            </p>
+                                        </form>
+                                    @endif
 
-                                @if($rawStatus === '8')
-                                    <div class="p-2 rounded bg-light border border-success mb-2">
-                                        <small class="fw-bold text-success d-block">✅ Approved</small>
-                                        <small class="text-muted fst-italic" style="font-size: 0.7rem;">Waiting for Admin Refund</small>
-                                    </div>
-                                @endif
 
-                                {{-- 3. Head Office & Delivery Managed Statuses (Numeric 3, 4, 5, 10 + Text) --}}
-                                @if($rawStatus === '3' || $rawStatus === 'at_head_office')
-                                    <small class="fw-semibold fst-italic text-muted d-block mb-2">Arrived at Head Office</small>
-                                @endif
+                                    {{-- Always show View Details button --}}
+                                    <a href="{{ route('seller.orders.show', $order->id) }}"
+                                    class="btn btn-outline-secondary btn-sm mt-1 w-100">
+                                    <i class="bi bi-eye me-1"></i> View Details
+                                    </a>
+                                </td>
 
-                                @if($rawStatus === '4' || $rawStatus === 'handed_over_delivery')
-                                    <small class="fw-bold text-primary d-block mb-2">
-                                        <i class="bi bi-truck"></i> Handed over to Delivery
-                                    </small>
-                                @endif
-
-                                @if($rawStatus === '10' || $rawStatus === 'arrived_destination')
-                                    <small class="fw-bold text-info d-block mb-2">
-                                        <i class="bi bi-airplane"></i> Arrived at Destination
-                                    </small>
-                                @endif
-
-                                @if($rawStatus === '5' || $rawStatus === 'delivered')
-                                    <small class="fw-bold text-success d-block mb-2">✅ Successfully Delivered</small>
-                                @endif
-
-                                @if($rawStatus === '6' || $rawStatus === 'order_cancelled')
-                                    <span class="badge bg-dark text-white d-block mb-2">ORDER CANCELLED</span>
-                                @endif
-
-                                {{-- Always show View Details button --}}
-                                <a href="{{ route('seller.orders.show', $order->id) }}"
-                                class="btn btn-outline-secondary btn-sm mt-2 w-100">
-                                    View Details
-                                </a>
-                            </td>
-
-                        </tr>
+                                                        </tr>
                 @endforeach
                 </tbody>
             </table>
