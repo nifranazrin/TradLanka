@@ -11,13 +11,29 @@
 
     body{ background:#f5f7f9; }
 
-    /* ================= TABLE ================= */
+    /* ================= TABLE FIX ================= */
+    .table-container {
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow: hidden; /* Ensures the header colors don't bleed out */
+    }
+
     .table-header{
         background:var(--brand);
         color:#fff;
         font-size:12px;
         text-transform:uppercase;
     }
+
+    /* Fixed table layout to prevent alignment gaps */
+    .custom-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+
     .table-row:hover{ background:#fafafa; }
 
     .badge-pending{
@@ -61,7 +77,6 @@
         transform:translateY(-10px);
     }
 
-    /* ================= HEADERS ================= */
     .reply-header{
         background:linear-gradient(135deg,var(--orange1),var(--orange2));
         padding:18px;
@@ -76,7 +91,6 @@
         letter-spacing:.3px;
     }
 
-    /* ================= FIELDS ================= */
     .emboss-field{
         background:#fff;
         border:1px solid #c7c7c7;
@@ -106,29 +120,27 @@
         font-weight:700;
         border-radius:8px;
     }
+
     .page-title{
-    font-size:32px;
-    font-weight:800;
-    color:#111827;         
-    letter-spacing:-0.5px;
-   }
+        font-size:32px;
+        font-weight:800;
+        color:#111827;         
+        letter-spacing:-0.5px;
+    }
 
-   .page-subtitle{
-    font-size:15px;
-    font-weight:500;
-    color:#4b5563;          
-    margin-top:6px;
-   }
-
+    .page-subtitle{
+        font-size:15px;
+        font-weight:500;
+        color:#4b5563;          
+        margin-top:6px;
+    }
 </style>
 
 <div class="container px-4 mx-auto mt-4 mb-4">
-
-
     <h2 class="page-title">Customer Inquiries</h2>
     <p class="page-subtitle">View and reply to customer messages</p>
 
-
+    {{-- SweetAlert Logic --}}
     @if(session('success'))
         <script>
             document.addEventListener('DOMContentLoaded',()=>{
@@ -142,17 +154,17 @@
         </script>
     @endif
 
-    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-x-auto w-full">
-
-        <table class="w-full min-w-full table-auto">
+    <div class="table-container mt-6">
+        <table class="custom-table">
             <thead class="table-header">
                 <tr>
-                    <th class="px-5 py-3 text-left">Status</th>
-                    <th class="px-5 py-3 text-left">Date</th>
-                    <th class="px-5 py-3 text-left">Customer</th>
-                    <th class="px-5 py-3 text-left">Email</th>
-                    <th class="px-5 py-3 text-left w-full">Message</th>
-                    <th class="px-7 py-3 text-center">Action</th>
+                    {{-- Proportional widths to ensure alignment --}}
+                    <th class="px-5 py-3 text-left" style="width: 12%;">Status</th>
+                    <th class="px-5 py-3 text-left" style="width: 15%;">Date</th>
+                    <th class="px-5 py-3 text-left" style="width: 20%;">Customer</th>
+                    <th class="px-5 py-3 text-left" style="width: 20%;">Email</th>
+                    <th class="px-5 py-3 text-left" style="width: 23%;">Message</th>
+                    <th class="px-7 py-3 text-center" style="width: 10%;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -163,17 +175,28 @@
                             {{ ucfirst($inq->status) }}
                         </span>
                     </td>
+                  
+                    {{-- Timezone Correction Applied --}}
                     <td class="px-5 py-4 text-sm">
-                        <div>{{ $inq->created_at->format('d M Y') }}</div>
-                        <div class="text-xs text-gray-400">{{ $inq->created_at->format('h:i A') }}</div>
+                        <div class="font-medium">{{ $inq->created_at->timezone('Asia/Colombo')->format('d M Y') }}</div>
+                        <div class="text-xs text-gray-400">
+                            {{ $inq->created_at->timezone('Asia/Colombo')->format('h:i A') }}
+                        </div>
                     </td>
-                    <td class="px-5 py-4">{{ $inq->first_name }} {{ $inq->last_name }}</td>
-                    <td class="px-5 py-4 text-blue-600">{{ $inq->email }}</td>
-                   <td class="px-5 py-4 max-w-xs truncate">
-                        {{ Str::limit($inq->message,40) }}
+
+                    <td class="px-5 py-4 font-medium">{{ $inq->first_name }} {{ $inq->last_name }}</td>
+                    <td class="px-5 py-4 text-blue-600 truncate" title="{{ $inq->email }}">
+                        {{ $inq->email }}
+                    </td>
+                    
+                    <td class="px-5 py-4 text-gray-600">
+                        <div class="truncate">
+                            {{ Str::limit($inq->message, 50) }}
+                        </div>
                     </td>
 
                     <td class="px-5 py-4 text-center">
+                        {{-- Reply Logic --}}
                         @if($inq->status=='pending')
                             <button class="btn-reply"
                                 onclick="openReplyModal(event,'{{ $inq->id }}','{{ $inq->email }}')">Reply</button>
@@ -189,6 +212,7 @@
             </tbody>
         </table>
     </div>
+
     <div class="mt-4 d-flex justify-content-center">
         {{ $inquiries->links() }}
     </div>
@@ -208,7 +232,7 @@
             <div id="modalCustomerEmail" class="emboss-field mb-4"></div>
 
             <label class="text-xs text-gray-500">Message</label>
-            <textarea name="reply_message" rows="5" required class="w-full border rounded p-2 mb-4"></textarea>
+            <textarea name="reply_message" rows="5" required class="w-full border rounded p-2 mb-4 outline-none focus:ring-1 focus:ring-orange-400"></textarea>
 
             <div class="text-right">
                 <button type="button" onclick="closeReplyModal()" class="px-4 py-2 border rounded mr-2">Cancel</button>
@@ -239,22 +263,36 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// Logic preserved exactly
 function openReplyModal(e,id,email){
     e.preventDefault();
+    const replyForm = document.getElementById('replyForm');
+    const modalCustomerEmail = document.getElementById('modalCustomerEmail');
+    const replyModal = document.getElementById('replyModal');
+    
     replyForm.action="/seller/inquiries/"+id+"/send-reply";
     modalCustomerEmail.innerText=email;
     replyModal.style.display="flex";
     document.body.style.overflow="hidden";
 }
-function closeReplyModal(){replyModal.style.display="none";document.body.style.overflow="auto";}
+
+function closeReplyModal(){
+    document.getElementById('replyModal').style.display="none";
+    document.body.style.overflow="auto";
+}
+
 function openViewHistory(name,msg,reply){
-    viewCustomerName.innerText=name;
-    viewOriginalMsg.innerText=msg;
-    viewReplyMsg.innerText=reply;
-    viewReplyModal.style.display="flex";
+    document.getElementById('viewCustomerName').innerText=name;
+    document.getElementById('viewOriginalMsg').innerText=msg;
+    document.getElementById('viewReplyMsg').innerText=reply;
+    document.getElementById('viewReplyModal').style.display="flex";
     document.body.style.overflow="hidden";
 }
-function closeViewReply(){viewReplyModal.style.display="none";document.body.style.overflow="auto";}
+
+function closeViewReply(){
+    document.getElementById('viewReplyModal').style.display="none";
+    document.body.style.overflow="auto";
+}
 </script>
 
 @endsection
