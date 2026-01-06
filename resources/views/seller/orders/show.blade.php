@@ -46,6 +46,12 @@
         display: inline-block;
         margin-top: 4px;
     }
+
+            /* Add these to your <style> section so the status badges show colors */
+        .badge-new { background: #fef3c7; color: #92400e; }
+        .badge-received { background: #e0f2fe; color: #075985; }
+        .badge-packed { background: #ede9fe; color: #5b21b6; }
+        .badge-delivered { background: #dcfce7; color: #166534; }
 </style>
 
 <div class="container-fluid px-4 py-5">
@@ -54,21 +60,25 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-maroon mb-0">Order #{{ $order->tracking_no }}</h3>
-            <span class="text-muted small">Placed on {{ $order->created_at->format('d M Y, h:i A') }}</span>
+            <span class="text-muted small">Placed on {{ $order->created_at->timezone('Asia/Colombo')->format('d M Y, h:i A') }}</span>
         </div>
         
         <div>
             @php
-                $statusMap = [
-                    0 => ['text' => 'Pending',            'class' => 'bg-warning text-dark'],
-                    1 => ['text' => 'Received',           'class' => 'bg-info text-dark'],
-                    2 => ['text' => 'Packed',             'class' => 'bg-primary'],
-                    3 => ['text' => 'Handed to Delivery', 'class' => 'bg-dark'], 
-                    4 => ['text' => 'Delivered',          'class' => 'bg-success'],
-                    9 => ['text' => 'Cancelled',         'class' => 'bg-danger'], 
-                ];
-                $statusData = $statusMap[$order->status] ?? ['text' => 'Unknown', 'class' => 'bg-secondary'];
+               $statusMap = [
+                            0  => ['text' => 'New Order',                     'class' => 'badge-new'],
+                            1  => ['text' => 'Received – Waiting to Pack',    'class' => 'badge-received'],
+                            2  => ['text' => 'Packed',                        'class' => 'badge-packed'],
+                            3  => ['text' => 'At Head Office',                'class' => 'badge-delivered'],
+                            4  => ['text' => 'Handed to Delivery',            'class' => 'bg-info text-dark'],
+                            5  => ['text' => 'Delivered',                     'class' => 'bg-success text-white'],
+                            6  => ['text' => 'Order Cancelled',               'class' => 'bg-danger text-white'], 
+                            7  => ['text' => '⚠️ Cancellation Requested',     'class' => 'bg-warning text-dark'],
+                            8  => ['text' => '✅ Approved for Refund',        'class' => 'bg-success text-white'],
+                            10 => ['text' => 'Arrived in Destination Country','class' => 'badge-packed'],
+                        ];
 
+                        $statusData = $statusMap[$order->status] ?? ['text' => 'Status: ' . $order->status, 'class' => 'bg-secondary'];
                 // ✅ IMPROVED CURRENCY LOGIC: 
                 // Check for USD in payment mode OR if country is not Sri Lanka
                 $isUSD = str_contains(strtoupper($order->payment_mode), 'USD') || 
