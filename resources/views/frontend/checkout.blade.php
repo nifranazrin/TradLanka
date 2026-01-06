@@ -258,80 +258,96 @@
 
 
 <script>
+$(document).ready(function () {
 
-$(document).ready(function() {
     const baseProductTotal = {{ $productTotal }};
     const rate = 0.0032;
     const currency = "{{ session('currency', 'LKR') }}";
     let currentDelivery = (currency === 'USD') ? 5000 : 500;
 
+    // ✅ GLOBAL country map (FIXED)
+    const countryMap = { 
+        "Sri Lanka": "lk",
+        "United Arab Emirates": "ae",
+        "Saudi Arabia": "sa",
+        "Qatar": "qa",
+        "Oman": "om",
+        "Kuwait": "kw",
+        "United Kingdom": "gb",
+        "France": "fr",
+        "Germany": "de",
+        "Italy": "it",
+        "Netherlands": "nl",
+        "United States": "us",
+        "Canada": "ca",
+        "Australia": "au",
+        "New Zealand": "nz",
+        "India": "in",
+        "Singapore": "sg",
+        "Malaysia": "my",
+        "Japan": "jp",
+        "South Korea": "kr",
+        "Maldives": "mv"
+    };
 
+    // ✅ Phone input
+    const phoneInput = window.intlTelInput(
+        document.querySelector("#phoneInput"), {
+            initialCountry: (currency === 'USD') ? "gb" : "lk",
+            separateDialCode: true,
+            utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/js/utils.js",
+        }
+    );
 
-    const phoneInput = window.intlTelInput(document.querySelector("#phoneInput"), {
-        initialCountry: (currency === 'USD') ? "gb" : "lk",
-        separateDialCode: true,
-        utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/js/utils.js",
-    });
-
-
-
+    // ✅ Select2 flag rendering
     function formatState(state) {
         if (!state.id) return state.text;
-        var flag = $(state.element).data('flag');
+        const flag = $(state.element).data('flag');
         return $('<span><span class="fi fi-' + flag + '"></span> ' + state.text + '</span>');
     }
 
+    $('#countrySelect').select2({
+        templateResult: formatState,
+        templateSelection: formatState,
+        width: '100%'
+    });
 
-
-    $('#countrySelect').select2({ templateResult: formatState, templateSelection: formatState, width: '100%' });
-    $('#countrySelect').on('change', function() {
+    // ✅ Country change handler
+    $('#countrySelect').on('change', function () {
 
         const country = $(this).val();
+
         currentDelivery = (country === "Sri Lanka") ? 500 : 5000;
         const newGrandTotalLKR = baseProductTotal + currentDelivery;
-
 
         if (currency === 'USD') {
             $('#delivery-fee-text').text('$' + (currentDelivery * rate).toFixed(2));
             $('#grand-total-text').text('$' + (newGrandTotalLKR * rate).toFixed(2));
-
         } else {
-
             $('#delivery-fee-text').text('Rs ' + currentDelivery.toLocaleString());
             $('#grand-total-text').text('Rs ' + newGrandTotalLKR.toLocaleString());
-
         }
 
-        // Auto-switch phone flag
+        // ✅ Auto switch phone flag
+        if (countryMap[country]) {
+            phoneInput.setCountry(countryMap[country]);
+        }
+    });
 
-        const countryMap = { 
-        "Sri Lanka": "lk", "United Arab Emirates": "ae", "Saudi Arabia": "sa", 
-        "Qatar": "qa", "Oman": "om", "Kuwait": "kw", "United Kingdom": "gb", 
-        "France": "fr", "Germany": "de", "Italy": "it", "Netherlands": "nl", 
-        "United States": "us", "Canada": "ca", "Australia": "au", 
-        "New Zealand": "nz", "India": "in", "Singapore": "sg", 
-        "Malaysia": "my", "Japan": "jp", "South Korea": "kr", "Maldives": "mv" 
-    };
-
-    if(countryMap[country]) {
-        phoneInput.setCountry(countryMap[country]);
-    }
-});
-
-if(countryMap[country]) {
-    phoneInput.setCountry(countryMap[country]);
-}
-
-    $('#placeOrderBtn').on('click', function() {
+    // ✅ Confirm & Place Order button
+    $('#placeOrderBtn').on('click', function () {
 
         const form = document.getElementById('checkoutForm');
 
-        if (!form.checkValidity()) { form.reportValidity(); return; }
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
 
         const totalLKR = baseProductTotal + currentDelivery;
-
-        const displayTotal = (currency === 'USD') ? '$' + (totalLKR * rate).toFixed(2) : 'Rs ' + totalLKR.toLocaleString();
-
+        const displayTotal = (currency === 'USD')
+            ? '$' + (totalLKR * rate).toFixed(2)
+            : 'Rs ' + totalLKR.toLocaleString();
 
         Swal.fire({
             title: 'Place Order?',
@@ -346,11 +362,9 @@ if(countryMap[country]) {
                 form.submit();
             }
         });
-
     });
 
 });
-
 </script>
 
 @endsection
