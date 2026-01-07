@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Staff; 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;   
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderCancelledMail;
+
 class OrderController extends Controller
 {
     /**
@@ -70,38 +74,46 @@ class OrderController extends Controller
     }
      
 
-     public function finalizeRefund($id)
+   public function finalizeRefund($id)
 {
     $order = Order::with('items.product')->findOrFail($id);
     $payMode = strtoupper($order->payment_mode);
     $isCod = str_contains($payMode, 'COD');
 
+    // Only allow finalization if the status is 8 (Pending Review) or 9 (Final Fail)
     if ($order->status == 8 || $order->status == 9) {
         $previousStatus = $order->status; 
 
         DB::beginTransaction();
         try {
+            // Restore stock levels for each item in the order
             foreach ($order->items as $item) {
                 if ($item->product) {
                     $item->product->increment('stock', $item->qty);
                 }
             }
 
-            // ✅ CRITICAL UPDATE: 
-            // Setting 'rider_seen' to 0 triggers the red numerical badge 
-            // in the Rider's sidebar under 'Task History'.
+            // Update status to 6 (Cancelled) and reset rider notification
             $order->update([
                 'status' => 6, 
                 'rider_seen' => 0 
             ]); 
 
+            // ✅ NEW: Trigger the Order Cancelled Email
+            try {
+                Mail::to($order->email)->send(new OrderCancelledMail($order));
+            } catch (\Exception $e) {
+                // Log Gmail SMTP errors without crashing the database transaction
+                Log::error("Cancellation email failed for Order #{$order->tracking_no}: " . $e->getMessage());
+            }
+
             DB::commit();
 
             if ($previousStatus == 9) {
-                return back()->with('success', 'Confirmed: Delivery Cancelled. Stock Restored.');
+                return back()->with('success', 'Confirmed: Delivery Cancelled. Stock Restored & Email Sent.');
             }
             
-            return back()->with('success', 'Refund Processed successfully.');
+            return back()->with('success', 'Refund Processed successfully & Email Sent.');
 
         } catch (\Exception $e) {
             DB::rollBack();

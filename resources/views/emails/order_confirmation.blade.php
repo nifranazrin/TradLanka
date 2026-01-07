@@ -29,8 +29,8 @@
                     Rs. {{ number_format($order->total_price, 2) }}
                 @endif
             </p>
-            <p style="margin: 0;"><strong>Payment Status:</strong> 
-                @if($order->payment_mode == 'cod')
+             <p style="margin: 0;"><strong>Payment Status:</strong> 
+                @if(strtolower($order->payment_mode) == 'cod')
                     Cash on Delivery (Pending)
                 @else
                     Successfully Paid Online

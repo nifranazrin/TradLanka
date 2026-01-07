@@ -8,6 +8,9 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Notifications\OrderDeliveredNotification;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderDeliveredMail;
+use Illuminate\Support\Facades\Log;
 
 class DeliveryOrderController extends Controller 
 {
@@ -134,22 +137,34 @@ public function updateMilestone(Request $request, $id)
         return view('delivery.orders.show', compact('order'));
     }
 
-    public function markAsDelivered($id)
-    {
-        $riderId = Auth::guard('delivery')->id();
-        $order = Order::where('id', $id)
-            ->where('delivery_boy_id', $riderId)
-            ->firstOrFail();
+      public function markAsDelivered($id)
+{
+    $riderId = Auth::guard('delivery')->id();
+    
+    // Find the order assigned to this specific rider
+    $order = Order::where('id', $id)
+        ->where('delivery_boy_id', $riderId)
+        ->firstOrFail();
 
-        $order->update([
-            'status' => 5, 
-            'delivered_at' => now()
-        ]); 
+    // Update status to 5 (Delivered) and set the timestamp
+    $order->update([
+        'status' => 5, 
+        'delivered_at' => now()
+    ]); 
 
-        $order->user->notify(new OrderDeliveredNotification($order));
-        return redirect()->route('delivery.my-deliveries')->with('success', 'Order completed and moved to history!');
+    // ✅ NEW: Trigger the Order Delivered Email
+    try {
+        Mail::to($order->email)->send(new OrderDeliveredMail($order));
+    } catch (\Exception $e) {
+        // ✅ Removed backslash since Log is now imported at the top
+        Log::error("Delivered email failed for Order #{$order->tracking_no}: " . $e->getMessage());
     }
 
+    // Existing system notification
+    $order->user->notify(new OrderDeliveredNotification($order));
+    
+    return redirect()->route('delivery.my-deliveries')->with('success', 'Order completed and confirmation email sent!');
+}
     /**
      * ✅ UPDATED: Mark as Failed (moves to Pending Approval)
      */

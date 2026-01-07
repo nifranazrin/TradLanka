@@ -51,13 +51,12 @@
                     </div>
                 </div>
 
-                <div class="mb-6">
-                    <label class="block font-bold text-gray-700 mb-2">Review Content</label>
-                    <textarea name="comment" rows="4" required 
+                 <div class="mb-6">
+                    <label class="block font-bold text-gray-700 mb-2">Review Content (Optional)</label>
+                    <textarea name="comment" rows="4" 
                         class="w-full border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-[#5b2c2c]/20 focus:border-[#5b2c2c] transition-all outline-none" 
-                        placeholder="What did you think of the quality and appearance?"></textarea>
+                        placeholder="What did you think of the quality and appearance? (Optional)"></textarea>
                 </div>
-
                 {{-- Image Upload Input --}}
                 <div class="mb-6">
                     <label class="block font-bold text-gray-700 mb-2">Upload Photo (Optional)</label>

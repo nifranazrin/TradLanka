@@ -2,6 +2,7 @@
 
 @section('content')
 
+
 {{-- ================================================= --}}
 {{-- 1. CUSTOM CSS (POPUP + SLIDER)                    --}}
 {{-- ================================================= --}}
@@ -148,7 +149,9 @@
 }
 </style>
 
-
+@php
+    $currencySymbol = session('currency') === 'USD' ? '$' : 'Rs.';
+@endphp
 
 {{-- Floating Toast Fallback --}}
 <div id="cartToast" class="hidden fixed bottom-6 right-6 bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg z-50 transition-all duration-500 flex items-center space-x-2">
@@ -209,7 +212,9 @@
                         <img src="{{ asset('storage/' . $product->image) }}" class="w-full h-36 object-cover">
                         <div class="p-4 text-center">
                             <h3 class="font-semibold text-gray-800 truncate">{{ $product->name }}</h3>
-                            <p class="text-[#5b2c2c] font-bold">Rs {{ number_format($product->price, 2) }}</p>
+                                 <p class="text-[#5b2c2c] font-bold">
+                                    {{ $currencySymbol }} {{ number_format($product->price, 2) }}
+                                </p>
                         </div>
                     </a>
                 </div>
@@ -222,7 +227,6 @@
 
 
 
-   {{-- SECTION: BEST SELLERS --}}
     {{-- SECTION: BEST SELLERS --}}
 <section class="mt-12 mb-4">
     <div class="flex justify-between items-center mb-6">
@@ -273,9 +277,9 @@
                         @endif
                     </div>
 
-                    <p class="text-[#5b2c2c] font-bold text-lg mb-2">
-                        {{ $item->display_price }}
-                    </p>
+                         <p class="text-[#5b2c2c] font-bold text-lg mb-2">
+                                {{ $currencySymbol }} {{ number_format($item->price, 2) }}
+                            </p>
                 </div>
                 
                 {{-- Change this line in your Best Sellers loop --}}
@@ -342,9 +346,9 @@
                         @endif
                     </div>
 
-                    <p class="text-[#5b2c2c] font-bold text-lg mb-2">
-                        {{ $item->display_price }}
-                    </p>
+                       <p class="text-[#5b2c2c] font-bold text-lg mb-2">
+                                {{ $currencySymbol }} {{ number_format($item->price, 2) }}
+                            </p>
                 </div>
                 
                 {{-- Change this line in your New Arrivals loop --}}
@@ -606,7 +610,6 @@
         });
     }); // 👈 This closing bracket was in the wrong place in your version!
 </script>
-
 
 
 <!-- ===== Dialogflow Chatbot (Hidden) ===== -->

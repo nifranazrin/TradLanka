@@ -182,7 +182,7 @@
               @endforelse
           </div>
 
-          {{-- ✅ MARK ALL AS READ SECTION --}}
+          {{--  MARK ALL AS READ SECTION --}}
           @if($unreadCount > 0)
               <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 flex justify-center">
                   <form action="{{ route('user.notifications.markAllRead') }}" method="POST">

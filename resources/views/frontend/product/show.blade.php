@@ -252,11 +252,9 @@
                     <span class="w-8 text-gray-600">{{ $star }}★</span>
 
                     {{-- FIXED BAR WIDTH --}}
-                    <div class="w-48 h-3 bg-gray-200 rounded overflow-hidden">
-                        <div class="h-3 bg-yellow-400"
-                             style="width: {{ $percent }}%"></div>
-                    </div>
-
+                    <div class="flex-1 h-3 bg-gray-200 rounded overflow-hidden">
+                <div class="h-3 bg-yellow-400" style="width: {{ $percent }}%"></div>
+            </div>
                     <span class="text-gray-500 w-6">
                         {{ $ratingCounts[$star] }}
                     </span>
@@ -382,14 +380,24 @@
                 variantBtns.forEach(b => b.classList.remove('bg-[#5b2c2c]', 'text-white', 'border-[#5b2c2c]', 'ring-2'));
                 this.classList.add('bg-[#5b2c2c]', 'text-white', 'border-[#5b2c2c]', 'ring-2');
                 
-                const price = parseFloat(this.dataset.price);
-                const stock = parseInt(this.dataset.stock);
+                let price = parseFloat(this.dataset.price);
+        const stock = parseInt(this.dataset.stock);
 
-                priceDisplay.innerText = currencySymbol + ' ' + price.toLocaleString('en-US', {minimumFractionDigits: 2});
-                hiddenVariantInput.value = this.dataset.id;
-                currentStock = stock;
-            });
+        // ✅ FIX: Apply exchange rate if currency is USD
+        if (currencySymbol === '$') {
+            const exchangeRate = 0.0032; // Must match FrontendController
+            price = price * exchangeRate;
+        }
+
+        priceDisplay.innerText = currencySymbol + ' ' + price.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
+        
+            hiddenVariantInput.value = this.dataset.id;
+            currentStock = stock;
+        });
+    });
 
         // Quantity Controls
         document.getElementById('increaseQty').onclick = () => {

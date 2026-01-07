@@ -56,23 +56,26 @@ class FrontendController extends Controller
         )
         ->orderByDesc('total_sales')->take(5)->get();
 
-    // ✅ RESTORED: The missing $banner variable that caused the error
+    //Banner
     $banner = Banner::where('section_name', 'home_festive_offer')->first();
 
         // 5. AI Recommendations (Text-Based)
         $recommendedProducts = $this->getAIRecommendations();
 
         // 6. Currency Conversion
-        if (session('currency') === 'USD') {
-            $products->each(fn($p) => $p->price *= $this->exchangeRate);
-            $bestSellers->each(fn($p) => $p->price *= $this->exchangeRate);
-            $recommendedProducts->each(fn($p) => $p->price *= $this->exchangeRate);
+       if (session('currency') === 'USD') {
+            $products->each(fn($p) => $p->price = (float)$p->price * $this->exchangeRate);
+            $bestSellers->each(fn($p) => $p->price = (float)$p->price * $this->exchangeRate);
+            
+            if ($recommendedProducts) {
+                $recommendedProducts->each(fn($p) => $p->price = (float)$p->price * $this->exchangeRate);
+            }
         }
 
         return view('frontend.home', compact('categories', 'popularCategories', 'products', 'banner', 'bestSellers', 'recommendedProducts'));
     }
 
-    public function productsByCategory(Request $request, $slug)
+   public function productsByCategory(Request $request, $slug)
     {
         $category = Category::where('slug', $slug)->where('status', 1)->firstOrFail();
         $currency = session('currency', 'LKR');
@@ -96,13 +99,18 @@ class FrontendController extends Controller
 
         $products = $query->paginate(12);
 
+        // ✅ Apply Correct Currency Conversion
         if ($currency === 'USD') {
             $products->getCollection()->transform(function ($product) {
-                $product->price *= $this->exchangeRate;
+                // Use explicit float casting to match home() logic
+                $product->price = (float)$product->price * $this->exchangeRate;
                 return $product;
             });
+
             if ($sidebarType === 'product') {
-                $sidebarItems->each(fn($p) => $p->price *= $this->exchangeRate);
+                $sidebarItems->each(function($p) {
+                    $p->price = (float)$p->price * $this->exchangeRate;
+                });
             }
         }
 
@@ -112,13 +120,20 @@ class FrontendController extends Controller
     public function searchPage(Request $request)
     {
         $query = $request->input('query');
+        $currency = session('currency', 'LKR');
         
         if ($query === 'best sellers') {
             $products = Product::where('products.is_active', 1)
                 ->whereIn('products.status', ['approved', 'reapproved'])
                 ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
                 ->select('products.*', DB::raw('SUM(order_items.qty) as total_sales'))
-                ->groupBy('products.id', 'products.name', 'products.slug', 'products.price', 'products.image', 'products.status', 'products.is_active', 'products.category_id', 'products.seller_id', 'products.description', 'products.stock', 'products.unit_type', 'products.approved_at', 'products.created_at', 'products.updated_at')
+                ->groupBy(
+                    'products.id', 'products.name', 'products.slug', 'products.price', 
+                    'products.image', 'products.status', 'products.is_active', 
+                    'products.category_id', 'products.seller_id', 'products.description', 
+                    'products.stock', 'products.unit_type', 'products.approved_at', 
+                    'products.created_at', 'products.updated_at'
+                )
                 ->orderByDesc('total_sales')
                 ->paginate(12);
 
@@ -134,6 +149,21 @@ class FrontendController extends Controller
                 ->where(fn($q) => $q->where('name', 'LIKE', "%{$query}%")
                                     ->orWhere('description', 'LIKE', "%{$query}%"))
                 ->paginate(12);
+        }
+
+        // ✅ NEW: Add Currency Conversion to Search Results
+        if ($currency === 'USD') {
+            if ($products instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+                $products->getCollection()->transform(function ($p) {
+                    $p->price = (float)$p->price * $this->exchangeRate;
+                    return $p;
+                });
+            } else {
+                // Standard collection for 'new arrivals' search
+                $products->each(function($p) {
+                    $p->price = (float)$p->price * $this->exchangeRate;
+                });
+            }
         }
 
         return view('frontend.pages.search', compact('products', 'query'));

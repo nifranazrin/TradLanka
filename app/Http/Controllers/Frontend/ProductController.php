@@ -49,15 +49,16 @@ class ProductController extends Controller
         ]);
 
         // 3. APPLY CURRENCY CONVERSION
-        if ($currency === 'USD') {
-            // Convert main product price
-            $product->price = $product->price * $exchangeRate;
+      
+            if ($currency === 'USD') {
+                // Convert main product price using explicit float casting
+                $product->price = (float)$product->price * $exchangeRate;
 
-            // Convert all variant prices
-            foreach ($product->variants as $variant) {
-                $variant->price = $variant->price * $exchangeRate;
+                // Convert all variant prices
+                foreach ($product->variants as $variant) {
+                    $variant->price = (float)$variant->price * $exchangeRate;
+                }
             }
-        }
 
         // 4. Breadcrumb category (optional)
         $breadcrumbCategory = null;

@@ -27,9 +27,13 @@ class AuthPopupController extends Controller
             // Security: Regenerate session
             $request->session()->regenerate();
 
+            /** * ✅ Check if this login was triggered by an "Add to Cart" action */
+            $isCartIntent = session()->has('add_to_cart_pid');
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Login successful!'
+                'message' => $isCartIntent ? 'Login successful & Item added to cart!' : 'Welcome back!',
+                'is_cart_login' => $isCartIntent // ✅ Send this flag to the frontend
             ]);
         }
 
@@ -72,9 +76,13 @@ class AuthPopupController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        /** * ✅ ADDED: Check intent for new registrations so they get the right message */
+        $isCartIntent = session()->has('add_to_cart_pid');
+
         return response()->json([
             'status' => 'success',
-            'message' => 'Registration successful!'
+            'message' => $isCartIntent ? 'Account created & Item added to cart!' : 'Registration successful!',
+            'is_cart_login' => $isCartIntent // ✅ Send this flag to the frontend
         ]);
     }
 }

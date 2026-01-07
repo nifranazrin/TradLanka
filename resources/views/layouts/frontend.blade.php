@@ -401,70 +401,100 @@
                 };
             }
 
-            // --- AJAX LOGIN ---
-            $('#ajax-login-form').submit(function(e) {
-                e.preventDefault();
-                const btn = $(this).find('button[type="submit"]');
-                const originalText = btn.html();
-                btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+           // --- AJAX LOGIN ---
+    $('#ajax-login-form').submit(function(e) {
+        e.preventDefault();
+        const btn = $(this).find('button[type="submit"]');
+        const originalText = btn.html();
+        btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
 
-                $.ajax({
-                    url: "{{ route('login.popup') }}",
-                    type: 'POST',
-                    data: $(this).serialize(),
-                    success: function(response) {
-                        closeModal();
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Welcome Back!',
-                            text: 'Login successful.',
-                            timer: 1500,
-                            showConfirmButton: false
-                        }).then(() => {
-                            checkPendingCartItem();
-                        });
-                    },
-                    error: function(xhr) {
-                        btn.html(originalText).prop('disabled', false);
-                        Swal.fire({ icon: 'error', title: 'Login Failed', text: 'Please check your credentials.' });
-                    }
-                });
-            });
+        $.ajax({
+            url: "{{ route('login.popup') }}",
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                closeModal();
 
-            // --- AJAX REGISTER ---
-            $('#ajax-register-form').submit(function(e) {
-                e.preventDefault();
-                const btn = $(this).find('button[type="submit"]');
-                const originalText = btn.html();
-                btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
-
-                $.ajax({
-                    url: "{{ route('register.popup') }}",
-                    type: 'POST',
-                    data: $(this).serialize(),
-                    success: function(response) {
-                        closeModal();
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Welcome to TradLanka!',
-                            text: 'Registration successful.',
-                            timer: 2000,
-                            showConfirmButton: false
-                        }).then(() => {
-                            checkPendingCartItem();
-                        });
-                    },
-                    error: function(xhr) {
-                        btn.html(originalText).prop('disabled', false);
-                        let msg = 'Registration failed.';
-                        if(xhr.responseJSON && xhr.responseJSON.errors) {
-                            msg = Object.values(xhr.responseJSON.errors).join('\n');
-                        }
-                        Swal.fire({ icon: 'error', title: 'Oops...', text: msg });
-                    }
-                });
-            });
+                // ✅ Check the flag to decide which alert to show
+                if (response.is_cart_login) {
+                    // Show "Added to Cart" style alert
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Item Added!',
+                        text: response.message, // "Login successful & Item added to cart!"
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload(); 
+                    });
+                } else {
+                    // ✅ NORMAL LOGIN: Only show Welcome Back
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Welcome Back!',
+                        text: 'Login successful.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            },
+            error: function(xhr) {
+                btn.html(originalText).prop('disabled', false);
+                Swal.fire({ icon: 'error', title: 'Login Failed', text: 'Please check your credentials.' });
+            }
         });
+    });
+
+    // --- AJAX REGISTER ---
+    $('#ajax-register-form').submit(function(e) {
+        e.preventDefault();
+        const btn = $(this).find('button[type="submit"]');
+        const originalText = btn.html();
+        btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+
+        $.ajax({
+            url: "{{ route('register.popup') }}",
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                closeModal();
+                
+                // ✅ Decision logic for registration
+                if (response.is_cart_login) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Welcome to TradLanka!',
+                        text: response.message, 
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Welcome!',
+                        text: 'Registration successful.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            },
+            error: function(xhr) {
+                btn.html(originalText).prop('disabled', false);
+                let msg = 'Registration failed.';
+                if(xhr.responseJSON && xhr.responseJSON.errors) {
+                    msg = Object.values(xhr.responseJSON.errors).join('\n');
+                }
+                Swal.fire({ icon: 'error', title: 'Oops...', text: msg });
+            }
+        });
+    });
+});
     </script>
 </body>
 </html>

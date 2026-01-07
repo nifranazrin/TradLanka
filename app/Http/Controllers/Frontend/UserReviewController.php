@@ -21,6 +21,7 @@ class UserReviewController extends Controller
         $toReview = Order::where('user_id', $userId)
             ->where('status', 5) 
             ->with('orderItems.product')
+            ->whereHas('orderItems.product')
             ->get()
             ->flatMap(function ($order) {
                 return $order->orderItems;
@@ -36,6 +37,7 @@ class UserReviewController extends Controller
 
         // 2. REVIEW HISTORY
         $history = Review::where('user_id', $userId)
+            ->whereHas('product')
             ->with('product')
             ->latest()
             ->get();
@@ -72,8 +74,8 @@ class UserReviewController extends Controller
         $request->validate([
             'product_id'   => 'required|exists:products,id',
             'rating'       => 'required|integer|min:1|max:5',
-            'comment'      => 'required|string|max:1000',
-            'image'        => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'comment'      => 'nullable|string|max:1000',
+            'image'        => 'nullable|image|max:2048',
             'is_anonymous' => 'nullable',
         ]);
 
