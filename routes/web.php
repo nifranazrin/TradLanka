@@ -113,6 +113,7 @@ Route::get('/cart', [CartController::class, 'viewCart'])->name('cart.show');
 Route::post('/cart/update-quantity', [CartController::class, 'updateCart'])->name('cart.update');
 Route::post('/cart/delete-items', [CartController::class, 'deleteCart'])->name('cart.delete');
 Route::get('stripe-success', [CheckoutController::class, 'stripeSuccess'])->name('stripe.success');
+Route::post('/cart/save-intent', [App\Http\Controllers\Frontend\CartController::class, 'saveIntent'])->name('cart.save-intent');
 
 // Save cart items to session before checkout
 Route::post('/cart/checkout-items', function (Request $request) {

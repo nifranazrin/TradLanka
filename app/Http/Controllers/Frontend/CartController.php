@@ -114,6 +114,18 @@ class CartController extends Controller
         return response()->json(['status' => 'error'], 403);
     }
 
+    public function saveIntent(Request $request) 
+{
+    // Save to session so AuthPopupController can find it later
+    session([
+        'add_to_cart_pid' => $request->product_id,
+        'add_to_cart_qty' => $request->product_qty,
+        'add_to_cart_vid' => $request->product_variant_id ?? null
+    ]);
+
+    return response()->json(['status' => 'intent_saved']);
+}
+
     /**
      * 4. DELETE ITEMS (Supports Bulk Delete)
      */

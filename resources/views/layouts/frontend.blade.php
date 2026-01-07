@@ -401,8 +401,7 @@
                 };
             }
 
-           // --- AJAX LOGIN ---
-    $('#ajax-login-form').submit(function(e) {
+           $('#ajax-login-form').submit(function(e) {
         e.preventDefault();
         const btn = $(this).find('button[type="submit"]');
         const originalText = btn.html();
@@ -415,20 +414,25 @@
             success: function(response) {
                 closeModal();
 
-                // ✅ Check the flag to decide which alert to show
+                // ✅ Check if login was triggered by "Add to Cart"
                 if (response.is_cart_login) {
-                    // Show "Added to Cart" style alert
+                    // Show Maroon-themed alert for Cart Logins
                     Swal.fire({
                         icon: 'success',
-                        title: 'Item Added!',
+                        title: 'Welcome Back!',
                         text: response.message, // "Login successful & Item added to cart!"
-                        timer: 2000,
-                        showConfirmButton: false
+                        timer: 2500,
+                        showConfirmButton: false,
+                        // ✅ Trigger the Maroon & Gold CSS you defined
+                        customClass: { 
+                            popup: 'cart-alert-popup' 
+                        }
                     }).then(() => {
-                        location.reload(); 
+                        // ✅ CRITICAL: Sync the guest's clicked item to the database
+                        checkPendingCartItem(); 
                     });
                 } else {
-                    // ✅ NORMAL LOGIN: Only show Welcome Back
+                    // ✅ NORMAL LOGIN: Simple "Welcome Back" alert
                     Swal.fire({
                         icon: 'success',
                         title: 'Welcome Back!',
@@ -436,7 +440,7 @@
                         timer: 1500,
                         showConfirmButton: false
                     }).then(() => {
-                        location.reload();
+                        location.reload(); // Refresh to show user name in header
                     });
                 }
             },
@@ -461,16 +465,21 @@
             success: function(response) {
                 closeModal();
                 
-                // ✅ Decision logic for registration
+                // ✅ Decision logic for registration intent
                 if (response.is_cart_login) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Welcome to TradLanka!',
                         text: response.message, 
-                        timer: 2000,
-                        showConfirmButton: false
+                        timer: 2500,
+                        showConfirmButton: false,
+                        // ✅ Trigger the Maroon & Gold CSS
+                        customClass: { 
+                            popup: 'cart-alert-popup' 
+                        }
                     }).then(() => {
-                        location.reload();
+                        // ✅ Sync the guest's clicked item to the database
+                        checkPendingCartItem();
                     });
                 } else {
                     Swal.fire({

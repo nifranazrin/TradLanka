@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Cart; // ✅ Added this to access your carts table
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -16,28 +17,30 @@ class AuthPopupController extends Controller
      */
     public function login(Request $request)
     {
-        // Validate credentials
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        // Attempt Login (Standard Web Guard)
         if (Auth::attempt($credentials, $request->remember)) {
-            // Security: Regenerate session
-            $request->session()->regenerate();
-
-            /** * ✅ Check if this login was triggered by an "Add to Cart" action */
+            // Check for intent BEFORE regenerating session
             $isCartIntent = session()->has('add_to_cart_pid');
+            $user = Auth::user();
+
+            // ✅ CRITICAL: Actually save the item to the DB if intent exists
+            if ($isCartIntent) {
+                $this->syncCartItem($user->id);
+            }
+
+            $request->session()->regenerate();
 
             return response()->json([
                 'status' => 'success',
-                'message' => $isCartIntent ? 'Login successful & Item added to cart!' : 'Welcome back!',
-                'is_cart_login' => $isCartIntent // ✅ Send this flag to the frontend
+                'message' => $isCartIntent ? 'Welcome Back! Item successfully added to your cart.' : 'Welcome back!',
+                'is_cart_login' => $isCartIntent 
             ]);
         }
 
-        // FAIL: Return consistent error status for AJAX catch block
         return response()->json([
             'status' => 'error',
             'message' => 'The provided credentials do not match our records.'
@@ -49,12 +52,10 @@ class AuthPopupController extends Controller
      */
     public function register(Request $request)
     {
-        // Validate
         try {
             $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
-                // Keep min:3 for your testing environment
                 'password' => 'required|string|min:3|confirmed', 
             ]);
         } catch (ValidationException $e) {
@@ -64,25 +65,61 @@ class AuthPopupController extends Controller
             ], 422);
         }
 
-        // Create User matching your database schema
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'user_role' => 0, // ✅ 0 = Customer
+            'user_role' => 0, 
         ]);
 
-        // Login Immediately and regenerate session
         Auth::login($user);
-        $request->session()->regenerate();
 
-        /** * ✅ ADDED: Check intent for new registrations so they get the right message */
+        // Check for intent
         $isCartIntent = session()->has('add_to_cart_pid');
+
+        // ✅ Actually save the item for the new user
+        if ($isCartIntent) {
+            $this->syncCartItem($user->id);
+        }
+
+        $request->session()->regenerate();
 
         return response()->json([
             'status' => 'success',
             'message' => $isCartIntent ? 'Account created & Item added to cart!' : 'Registration successful!',
-            'is_cart_login' => $isCartIntent // ✅ Send this flag to the frontend
+            'is_cart_login' => $isCartIntent 
         ]);
+    }
+
+    /**
+     * ✅ PRIVATE HELPER: Sync Session Item to Database
+     * This ensures the database is updated immediately upon login/register
+     */
+    private function syncCartItem($userId)
+    {
+        $pid = session('add_to_cart_pid');
+        $qty = session('add_to_cart_qty', 1);
+        $vid = session('add_to_cart_vid');
+
+        // Check if item already exists in DB cart for this user to avoid duplicates
+        $existing = Cart::where('user_id', $userId)
+                        ->where('product_id', $pid)
+                        ->where('product_variant_id', $vid)
+                        ->first();
+
+        if ($existing) {
+            $existing->product_qty += $qty;
+            $existing->save();
+        } else {
+            Cart::create([
+                'user_id' => $userId,
+                'product_id' => $pid,
+                'product_qty' => $qty,
+                'product_variant_id' => $vid
+            ]);
+        }
+
+        // IMPORTANT: Clear session now that it is safely in the database
+        session()->forget(['add_to_cart_pid', 'add_to_cart_qty', 'add_to_cart_vid']);
     }
 }

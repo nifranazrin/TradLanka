@@ -7,46 +7,58 @@
 {{-- 1. CUSTOM CSS (POPUP + SLIDER)                    --}}
 {{-- ================================================= --}}
 <style>
-    /* --- SweetAlert Popup Styles --- */
-    .cart-alert-popup {
-        background: #dfdacc !important;
-        border-radius: 16px !important;
-        padding: 1.5rem 1.6rem !important;
-        border: 1px solid #efeae8;
-    }
-    .cart-alert-popup .swal2-title {
-        font-size: 22px !important;
-        font-weight: 800 !important;
-        color: #2c1111 !important;
-        letter-spacing: 0.3px;
-        margin-bottom: 8px !important;
-    }
-    .cart-alert-popup .swal2-icon {
-        transform: scale(0.7);
-        margin-top: 5px !important;
-        border-color: #5b2c2c !important;
-    }
-    .cart-alert-popup p { margin: 0; }
-    
-    /* Confirm Button (View Cart) */
-    .cart-alert-popup .swal2-confirm {
-        background: #bb8f8f !important;
-        color: #300f07 !important;
-        border-radius: 8px !important;
-        font-weight: 600;
-        padding: 10px 24px !important;
-        box-shadow: 0 4px 6px rgba(91, 44, 44, 0.2) !important;
-    }
-    
-    /* Cancel Button (Continue Shopping) */
-    .cart-alert-popup .swal2-cancel {
-        background: #cabf59 !important;
-        color: #191a13 !important;
-        border-radius: 8px !important;
-        font-weight: 600;
-        padding: 10px 18px !important;
-    }
-    .cart-alert-popup .swal2-close { color: #5b2c2c !important; }
+   /* --- Corrected SweetAlert Popup Styles (Butter & Maroon) --- */
+.cart-alert-popup {
+    background: #f3d69f !important; /* Light Butter Background */
+    border-radius: 16px !important;
+    padding: 1.5rem 1.6rem !important;
+    border: 2px solid #5b2c2c; /* Maroon Border */
+}
+
+/* Maroon Title */
+.cart-alert-popup .swal2-title {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #5b2c2c !important; /* Brand Maroon */
+    letter-spacing: 0.3px;
+    margin-bottom: 8px !important;
+}
+
+/* Maroon Success Icon */
+.cart-alert-popup .swal2-icon.swal2-success {
+    border-color: #5b2c2c !important;
+}
+.cart-alert-popup .swal2-success-ring {
+    border: .25em solid rgba(91, 44, 44, 0.2) !important;
+}
+.cart-alert-popup .swal2-success-line-tip, 
+.cart-alert-popup .swal2-success-line-long {
+    background-color: #5b2c2c !important;
+}
+
+/* View Cart Button - Maroon */
+.cart-alert-popup .swal2-confirm {
+    background: #5b2c2c !important; 
+    color: #ebe5e5 !important;
+    border-radius: 8px !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 10px 24px !important;
+}
+
+/* Continue Shopping Button - Green */
+.cart-alert-popup .swal2-cancel {
+    background: #198754 !important; 
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    font-weight: 600;
+    padding: 10px 18px !important;
+}
+
+/* Ensure product text inside the popup is visible */
+.cart-alert-popup div {
+    color: #2c0a0a !important;
+}
 
     /* --- Recommended Slider Animation --- */
     @keyframes scroll { 
@@ -80,7 +92,7 @@
 .full-card-height {
     display: flex;
     flex-direction: column;
-    height: 85%;
+    height: 75%;
     background: #ffffff;
     border-radius: 4px; /* Shorter radius is more modern */
     border: 1px solid #f2f2f2;
@@ -526,89 +538,111 @@
         }
 
         // ============================================
-        // 4. UNIVERSAL ADD TO CART LOGIC (MOVED INSIDE)
-        // ============================================
-        const buttons = document.querySelectorAll('.addToCartBtn');
+// 4. UNIVERSAL ADD TO CART LOGIC (CORRECTED)
+// ============================================
+const buttons = document.querySelectorAll('.addToCartBtn');
 
-        buttons.forEach(btn => {
-            btn.addEventListener('click', function(event) {
-                event.preventDefault(); 
-                
-                const productId   = this.getAttribute('data-id'); 
-                const productName = this.getAttribute('data-name'); 
-                const rawPrice    = this.getAttribute('data-price'); 
-                const productImage = this.getAttribute('data-image'); 
-                const productQty   = 1; 
+buttons.forEach(btn => {
+    btn.addEventListener('click', function(event) {
+        event.preventDefault(); 
+        
+        const productId   = this.getAttribute('data-id'); 
+        const productName = this.getAttribute('data-name'); 
+        const rawPrice    = this.getAttribute('data-price'); 
+        const productImage = this.getAttribute('data-image'); 
+        const productQty   = 1; 
 
-                if (!isLoggedIn) {
-                    localStorage.setItem('pendingCartItem', JSON.stringify({ id: productId, qty: productQty }));
-                    const authModal = document.getElementById('authModal');
-                    authModal ? authModal.classList.remove('hidden') : window.location.href = "/login";
-                    return; 
+        // --- GUEST LOGIC ---
+        if (!isLoggedIn) {
+            // 1. Backup to LocalStorage
+            localStorage.setItem('pendingCartItem', JSON.stringify({ id: productId, qty: productQty }));
+
+            // 2. ✅ SAVE INTENT TO SESSION (This makes AuthPopupController work)
+            // We send a quick background request to store this item in the session
+            fetch("{{ route('cart.save-intent') }}", {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({ product_id: productId, product_qty: productQty })
+            }).then(() => {
+                // 3. Open Login Modal ONLY after session is saved
+                const authModal = document.getElementById('authModal');
+                if(authModal) {
+                    authModal.classList.remove('hidden');
+                } else {
+                    window.location.href = "/login";
                 }
-
-                const originalHTML = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                this.disabled = true;
-
-                fetch("{{ route('cart.add') }}", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify({ 
-                        product_id: productId,
-                        product_qty: productQty,
-                        product_variant_id: null 
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error('Server returned ' + response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    this.innerHTML = originalHTML;
-                    this.disabled = false;
-
-                    if(data.status === 'success') {
-                        if(data.cart_count !== undefined) updateCartIcon(data.cart_count);
-
-                        const formattedPrice = parseFloat(rawPrice).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
-                        const currencySymbol = "{{ session('currency') === 'USD' ? '$' : 'Rs.' }}";
-
-                        Swal.fire({
-                            title: 'Added to Cart',
-                            html: `
-                                <div style="display:flex; align-items:center; gap:16px; margin-top:10px;">
-                                    <img src="${productImage}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:1px solid #ddd;">
-                                    <div style="text-align:left;">
-                                        <div style="font-weight:600; color:#333; font-size:15px; line-height:1.3;">${productName}</div>
-                                        <div style="color:#5b2c2c; font-weight:700; font-size:15px; margin-top:4px;">${currencySymbol} ${formattedPrice}</div>
-                                    </div>
-                                </div>`,
-                            icon: 'success',
-                            showCancelButton: true,
-                            confirmButtonText: '<i class="fas fa-shopping-cart"></i> View Cart',
-                            cancelButtonText: 'Continue Shopping',
-                            customClass: { popup: 'cart-alert-popup' }
-                        }).then((result) => {
-                            if (result.isConfirmed) window.location.href = "{{ route('cart.show') }}";
-                        });
-                    }
-                })
-                .catch(error => {
-                    this.innerHTML = originalHTML;
-                    this.disabled = false;
-                    Swal.fire({ icon: 'error', title: 'Server Error', text: 'Could not connect to the cart.' });
-                });
             });
+            return; 
+        }
+
+        // --- LOGGED IN LOGIC ---
+        const originalHTML = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        this.disabled = true;
+
+        fetch("{{ route('cart.add') }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({ 
+                product_id: productId,
+                product_qty: productQty,
+                product_variant_id: null 
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Server returned ' + response.status);
+            return response.json();
+        })
+        .then(data => {
+            this.innerHTML = originalHTML;
+            this.disabled = false;
+
+            if(data.status === 'success') {
+                if(data.cart_count !== undefined) updateCartIcon(data.cart_count);
+
+                const formattedPrice = parseFloat(rawPrice).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                const currencySymbol = "{{ session('currency') === 'USD' ? '$' : 'Rs.' }}";
+
+                // ✅ Maroon Themed Success Alert
+                Swal.fire({
+                    title: 'Added to Cart',
+                    html: `
+                          <div style="display:flex; align-items:center; gap:16px; margin-top:10px;">
+                            <img src="${productImage}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:1px solid #ddd;">
+                            <div style="text-align:left;">
+                                <div style="font-weight:600; color:#5b2c2c; font-size:15px; line-height:1.3;">${productName}</div>
+                                <div style="color:#450b07; font-weight:700; font-size:15px; margin-top:4px;">${currencySymbol} ${formattedPrice}</div>
+                            </div>
+                        </div>`,
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-shopping-cart"></i> View Cart',
+                    cancelButtonText: 'Continue Shopping',
+                    customClass: { popup: 'cart-alert-popup' } // Applies Maroon Style
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = "{{ route('cart.show') }}";
+                });
+            }
+        })
+        .catch(error => {
+            this.innerHTML = originalHTML;
+            this.disabled = false;
+            Swal.fire({ icon: 'error', title: 'Server Error', text: 'Could not connect to the cart.' });
         });
-    }); // 👈 This closing bracket was in the wrong place in your version!
+    });
+});
+    }); 
 </script>
 
 
