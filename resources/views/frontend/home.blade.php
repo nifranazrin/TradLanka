@@ -222,24 +222,23 @@
 
 
 
-     {{-- SECTION: BEST SELLERS --}}
+   {{-- SECTION: BEST SELLERS --}}
+    {{-- SECTION: BEST SELLERS --}}
 <section class="mt-12 mb-4">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl md:text-2xl font-bold text-[#5b2c2c]">Best Sellers</h2>
         <a href="{{ route('search.page', ['query' => 'best sellers', 'browse' => 'all']) }}" 
-   class="text-[#5b2c2c] font-bold hover:underline">
-   Browse more →
-</a>
+           class="text-[#5b2c2c] font-bold hover:underline">
+            Browse more →
+        </a>
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-    @foreach ($bestSellers->take(5) as $item)
-    
-
-        <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 full-card-height">
+    @foreach ($bestSellers as $item)
+        @if($item)
+        <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 full-card-height flex flex-col">
             {{-- Image Wrapper with Gold Badge --}}
             <div class="relative unified-image-wrapper">
-                {{-- BEST SELLER BADGE (GOLD) --}}
                 <div class="absolute top-2 left-2 z-10 pointer-events-none">
                     <span class="bg-[#d97706] text-white text-[9px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
                         <i class="fas fa-crown"></i> BEST SELLER
@@ -249,11 +248,12 @@
                 <a href="{{ route('product.show', $item->slug) }}">
                     <img src="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}" 
                          alt="{{ $item->name }}" 
-                         class="w-full h-full object-cover">
+                         class="w-full h-full object-cover"
+                         onerror="this.src='{{ asset('images/placeholder.jpg') }}'">
                 </a>
             </div>
             
-            <div class="p-4 text-center flex-grow flex flex-col">
+            <div class="p-4 text-center flex-grow flex flex-col justify-between">
                 <div>
                     <h3 class="font-semibold text-gray-800 unified-title-height">
                         {{ $item->name }}
@@ -273,23 +273,24 @@
                         @endif
                     </div>
 
-                   
-                 <p class="text-[#5b2c2c] font-bold text-lg mb-2">
-                    {{ $item->display_price }}
-                </p>
-
+                    <p class="text-[#5b2c2c] font-bold text-lg mb-2">
+                        {{ $item->display_price }}
+                    </p>
                 </div>
                 
-                <button type="button"
-                        class="addToCartBtn custom-cart-btn active:scale-95"
-                        data-id="{{ $item->id }}" 
-                        data-name="{{ $item->name }}" 
-                        data-price="{{ $item->display_price }}"
-                        data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
-                    Add to Cart
-                </button>
-            </div>
+                {{-- Change this line in your Best Sellers loop --}}
+            <button type="button"
+                    class="addToCartBtn custom-cart-btn active:scale-95"
+                    data-id="{{ $item->id }}" 
+                    data-name="{{ $item->name }}" 
+                    {{-- ✅ FIX: Use raw price --}}
+                    data-price="{{ $item->price }}" 
+                    data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
+                Add to Cart
+            </button>
+             </div>
         </div>
+        @endif
     @endforeach
     </div>
 </section>
@@ -346,14 +347,16 @@
                     </p>
                 </div>
                 
-                <button type="button"
-                        class="addToCartBtn custom-cart-btn active:scale-95"
-                        data-id="{{ $item->id }}" 
-                        data-name="{{ $item->name }}" 
-                        data-price="{{ $item->display_price }}" 
-                        data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
-                    Add to Cart
-                </button>
+                {{-- Change this line in your New Arrivals loop --}}
+<button type="button"
+        class="addToCartBtn custom-cart-btn active:scale-95"
+        data-id="{{ $item->id }}" 
+        data-name="{{ $item->name }}" 
+        {{-- ✅ FIX: Use raw price --}}
+        data-price="{{ $item->price }}" 
+        data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
+    Add to Cart
+</button>
             </div>
         </div>
     @endforeach
@@ -492,15 +495,14 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    /** * ✅ FIX 1: Define isLoggedIn at the top level so all functions can see it.
-     */
+    // ✅ FIX 1: Define isLoggedIn at the top level so all functions can see it.
     const isLoggedIn = {{ auth()->check() ? 'true' : 'false' }};
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Animations
+        // 1. Initialize Animations
         AOS.init({ once: true, offset: 100 });
 
-        // Helper: Update Header Cart Icon
+        // 2. Helper: Update Header Cart Icon
         function updateCartIcon(count) {
             const badge = document.getElementById('cart-badge'); 
             if(badge) {
@@ -509,25 +511,18 @@
             }
         }
 
-        // Chatbot Toggle Logic
-          const chatbotBtn = document.getElementById('chatbotBtn');
-       const chatbot = document.getElementById('tradlankaChatbot');
+        // 3. Chatbot Toggle Logic
+        const chatbotBtn = document.getElementById('chatbotBtn');
+        const chatbot = document.getElementById('tradlankaChatbot');
+        if (chatbotBtn && chatbot) {
+            chatbotBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                chatbot.hasAttribute('open') ? chatbot.removeAttribute('open') : chatbot.setAttribute('open', '');
+            });
+        }
 
-  if (!chatbotBtn || !chatbot) return;
-
-  chatbotBtn.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    if (chatbot.hasAttribute('open')) {
-      chatbot.removeAttribute('open');
-    } else {
-      chatbot.setAttribute('open', '');
-    }
-  });
-
-});
         // ============================================
-        // UNIVERSAL ADD TO CART LOGIC
+        // 4. UNIVERSAL ADD TO CART LOGIC (MOVED INSIDE)
         // ============================================
         const buttons = document.querySelectorAll('.addToCartBtn');
 
@@ -535,36 +530,23 @@
             btn.addEventListener('click', function(event) {
                 event.preventDefault(); 
                 
-                // Get Product Data from Button Attributes
                 const productId   = this.getAttribute('data-id'); 
                 const productName = this.getAttribute('data-name'); 
-                const productPrice= this.getAttribute('data-price'); 
-                const productImage= this.getAttribute('data-image'); 
-                const productQty  = 1; 
+                const rawPrice    = this.getAttribute('data-price'); 
+                const productImage = this.getAttribute('data-image'); 
+                const productQty   = 1; 
 
-                // --- Guest Logic ---
                 if (!isLoggedIn) {
-                    localStorage.setItem('pendingCartItem', JSON.stringify({
-                        id: productId,
-                        qty: productQty
-                    }));
-                    
-                    // Show Login Modal or Redirect
-                    if (document.getElementById('authModal')) {
-                        document.getElementById('authModal').classList.remove('hidden');
-                    } else {
-                        // FIX: Redirect if no modal exists
-                        window.location.href = "/login";
-                    }
+                    localStorage.setItem('pendingCartItem', JSON.stringify({ id: productId, qty: productQty }));
+                    const authModal = document.getElementById('authModal');
+                    authModal ? authModal.classList.remove('hidden') : window.location.href = "/login";
                     return; 
                 }
 
-                // --- Logged In Logic ---
                 const originalHTML = this.innerHTML;
                 this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 this.disabled = true;
 
-                // AJAX Request
                 fetch("{{ route('cart.add') }}", {
                     method: "POST",
                     headers: {
@@ -575,104 +557,56 @@
                     body: JSON.stringify({ 
                         product_id: productId,
                         product_qty: productQty,
-                        // ✅ FIX 2: Your controller now expects this field
                         product_variant_id: null 
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Server returned ' + response.status);
+                    return response.json();
+                })
                 .then(data => {
-                    // Reset Button
                     this.innerHTML = originalHTML;
                     this.disabled = false;
 
                     if(data.status === 'success') {
-                        if(data.cart_count !== undefined) {
-                            updateCartIcon(data.cart_count);
-                        }
+                        if(data.cart_count !== undefined) updateCartIcon(data.cart_count);
 
-                        // Attractive Maroon & Butter Alert
+                        const formattedPrice = parseFloat(rawPrice).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                        const currencySymbol = "{{ session('currency') === 'USD' ? '$' : 'Rs.' }}";
+
                         Swal.fire({
                             title: 'Added to Cart',
                             html: `
                                 <div style="display:flex; align-items:center; gap:16px; margin-top:10px;">
-                                    <img src="${productImage}" 
-                                        style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:1px solid #ddd;">
+                                    <img src="${productImage}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:1px solid #ddd;">
                                     <div style="text-align:left;">
-                                        <div style="font-weight:600; color:#333; font-size:15px; line-height:1.3;">
-                                            ${productName}
-                                        </div>
-                                        <div style="color:#5b2c2c; font-weight:700; font-size:15px; margin-top:4px;">
-                                            ${productPrice}
-                                        </div>
+                                        <div style="font-weight:600; color:#333; font-size:15px; line-height:1.3;">${productName}</div>
+                                        <div style="color:#5b2c2c; font-weight:700; font-size:15px; margin-top:4px;">${currencySymbol} ${formattedPrice}</div>
                                     </div>
-                                </div>
-                            `,
+                                </div>`,
                             icon: 'success',
-                            showCloseButton: true,
                             showCancelButton: true,
                             confirmButtonText: '<i class="fas fa-shopping-cart"></i> View Cart',
                             cancelButtonText: 'Continue Shopping',
-                            reverseButtons: true,
-                            width: 440,
-                            padding: '1.5em',
-                            backdrop: 'rgba(0,0,0,0.45)',
-                            customClass: {
-                                popup: 'cart-alert-popup'
-                            }
+                            customClass: { popup: 'cart-alert-popup' }
                         }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href = "{{ route('cart.show') }}";
-                            }
-                        });
-
-                    } else if(data.status === 'exists') {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Already in Cart',
-                            text: data.message,
-                            confirmButtonText: 'OK',
-                            customClass: {
-                                popup: 'cart-alert-popup'
-                            }
+                            if (result.isConfirmed) window.location.href = "{{ route('cart.show') }}";
                         });
                     }
                 })
-                .catch((error) => {
-                    console.error('Error:', error);
+                .catch(error => {
                     this.innerHTML = originalHTML;
                     this.disabled = false;
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Server Error',
-                        text: 'Could not connect to the cart. Please try again.',
-                    });
+                    Swal.fire({ icon: 'error', title: 'Server Error', text: 'Could not connect to the cart.' });
                 });
             });
         });
+    }); // 👈 This closing bracket was in the wrong place in your version!
 </script>
 
-@if(session('order_success'))
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    Swal.fire({
-        icon: 'success',
-        title: 'Thank You!',
-        html: `
-            <p style="font-size:16px; line-height:1.6;">
-                Thank you for choosing <b>TradLanka</b> ♥ <br>
-                Your order has been placed successfully.
-            </p>
-        `,
-        confirmButtonText: 'Continue Shopping',
-        confirmButtonColor: '#5b2c2c',
-        background: '#fffaf0',
-        color: '#5b2c2c',
-        iconColor: '#d4af37',
-        allowOutsideClick: false
-    });
-});
-</script>
-@endif
 
 
 <!-- ===== Dialogflow Chatbot (Hidden) ===== -->

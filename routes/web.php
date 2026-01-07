@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\Auth\CustomerLoginController;
 use App\Http\Controllers\Auth\StaffLoginController;
 use App\Http\Controllers\Auth\AuthPopupController;
+use App\Http\Controllers\Auth\StaffForgotPasswordController;
 
 // USER CONTROLLERS
 use App\Http\Controllers\User\UserDashController;
@@ -85,6 +86,14 @@ Route::get('/test-order-email', [MailTestController::class, 'sendTestEmail']);
 // Now it points to the correct ProductController where you added the code
 Route::post('/product/review/store', [App\Http\Controllers\Frontend\ProductController::class, 'storeReview'])->name('review.store')->middleware('auth');
 
+// 1. Requesting the Link (Forgot Password Page)
+Route::get('staff/password/reset', [StaffForgotPasswordController::class, 'showLinkRequestForm'])->name('staff.password.request');
+Route::post('staff/password/email', [StaffForgotPasswordController::class, 'sendResetLinkEmail'])->name('staff.password.email');
+
+// 2. Resetting the Password (The Link in the Email)
+// Note: name('password.reset') MUST stay exactly like this for the email link to work.
+Route::get('staff/password/reset/{token}', [StaffForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('staff/password/reset', [StaffForgotPasswordController::class, 'reset'])->name('password.update');
 
 
 // GLOBAL CUSTOMER LOGOUT

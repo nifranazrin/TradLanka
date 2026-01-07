@@ -69,50 +69,68 @@
                 </div>
 
                 {{-- ================= RECENT ORDERS TABLE ================= --}}
-                <div id="orders" class="bg-white/95 backdrop-blur-sm rounded-lg shadow-md p-6 scroll-mt-28">
-                    <h3 class="font-bold text-xl text-[#5b2c2c] mb-5 border-b pb-2">Recent Orders</h3>
-                    @if($orders->count())
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
-                                    <tr>
-                                        <th class="text-left px-4 py-3 font-bold">Product</th>
-                                        <th class="text-left px-4 py-3 font-bold">Order #</th>
-                                        <th class="text-left px-4 py-3 font-bold">Date</th>
-                                        <th class="text-right px-4 py-3 font-bold">Total</th>
-                                        <th class="text-right px-4 py-3">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    @foreach($orders as $order)
-                                        <tr class="hover:bg-gray-50 transition">
-                                            <td class="px-4 py-4">
-                                                @php $firstItem = $order->orderItems->first(); @endphp
-                                                @if($firstItem && $firstItem->product)
-                                                    <img src="{{ asset('storage/' . ($firstItem->product->image ?? 'default.jpg')) }}" 
-                                                         class="w-12 h-12 object-cover rounded border border-gray-200">
-                                                @endif
-                                            </td>
-                                            <td class="px-4 py-4 font-medium text-gray-800">{{ $order->tracking_no }}</td>
-                                            <td class="px-4 py-4 text-gray-500">{{ $order->created_at->format('d M Y') }}</td>
-                                            <td class="px-4 py-4 text-right font-bold text-[#5b2c2c]">Rs. {{ number_format($order->total_price, 2) }}</td>
-                                            <td class="px-4 py-4 text-right">
-                                                <a href="{{ route('user.orders.show', $order->id) }}" class="text-blue-600 font-bold hover:text-blue-800 text-xs uppercase tracking-wider">Manage</a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="text-center py-8">
-                            <i class="fas fa-shopping-bag text-gray-300 text-4xl mb-3"></i>
-                            <p class="text-gray-500">No orders placed yet.</p>
-                            <a href="{{ route('home') }}" class="text-[#5b2c2c] font-bold hover:underline mt-2 inline-block">Start Shopping</a>
-                        </div>
-                    @endif
-                </div>
+                             
+<div id="orders" class="bg-white/95 backdrop-blur-sm rounded-lg shadow-md p-6 scroll-mt-28">
+    <h3 class="font-bold text-xl text-[#5b2c2c] mb-5 border-b pb-2">Recent Orders</h3>
+    @if($orders->count())
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <tr>
+                        <th class="text-left px-4 py-3 font-bold">Product</th>
+                        <th class="text-left px-4 py-3 font-bold">Order #</th>
+                        <th class="text-left px-4 py-3 font-bold">Date</th>
+                        <th class="text-right px-4 py-3 font-bold">Total</th>
+                        <th class="text-right px-4 py-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($orders as $order)
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-4 py-4">
+                                 @php
+                            // Find the first item that actually has an associated product
+                            $itemWithProduct = $order->orderItems->first(function($item) {
+                                return $item->product !== null;
+                            });
 
+                            // Determine image path: Valid Product > Default Placeholder
+                            $imagePath = ($itemWithProduct && $itemWithProduct->product->image) 
+                                ? asset('storage/' . $itemWithProduct->product->image) 
+                                : asset('images/default-placeholder.png'); 
+                        @endphp
+                                                    
+                                <img src="{{ $imagePath }}" 
+                                     alt="Order Product Image"
+                                     class="w-12 h-12 object-cover rounded border border-gray-200">
+                            </td>
+                            <td class="px-4 py-4 font-medium text-gray-800">{{ $order->tracking_no }}</td>
+                            <td class="px-4 py-4 text-gray-500">{{ $order->created_at->format('d M Y') }}</td>
+                            
+                            <td class="px-4 py-4 text-right font-bold text-[#5b2c2c]">
+                                @if($order->currency === 'USD')
+                                    ${{ number_format($order->total_price, 2) }}
+                                @else
+                                    Rs. {{ number_format($order->total_price, 2) }}
+                                @endif
+                            </td>
+
+                            <td class="px-4 py-4 text-right">
+                                <a href="{{ route('user.orders.show', $order->id) }}" class="text-blue-600 font-bold hover:text-blue-800 text-xs uppercase tracking-wider">Manage</a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @else
+        <div class="text-center py-8">
+            <i class="fas fa-shopping-bag text-gray-300 text-4xl mb-3"></i>
+            <p class="text-gray-500">No orders placed yet.</p>
+            <a href="{{ route('home') }}" class="text-[#5b2c2c] font-bold hover:underline mt-2 inline-block">Start Shopping</a>
+        </div>
+    @endif
+</div>
             </section>
         </div>
     </div>

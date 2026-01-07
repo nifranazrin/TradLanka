@@ -13,50 +13,45 @@ class CartController extends Controller
 {
     /**
      * 1. ADD TO CART
+     * Handles both AJAX and standard form submissions
      */
-     public function addProduct(Request $request)
+    public function addProduct(Request $request)
     {
         $product_id         = $request->input('product_id');
         $product_qty        = $request->input('product_qty');
         $product_variant_id = $request->input('product_variant_id'); 
 
-        // ✅ KEEP YOUR ORIGINAL LOGIN CHECK
+        // ✅ Check if customer is authenticated
         if (Auth::check()) {
             $user_id = Auth::id();
             $prod_check = Product::where('id', $product_id)->first();
 
             if ($prod_check) {
-                
-                // ✅ WISHLIST LOGIC: Check if stock is 0
-                // If 0, it becomes a Heart item (Wishlist)
-                $isWishlist = ($prod_check->quantity <= 0) ? 1 : 0;
-
-                // Match both Product ID AND Variant ID
+                // Check if this specific product/variant combo is already in this user's cart
                 $cartItem = Cart::where('product_id', $product_id)
                                 ->where('product_variant_id', $product_variant_id)
                                 ->where('user_id', $user_id)
                                 ->first();
 
                 if ($cartItem) {
-                    // Update existing item
+                    // Update quantity of existing item
                     $cartItem->product_qty += $product_qty;
-                    $cartItem->is_wishlist = $isWishlist; // Update status
                     $cartItem->save();
 
-                    $message = $isWishlist ? $prod_check->name . ' wishlist updated!' : $prod_check->name . ' quantity updated!';
+                    $message = $prod_check->name . ' quantity updated in cart!';
                 } else {
-                    // Create new item
+                    // Create new cart entry
                     $cartItem = new Cart();
                     $cartItem->product_id         = $product_id;
                     $cartItem->user_id            = $user_id;
                     $cartItem->product_qty        = $product_qty;
                     $cartItem->product_variant_id = $product_variant_id;
-                    $cartItem->is_wishlist        = $isWishlist; // ✅ SAVE THE HEART STATUS
                     $cartItem->save();
 
-                    $message = $isWishlist ? $prod_check->name . ' added to Wishlist!' : $prod_check->name . ' added to cart!';
+                    $message = $prod_check->name . ' added to cart!';
                 }
 
+                // Get the total number of unique items for the header badge
                 $newCartCount = Cart::where('user_id', $user_id)->count();
 
                 if ($request->ajax() || $request->wantsJson()) {
@@ -70,7 +65,7 @@ class CartController extends Controller
                 }
             }
         } else {
-            // ✅ KEEP YOUR ORIGINAL POPUP TRIGGER
+            // ✅ Handle Guest status for the AJAX popup
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'status' => 'guest',
@@ -87,6 +82,7 @@ class CartController extends Controller
      */
     public function viewCart()
     {
+        // Eager load products and variants to prevent errors if a product is missing
         $cartItems = Cart::where('user_id', Auth::id())
                          ->with(['product', 'variant']) 
                          ->latest()
@@ -95,10 +91,8 @@ class CartController extends Controller
         return view('frontend.cart', compact('cartItems'));
     }
 
-    
-
     /**
-     * 3. UPDATE QUANTITY
+     * 3. UPDATE QUANTITY (Used in Cart Page)
      */
     public function updateCart(Request $request)
     {
@@ -121,7 +115,7 @@ class CartController extends Controller
     }
 
     /**
-     * 4. DELETE ITEMS
+     * 4. DELETE ITEMS (Supports Bulk Delete)
      */
     public function deleteCart(Request $request)
     {
@@ -135,14 +129,14 @@ class CartController extends Controller
 
                 return response()->json([
                     'status'  => 'success',
-                    'message' => 'Items deleted successfully'
+                    'message' => 'Items removed from cart successfully'
                 ]);
             }
         }
 
         return response()->json([
             'status'  => 'error',
-            'message' => 'Something went wrong'
+            'message' => 'Unable to delete items'
         ], 400);
     }
 }

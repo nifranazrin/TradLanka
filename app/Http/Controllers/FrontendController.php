@@ -39,15 +39,25 @@ class FrontendController extends Controller
         // 3. New Arrivals
         $products = Product::whereIn('status', ['approved', 'reapproved'])->where('is_active', 1)->latest()->take(5)->get();
 
-        // 4. Best Sellers
-        $bestSellers = Product::select('products.*', DB::raw('SUM(order_items.qty) as total_sales'))
-            ->join('order_items', 'products.id', '=', 'order_items.product_id')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 4)->where('products.is_active', 1)
-            ->groupBy('products.id', 'products.name', 'products.slug', 'products.price', 'products.image', 'products.status', 'products.is_active', 'products.category_id', 'products.seller_id', 'products.description', 'products.stock', 'products.unit_type', 'products.approved_at', 'products.created_at', 'products.updated_at')
-            ->orderByDesc('total_sales')->take(5)->get();
+        
+        // 4. Best Sellers (Lively Logic)
+    $bestSellers = Product::select('products.*', DB::raw('SUM(order_items.qty) as total_sales'))
+        ->join('order_items', 'products.id', '=', 'order_items.product_id')
+        ->join('orders', 'order_items.order_id', '=', 'orders.id')
+        ->whereIn('orders.status', [4, 5, 6]) // Status 4, 5, 6 for processed/delivered
+        ->where('products.is_active', 1)
+        ->whereIn('products.status', ['approved', 'reapproved'])
+        ->groupBy(
+            'products.id', 'products.name', 'products.slug', 'products.price', 
+            'products.image', 'products.status', 'products.is_active', 
+            'products.category_id', 'products.seller_id', 'products.description', 
+            'products.stock', 'products.unit_type', 'products.approved_at', 
+            'products.created_at', 'products.updated_at'
+        )
+        ->orderByDesc('total_sales')->take(5)->get();
 
-        $banner = Banner::where('section_name', 'home_festive_offer')->first();
+    // ✅ RESTORED: The missing $banner variable that caused the error
+    $banner = Banner::where('section_name', 'home_festive_offer')->first();
 
         // 5. AI Recommendations (Text-Based)
         $recommendedProducts = $this->getAIRecommendations();

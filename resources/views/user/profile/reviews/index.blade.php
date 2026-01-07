@@ -35,115 +35,119 @@
                     </div>
 
                     {{-- Tabs --}}
-                    <div class="flex border-b border-gray-100 bg-gray-50/50">
-                        <button id="btn-to-review"
-    class="flex-1 py-4 text-center text-sm font-bold border-b-2 border-[#5b2c2c] text-[#5b2c2c] flex items-center justify-center gap-2">
+                       {{-- Tabs --}}
+<div class="flex border-b border-gray-100 bg-gray-50/50">
+    <button id="btn-to-review"
+            class="flex-1 py-4 text-center text-sm font-bold border-b-2 border-[#5b2c2c] text-[#5b2c2c] flex items-center justify-center gap-2">
 
-    To Review
+        To Review
 
-    @if($toReviewCount > 0)
-        <span
-            class="inline-flex items-center justify-center 
-                   w-6 h-6 rounded-full 
-                   bg-red-600 text-white 
-                   text-xs font-extrabold">
-            {{ $toReviewCount }}
-        </span>
-    @endif
-</button>
+        {{-- Use the count from the filtered list rather than the controller variable --}}
+        @if($toReview->whereNotNull('product')->count() > 0)
+            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-600 text-white text-xs font-extrabold shadow-sm">
+                {{ $toReview->whereNotNull('product')->count() }}
+            </span>
+        @endif
+    </button>
 
+    <button id="btn-history"
+            class="flex-1 py-4 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-[#5b2c2c]">
+        History ({{ $history->count() }})
+    </button>
+</div>
 
-                        <button id="btn-history"
-                            class="flex-1 py-4 text-center text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-[#5b2c2c]">
-                            History ({{ $history->count() }})
-                        </button>
+                   <div class="p-6">
+
+    {{-- TO REVIEW --}}
+    <div id="panel-to-review" class="space-y-4">
+        @forelse($toReview as $item)
+            {{-- ✅ FIX 1: Only show the card if the product relationship is NOT null --}}
+            @if($item->product)
+                <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-[#fcfaf7]">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-white rounded-lg border overflow-hidden">
+                            <img src="{{ asset('storage/' . ($item->product->image ?? 'default.jpg')) }}"
+                                 class="w-full h-full object-contain p-1"
+                                 onerror="this.src='{{ asset('storage/images/default.jpg') }}'">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm">
+                                {{ $item->product->name }}
+                            </h4>
+                            <p class="text-xs text-gray-500 italic">
+                                Delivered: {{ $item->order->updated_at->format('M d, Y') }}
+                            </p>
+                        </div>
                     </div>
+                    {{-- ✅ FIX 2: This route is now safe because the product is verified to exist --}}
+                    <a href="{{ route('user.reviews.create', $item->product_id) }}"
+                       class="bg-[#5b2c2c] text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-[#4a2424]">
+                        Review
+                    </a>
+                </div>
+            @endif
+        @empty
+            <div class="text-center py-10 text-gray-400 italic">
+                No reviews pending.
+            </div>
+        @endforelse
+    </div>
 
-                    <div class="p-6">
-
-                        {{-- TO REVIEW --}}
-                        <div id="panel-to-review" class="space-y-4">
-                            @forelse($toReview as $item)
-                                <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-[#fcfaf7]">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-16 h-16 bg-white rounded-lg border overflow-hidden">
-                                            <img src="{{ asset('storage/' . ($item->product->image ?? 'default.jpg')) }}"
-                                                 class="w-full h-full object-contain p-1">
-                                        </div>
-                                        <div>
-                                            <h4 class="font-bold text-gray-800 text-sm">
-                                                {{ $item->product->name ?? 'Product' }}
-                                            </h4>
-                                            <p class="text-xs text-gray-500 italic">
-                                                Delivered: {{ $item->order->updated_at->format('M d, Y') }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <a href="{{ route('user.reviews.create', $item->product_id) }}"
-                                       class="bg-[#5b2c2c] text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-[#4a2424]">
-                                        Review
+    {{-- HISTORY --}}
+    <div id="panel-history" class="space-y-6" style="display:none;">
+        @forelse($history as $review)
+            <div class="p-5 rounded-xl border border-gray-100 bg-white shadow-sm">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg border overflow-hidden bg-gray-50">
+                            {{-- ✅ FIX 3: Show placeholder image if product was deleted after review --}}
+                            <img src="{{ asset('storage/' . ($review->product->image ?? 'default.jpg')) }}"
+                                 class="w-full h-full object-contain p-0.5"
+                                 onerror="this.src='{{ asset('storage/images/default.jpg') }}'">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm">
+                                @if($review->product)
+                                    <a href="{{ route('product.show', $review->product) }}"
+                                       class="text-[#5b2c2c] hover:underline">
+                                        {{ $review->product->name }}
                                     </a>
-                                </div>
-                            @empty
-                                <div class="text-center py-10 text-gray-400 italic">
-                                    No reviews pending.
-                                </div>
-                            @endforelse
+                                @else
+                                    <span class="text-gray-400 italic">Product No Longer Available</span>
+                                @endif
+                            </h4>
+
+                            <div class="flex text-yellow-400 text-[10px] mt-1">
+                                @for($i=1; $i<=5; $i++)
+                                    <i class="{{ $i <= $review->rating ? 'fas' : 'far' }} fa-star"></i>
+                                @endfor
+                            </div>
                         </div>
-
-                        {{-- HISTORY --}}
-                        <div id="panel-history" class="space-y-6" style="display:none;">
-                            @forelse($history as $review)
-                                <div class="p-5 rounded-xl border border-gray-100 bg-white shadow-sm">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-12 h-12 rounded-lg border overflow-hidden bg-gray-50">
-                                                <img src="{{ asset('storage/' . ($review->product->image ?? 'default.jpg')) }}"
-                                                     class="w-full h-full object-contain p-0.5">
-                                            </div>
-                                            <div>
-                                                <h4 class="font-bold text-gray-800 text-sm">
-                                                    @if($review->product)
-                                                        <a href="{{ route('product.show', $review->product) }}"
-                                                           class="text-[#5b2c2c] hover:underline">
-                                                            {{ $review->product->name }}
-                                                        </a>
-                                                    @else
-                                                        <span class="text-gray-400 italic">
-                                                            Product not available
-                                                        </span>
-                                                    @endif
-                                                </h4>
-
-                                                <div class="flex text-yellow-400 text-[10px] mt-1">
-                                                    @for($i=1; $i<=5; $i++)
-                                                        <i class="{{ $i <= $review->rating ? 'fas' : 'far' }} fa-star"></i>
-                                                    @endfor
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <span class="text-[10px] text-gray-400">
-                                            {{ $review->created_at->format('M d, Y') }}
-                                        </span>
-                                    </div>
-
-                                    <div class="text-sm text-gray-600 italic border-l-4 border-[#5b2c2c]/10 pl-4 py-1">
-                                        "{{ $review->comment }}"
-                                    </div>
-
-                                    @if($review->image)
-                                        <img src="{{ asset('storage/' . $review->image) }}"
-                                             class="mt-3 w-24 h-24 object-cover rounded-lg border">
-                                    @endif
-                                </div>
-                            @empty
-                                <div class="text-center py-10 text-gray-400 italic">
-                                    No history found.
-                                </div>
-                            @endforelse
-                        </div>
-
                     </div>
+                    <span class="text-[10px] text-gray-400">
+                        {{ $review->created_at->format('M d, Y') }}
+                    </span>
+                </div>
+
+                <div class="text-sm text-gray-600 italic border-l-4 border-[#5b2c2c]/10 pl-4 py-1">
+                    "{{ $review->comment }}"
+                </div>
+
+                @if($review->image)
+                    <img src="{{ asset('storage/' . $review->image) }}"
+                         class="mt-3 w-24 h-24 object-cover rounded-lg border">
+                @endif
+            </div>
+        @empty
+            <div class="text-center py-10 text-gray-400 italic">
+                No history found.
+            </div>
+        @endforelse
+    </div>
+
+</div>
+
+                        
                 </div>
             </div>
 

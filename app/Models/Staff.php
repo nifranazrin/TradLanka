@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable; 
+use Illuminate\Contracts\Auth\CanResetPassword;
+use Illuminate\Auth\Passwords\CanResetPassword as ResetPasswordTrait;
 
-class Staff extends Authenticatable
+class Staff extends Authenticatable implements CanResetPassword
 {
-    use HasFactory, Notifiable; 
+    // 3. ADD "ResetPasswordTrait" INSIDE THE CLASS
+    use HasFactory, Notifiable, ResetPasswordTrait; 
 
     protected $fillable = [
         'name',
@@ -16,7 +19,7 @@ class Staff extends Authenticatable
         'password',
         'phone',      
         'address', 
-         'nic_number',   
+        'nic_number',   
         'role',
         'status',
         'image',  

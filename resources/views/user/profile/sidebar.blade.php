@@ -32,21 +32,26 @@
     <hr class="my-4 border-gray-200">
 
     <p class="font-bold text-gray-800 mb-3 text-lg">Reviews</p>
-    <ul class="space-y-3 ml-2">
-        <li>
-            {{-- CORRECTED REVIEW LINK: Use user.reviews.index to match web.php --}}
-            <a href="{{ route('user.reviews.index') }}" 
-               class="{{ request()->routeIs('user.reviews.*') ? 'font-bold text-[#5b2c2c]' : 'font-medium text-gray-600' }} hover:text-[#5b2c2c] flex items-center justify-between group">
-               <span class="flex items-center gap-2">
-                   <i class="fas fa-star"></i> My Reviews
-               </span>
-               {{-- Badge logic for pending reviews --}}
-               @if(isset($toReviewCount) && $toReviewCount > 0)
-                   <span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{{ $toReviewCount }}</span>
-               @endif
-            </a>
-        </li>
-    </ul>
+<ul class="space-y-3 ml-2">
+    <li>
+        {{-- Link points to user.reviews.index as per your web.php --}}
+        <a href="{{ route('user.reviews.index') }}" 
+           class="{{ request()->routeIs('user.reviews.*') ? 'font-bold text-[#5b2c2c]' : 'font-medium text-gray-600' }} hover:text-[#5b2c2c] flex items-center justify-between group transition-colors duration-200">
+           
+            <span class="flex items-center gap-2">
+                <i class="fas fa-star text-sm {{ request()->routeIs('user.reviews.*') ? 'text-[#5b2c2c]' : 'text-gray-400 group-hover:text-[#5b2c2c]' }}"></i> 
+                My Reviews
+            </span>
+
+            {{-- Badge logic: Displays red circle if there are pending reviews to be written --}}
+            @if(isset($toReviewCount) && $toReviewCount > 0)
+                <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">
+                    {{ $toReviewCount }}
+                </span>
+            @endif
+        </a>
+    </li>
+</ul>
 
     <hr class="my-4 border-gray-200">
 

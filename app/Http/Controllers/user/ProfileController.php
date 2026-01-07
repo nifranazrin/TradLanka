@@ -1,11 +1,13 @@
 <?php
 
 namespace App\Http\Controllers\User;
-use Illuminate\Support\Facades\DB;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\Order;
+use App\Models\OrderItem;
 
 class ProfileController extends Controller
 {
@@ -24,13 +26,17 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
+        // Calculate pending reviews for the sidebar badge
+        $toReviewCount = $this->getPendingReviewsCount($user->id);
+
+        // Fetch latest 5 orders with products loaded for the image display
         $orders = Order::where('user_id', $user->id)
             ->latest()
             ->take(5)
-            ->with('orderItems')
+            ->with('orderItems.product') 
             ->get();
 
-        return view('user.profile.index', compact('user', 'orders'));
+        return view('user.profile.index', compact('user', 'orders', 'toReviewCount'));
     }
 
     /**
@@ -72,12 +78,8 @@ class ProfileController extends Controller
     /**
      * Update Address (Handle Form Submit)
      */
-      /**
-     * Update Address (Handle Form Submit)
-     */
     public function updateAddress(Request $request)
     {
-        // 1. Validate all fields including the new ones
         $request->validate([
             'address1' => 'required|string|max:500',
             'address2' => 'nullable|string|max:255',
@@ -89,8 +91,6 @@ class ProfileController extends Controller
         ]);
 
         $user = Auth::user();
-
-        // 2. Save all fields to the user profile
         $user->address1 = $request->address1;
         $user->address2 = $request->address2;
         $user->city     = $request->city;
@@ -111,26 +111,27 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
+        // Calculate pending reviews for the sidebar badge
+        $toReviewCount = $this->getPendingReviewsCount($user->id);
+
         $orders = Order::where('user_id', $user->id)
             ->latest()
-            ->with('orderItems')
+            ->with('orderItems.product')
             ->get();
 
-        return view('user.profile.orders', compact('user', 'orders'));
+        return view('user.profile.orders', compact('user', 'orders', 'toReviewCount'));
     }
 
     /**
      * View Single Order Details
-     * ✅ Added this method to fix your "View Details" button
      */
     public function viewOrder($id)
     {
         $user = Auth::user();
 
-        // Fetch order only if it belongs to the logged-in user
         $order = Order::where('id', $id)
             ->where('user_id', $user->id)
-            ->with('orderItems.product') // Load items and products
+            ->with('orderItems.product') 
             ->first();
 
         if (!$order) {
@@ -140,35 +141,47 @@ class ProfileController extends Controller
         return view('user.profile.order-details', compact('user', 'order'));
     }
 
+    /**
+     * Handle Order Cancellation Request
+     */
     public function cancelOrder($id)
-{
-    $user = Auth::user(); //
-    
-    // 1. Find the order only if it belongs to this user and is in a cancellable stage
-    // Cancellable Stages: 0 (Placed), 1 (Received), 2 (Packed)
-    $order = Order::where('id', $id)
-        ->where('user_id', $user->id)
-        ->whereIn('status', ['0', '1', '2']) 
-        ->first();
-
-    // 2. If the order is already at status 4 (Head Office) or above, deny the request
-    if (!$order) {
-        return redirect()->back()->with('error', 'Order cannot be cancelled at this stage. It may already be at the Head Office or shipped.');
-    }
-
-    try {
-        // 3. Update Status to 7 (Cancellation Requested)
-        // NOTE: We do NOT restore stock here. Stock is restored ONLY after Admin final approval.
-        $order->status = '7';
-        $order->save();
-
-        // 4. ✅ OPTIONAL: Notify the Seller here so they see it in their dashboard
-        // Notification::send($order->seller, new \App\Notifications\CancellationRequest($order));
-
-        return redirect()->back()->with('status', 'Your cancellation request has been sent to the Seller for approval.');
+    {
+        $user = Auth::user();
         
-    } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'Something went wrong. Please try again later.');
+        // Find cancellable order (Status 0, 1, or 2)
+        $order = Order::where('id', $id)
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['0', '1', '2']) 
+            ->first();
+
+        if (!$order) {
+            return redirect()->back()->with('error', 'Order cannot be cancelled at this stage.');
+        }
+
+        try {
+            $order->status = '7'; // Cancellation Requested
+            $order->save();
+
+            return redirect()->back()->with('status', 'Your cancellation request has been sent for approval.');
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Something went wrong. Please try again later.');
+        }
     }
+
+    /**
+     * Helper: Count items in Delivered orders that have no review from this user
+     */
+  private function getPendingReviewsCount($userId)
+{
+    return OrderItem::whereHas('order', function ($query) use ($userId) {
+            $query->where('user_id', $userId)->where('status', '5'); 
+        })
+        // This is the fix: It ignores OrderItems where the product is deleted
+        ->whereHas('product') 
+        ->whereDoesntHave('product.reviews', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })
+        ->count();
 }
 }
