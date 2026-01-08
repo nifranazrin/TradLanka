@@ -256,6 +256,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', AdminMiddleware::cla
         Route::post('/send', [AdminChatController::class, 'sendMessage'])->name('send');
         Route::post('/delete', [AdminChatController::class, 'deleteMessage'])->name('delete');
         Route::get('/orders', [AdminChatController::class, 'getRecentOrders'])->name('orders');
+        // Change 'clearConversation' to 'clearChat'
+Route::post('/clear/{receiverId}/{type}', [AdminChatController::class, 'clearChat'])->name('clear');
     });
 
     // --- Reports & Analytics ---

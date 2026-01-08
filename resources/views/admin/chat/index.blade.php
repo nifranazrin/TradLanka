@@ -215,6 +215,9 @@ function loadMessages() {
         box.innerHTML = '';
         
         data.forEach(m => {
+            // ✅ Only show messages where deleted_by_admin is false
+            if(m.deleted_by_admin) return;
+
             const isSent = m.sender_type === 'admin';
             const row = document.createElement('div');
             row.className = 'msg-row ' + (isSent ? 'sent' : 'received');
@@ -222,7 +225,6 @@ function loadMessages() {
             let messageText = (m.message && m.message !== 'null') ? m.message : '';
             let attachmentHtml = '';
 
-            // Handle Multi-file attachments exactly like Delivery
             if(m.attachment) {
                 try {
                     const files = JSON.parse(m.attachment);
@@ -238,7 +240,6 @@ function loadMessages() {
                 }
             }
 
-            // Options Menu (Sync with Delivery Logic)
             const menuHtml = `
                 <div class="dropdown d-inline float-end ms-2">
                     <i class="bi bi-three-dots-vertical cursor-pointer" data-bs-toggle="dropdown" style="font-size:12px; opacity:0.5"></i>
@@ -293,21 +294,32 @@ function clearChat() {
 
     Swal.fire({ 
         title: 'Clear Chat?', 
-        text: "This will delete all messages for both parties permanently.", 
-        icon: 'warning', 
+        text: "This will clear the history for YOU. The staff member will still see these messages.", 
+        icon: 'info', 
         showCancelButton: true, 
-        confirmButtonColor: '#6b2f2f', // Maroon theme
-        confirmButtonText: 'Yes, All Delete!'
+        confirmButtonColor: '#6b2f2f',
+        confirmButtonText: 'Yes, Clear for Me'
     }).then(res => {
         if(res.isConfirmed) {
             fetch(`/admin/chat/clear/${currentReceiverId}/${currentReceiverType}`, { 
                 method: 'POST', 
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } 
-            }).then(response => response.json()).then(data => {
+                headers: { 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                } 
+            })
+            .then(response => response.json())
+            .then(data => {
                 if(data.status === 'success') {
-                    document.getElementById('messagesBox').innerHTML = ''; // Wipe UI
-                    Swal.fire('Cleared!', 'The history has been wiped.', 'success');
+                    // ✅ Immediate UI Cleanup
+                    document.getElementById('messagesBox').innerHTML = ''; 
+                    Swal.fire('Cleared!', 'The history is now hidden from your view.', 'success');
+                    // No need to call loadMessages() here because we just emptied it
                 }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                Swal.fire('Error', 'Server connection failed.', 'error');
             });
         }
     });

@@ -66,15 +66,22 @@ class ChatController extends Controller
      * 2. Fetch Messages (AJAX)
      */
     public function fetchMessages($receiverId, $type)
-    {
-        $adminId = Auth::guard('admin')->id();
-        
-        return Message::where(function($q) use ($adminId, $receiverId) {
-            $q->where('sender_id', $adminId)->where('receiver_id', $receiverId);
-        })->orWhere(function($q) use ($adminId, $receiverId) {
-            $q->where('sender_id', $receiverId)->where('receiver_id', $adminId);
-        })->orderBy('created_at', 'asc')->get();
-    }
+{
+    $adminId = Auth::guard('admin')->id(); //
+    
+    return Message::where('deleted_by_admin', false) // ✅ Only fetch active messages for admin
+        ->where(function($q) use ($adminId, $receiverId, $type) {
+            $q->where(function($sq) use ($adminId, $receiverId, $type) {
+                $sq->where('sender_id', $adminId)->where('sender_type', 'admin')
+                   ->where('receiver_id', $receiverId)->where('receiver_type', $type);
+            })->orWhere(function($sq) use ($adminId, $receiverId, $type) {
+                $sq->where('sender_id', $receiverId)->where('sender_type', $type)
+                   ->where('receiver_id', $adminId)->where('receiver_type', 'admin');
+            });
+        })
+        ->orderBy('created_at', 'asc')
+        ->get(); //
+}
 
     /**
      * 3. Send Message
@@ -105,18 +112,20 @@ class ChatController extends Controller
      * ✅ ALL DELETE LOGIC (Clear Chat)
      * Matches your Delivery Controller logic exactly.
      */
-    public function clearChat($receiverId, $type)
-    {
-        $adminId = Auth::guard('admin')->id();
-        
-        Message::where(function($q) use ($adminId, $receiverId) {
-            $q->where('sender_id', $adminId)->where('receiver_id', $receiverId);
-        })->orWhere(function($q) use ($adminId, $receiverId) {
-            $q->where('sender_id', $receiverId)->where('receiver_id', $adminId);
-        })->delete(); 
-        
-        return response()->json(['status' => 'success']);
-    }
+   public function clearChat($receiverId, $type)
+{
+    $adminId = Auth::guard('admin')->id();
+
+    Message::where(function($q) use ($adminId, $receiverId, $type) {
+        $q->where('sender_id', $adminId)->where('sender_type', 'admin')
+          ->where('receiver_id', $receiverId)->where('receiver_type', $type);
+    })->orWhere(function($q) use ($adminId, $receiverId, $type) {
+        $q->where('sender_id', $receiverId)->where('sender_type', $type)
+          ->where('receiver_id', $adminId)->where('receiver_type', 'admin');
+    })->update(['deleted_by_admin' => true]); // Mark as hidden for Admin
+
+    return response()->json(['status' => 'success']);
+}
 
     /**
      * ✅ SINGLE DELETE LOGIC
