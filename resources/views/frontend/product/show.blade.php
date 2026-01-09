@@ -138,57 +138,63 @@
                 <h3 class="text-lg font-semibold text-[#5b2c2c] mb-2">Description</h3>
                 <p class="text-gray-700 leading-relaxed mb-6 text-sm">{!! nl2br(e($product->description)) !!}</p>
 
-                @if ($hasVariants)
-                    <div class="mt-5 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                        <label class="block text-sm font-bold text-gray-700 mb-3">
-                            Select Size / Option: <span class="text-red-500">*</span>
-                        </label>
-                        <div class="flex gap-3 flex-wrap" id="variantContainer">
-                           <div class="flex gap-3 flex-wrap" id="variantContainer">
-                                    @foreach ($product->variants as $variant)
-                                        <button
-                                            type="button"
-                                            class="variantOption px-4 py-2 border border-gray-300 rounded-md text-sm font-medium transition-all
-                                                hover:border-[#5b2c2c] hover:bg-gray-50
-                                                {{ $variant->stock == 0 ? 'opacity-50 cursor-not-allowed bg-gray-100' : 'bg-white' }}"
-                                            {{ $variant->stock == 0 ? 'disabled' : '' }}
-                                            data-id="{{ $variant->id }}"
-                                            data-price="{{ $variant->price }}" 
-                                            data-stock="{{ $variant->stock }}"
-                                            data-label="{{ $variant->unit_label }}">
-                                            
-                                            {{ $variant->unit_label }}
-                                            
-                                            @if($variant->stock == 0) 
-                                                <span class="text-xs text-red-500">(Sold Out)</span> 
-                                            @endif
-                                        </button>
-                                    @endforeach
-                                </div>
-                        <input type="hidden" id="selectedVariantId" value="">
-                    </div>
-                @endif
+                 
+                {{-- ✅ PRODUCT BUYING SECTION --}}
+@if ($hasVariants)
+    <div class="mt-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-4">
+            <i class="fas fa-layer-group text-[#5b2c2c]"></i> 
+            Select Size / Option: <span class="text-red-500">*</span>
+        </label>
+        
+        <div class="flex gap-3 flex-wrap" id="variantContainer">
+            @foreach ($product->variants as $variant)
+                <button
+                    type="button"
+                    class="variantOption px-5 py-2.5 border-2 border-gray-100 rounded-xl text-sm font-bold transition-all duration-200
+                        hover:border-[#5b2c2c] hover:bg-gray-50 flex flex-col items-center
+                        {{ $variant->stock == 0 ? 'opacity-40 cursor-not-allowed bg-gray-50 border-dashed' : 'bg-white shadow-sm' }}"
+                    {{ $variant->stock == 0 ? 'disabled' : '' }}
+                    data-id="{{ $variant->id }}"
+                    data-price="{{ $variant->price }}" 
+                    data-stock="{{ $variant->stock }}"
+                    data-label="{{ $variant->unit_label }}">
+                    
+                    <span>{{ $variant->unit_label }}</span>
+                    
+                    @if($variant->stock == 0) 
+                        <span class="text-[10px] text-red-500 font-bold uppercase">Sold Out</span> 
+                    @endif
+                </button>
+            @endforeach
+        </div>
+        <input type="hidden" id="selectedVariantId" value="">
+    </div>
+@endif
 
-                <div class="mt-6">
-                    <label class="block text-sm font-medium mb-2">Quantity</label>
-                    <div class="inline-flex items-center border rounded-md bg-white shadow-sm">
-                        <button id="decreaseQty" class="px-4 py-2 text-gray-600 hover:bg-gray-100 border-r transition">-</button>
-                        <input id="productQty" type="text" value="1" class="w-16 text-center focus:outline-none py-2 font-semibold text-gray-700" readonly>
-                        <button id="increaseQty" class="px-4 py-2 text-gray-600 hover:bg-gray-100 border-l transition">+</button>
-                    </div>
-                </div>
+{{-- ✅ MODERN QUANTITY & BUTTON BAR --}}
+<div class="mt-8 flex flex-col md:flex-row items-end gap-6">
+    <div class="flex flex-col items-center md:items-start gap-2 w-full md:w-auto">
+        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Quantity</label>
+        <div class="inline-flex items-center border-2 border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm">
+            <button id="decreaseQty" class="w-12 h-12 flex items-center justify-center text-gray-400 hover:bg-gray-50 hover:text-[#5b2c2c] transition-colors border-r">-</button>
+            <input id="productQty" type="text" value="1" class="w-14 text-center focus:outline-none h-12 font-bold text-gray-800" readonly>
+            <button id="increaseQty" class="w-12 h-12 flex items-center justify-center text-gray-400 hover:bg-gray-50 hover:text-[#5b2c2c] transition-colors border-l">+</button>
+        </div>
+    </div>
 
-                <div class="mt-8 flex flex-col sm:flex-row gap-4">
-                    <button id="addToCartBtn" data-id="{{ $product->id }}" 
-                            class="flex-1 h-12 bg-[#5b2c2c] hover:bg-[#462020] text-white rounded-lg flex items-center justify-center gap-2 shadow-lg transition transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-cart-plus"></i> Add to Cart
-                    </button>
-                    <button id="buyNowBtn" data-id="{{ $product->id }}"
-                            class="flex-1 h-12 bg-[#d97706] hover:bg-[#b86504] text-white rounded-lg flex items-center justify-center gap-2 shadow-lg transition transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-bolt"></i> Buy Now
-                    </button>
-                </div>
-            </div>
+    <div class="flex flex-1 gap-4 w-full h-14">
+        {{-- ADD TO CART WITH SHOPPING CART ICON --}}
+        <button id="addToCartBtn" data-id="{{ $product->id }}" 
+                class="flex-1 h-full bg-white border-2 border-[#5b2c2c] text-[#5b2c2c] font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-[#5b2c2c] hover:text-white transition-all duration-300 shadow-md transform active:scale-95">
+            <i class="fas fa-shopping-cart"></i> Add to Cart
+        </button>
+        <button id="buyNowBtn" data-id="{{ $product->id }}"
+                class="flex-1 h-full bg-[#d97706] text-white font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-[#b86504] transition-all duration-300 shadow-md transform active:scale-95">
+            <i class="fas fa-bolt"></i> Buy Now
+        </button>
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -343,7 +349,6 @@
         const thumbs = document.querySelectorAll('.gallery-thumb');
         const variantBtns = document.querySelectorAll('.variantOption');
         const priceDisplay = document.getElementById('displayPrice');
-        const stockDisplay = document.getElementById('stockDisplay');
         const hiddenVariantInput = document.getElementById('selectedVariantId');
         const qtyInput = document.getElementById('productQty');
         const addToCartBtn = document.getElementById('addToCartBtn');
@@ -351,19 +356,32 @@
         
         let currentStock = {{ $product->stock }}; 
 
-        // --- TradLanka Attractive Theme Settings ---
         const tradLankaTheme = {
-            background: '#fdf6e3',      // Butter Cream
-            color: '#5b2c2c',           // Maroon Text
+            background: '#fdf6e3',
+            color: '#5b2c2c',
             confirmButtonColor: '#5b2c2c',
             iconColor: '#5b2c2c',
-            // Tailwind classes for bigger text
             customClass: {
                 title: 'text-3xl font-bold', 
                 htmlContainer: 'text-xl',
-                confirmButton: 'px-8 py-3 text-lg rounded-lg'
+                confirmButton: 'px-8 py-3 text-lg rounded-lg',
+                popup: 'cart-alert-popup'
             }
         };
+
+        // ✅ HELPER: Update Header Cart Icon (Sync with Homepage ID)
+        function updateCartIcon(count) {
+            const badge = document.getElementById('cart-badge'); 
+            if(badge) {
+                badge.innerText = count;
+                badge.classList.remove('hidden'); // Ensure it shows if it was hidden
+                
+                // Pop Animation
+                badge.style.transition = "transform 0.3s ease";
+                badge.style.transform = "scale(1.5)";
+                setTimeout(() => { badge.style.transform = "scale(1)"; }, 300);
+            }
+        }
 
         // Thumbnail Switcher
         thumbs.forEach(thumb => {
@@ -377,39 +395,33 @@
         // Variant Selection
         variantBtns.forEach(btn => {
             btn.addEventListener('click', function () {
-                variantBtns.forEach(b => b.classList.remove('bg-[#5b2c2c]', 'text-white', 'border-[#5b2c2c]', 'ring-2'));
-                this.classList.add('bg-[#5b2c2c]', 'text-white', 'border-[#5b2c2c]', 'ring-2');
+                variantBtns.forEach(b => b.classList.remove('active-variant', 'ring-2', 'ring-[#5b2c2c]'));
+                this.classList.add('active-variant', 'ring-2', 'ring-[#5b2c2c]');
                 
                 let price = parseFloat(this.dataset.price);
-        const stock = parseInt(this.dataset.stock);
+                const stock = parseInt(this.dataset.stock);
+                
+                if (currencySymbol === '$') {
+                    price = price * 0.0032; 
+                }
 
-        // ✅ FIX: Apply exchange rate if currency is USD
-        if (currencySymbol === '$') {
-            const exchangeRate = 0.0032; // Must match FrontendController
-            price = price * exchangeRate;
-        }
-
-        priceDisplay.innerText = currencySymbol + ' ' + price.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+                priceDisplay.innerText = currencySymbol + ' ' + price.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                
+                hiddenVariantInput.value = this.dataset.id;
+                currentStock = stock;
+                qtyInput.value = 1;
+            });
         });
-        
-            hiddenVariantInput.value = this.dataset.id;
-            currentStock = stock;
-        });
-    });
 
         // Quantity Controls
         document.getElementById('increaseQty').onclick = () => {
             let val = parseInt(qtyInput.value);
             if(val < currentStock) qtyInput.value = val + 1;
             else {
-                Swal.fire({
-                    ...tradLankaTheme,
-                    title: 'Stock Limit',
-                    text: 'Only ' + currentStock + ' items available.',
-                    icon: 'warning'
-                });
+                Swal.fire({ ...tradLankaTheme, title: 'Stock Limit', icon: 'warning' });
             }
         };
 
@@ -418,36 +430,20 @@
             if(val > 1) qtyInput.value = val - 1;
         };
 
+        // ✅ THE ACTION FUNCTION
         function handleAddToCart(btn, isBuyNow) {
-            // Check for Variant Selection
             if(hasVariants && !hiddenVariantInput.value) {
-                Swal.fire({
-                    ...tradLankaTheme,
-                    title: 'Pick a Size!',
-                    text: 'Please select an option before adding to cart.',
-                    icon: 'info'
-                });
-                document.getElementById('variantContainer').scrollIntoView({behavior: 'smooth'});
+                Swal.fire({ title: 'Pick a Size!', icon: 'info' });
                 return;
             }
 
-            // Check Login
             if(!isLoggedIn) {
-                Swal.fire({
-                    ...tradLankaTheme,
-                    title: 'Login Required',
-                    text: 'Please login to start shopping.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Login Now'
-                }).then((result) => {
-                    if (result.isConfirmed) window.location.href = "/login";
-                });
+                window.location.href = "/login";
                 return;
             }
 
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
             fetch("{{ route('cart.add') }}", {
@@ -460,45 +456,43 @@
                 body: JSON.stringify({ 
                     product_id: btn.dataset.id, 
                     product_qty: qtyInput.value, 
-                    product_variant_id: hasVariants ? (hiddenVariantInput.value || null) : null 
+                    product_variant_id: hasVariants ? hiddenVariantInput.value : null 
                 })
             })
             .then(res => res.json())
             .then(data => {
-                btn.innerHTML = originalText; 
+                btn.innerHTML = originalHTML; 
                 btn.disabled = false;
 
-                if(data.status === 'success' || data.status === 'exists') {
-                    if(isBuyNow) { 
+                if (data.status === 'success') {
+                    // Update Header
+                    if (data.cart_count !== undefined) {
+                        updateCartIcon(data.cart_count); 
+                    }
+
+                    if (isBuyNow) { 
                         window.location.href = "{{ route('cart.show') }}"; 
                     } else {
                         Swal.fire({
                             ...tradLankaTheme,
-                            title: 'Success!',
+                            title: 'Added to Cart',
                             text: data.message,
                             icon: 'success',
-                            timer: 2500,
-                            timerProgressBar: true
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-shopping-cart"></i> View Cart',
+                            cancelButtonText: 'Continue Shopping'
+                        }).then((result) => {
+                            if (result.isConfirmed) window.location.href = "{{ route('cart.show') }}";
                         });
                     }
-                } else { 
-                    Swal.fire({
-                        ...tradLankaTheme,
-                        title: 'Oops!',
-                        text: data.message || 'Something went wrong',
-                        icon: 'error'
-                    });
+                } else if (data.status === 'guest') {
+                    window.location.href = data.url;
                 }
             })
             .catch(err => { 
-                btn.innerHTML = originalText; 
+                btn.innerHTML = originalHTML; 
                 btn.disabled = false; 
-                Swal.fire({
-                    ...tradLankaTheme,
-                    title: 'Server Error',
-                    text: 'Could not connect to the server.',
-                    icon: 'error'
-                });
+                console.error("Cart Error:", err);
             });
         }
 
@@ -506,4 +500,20 @@
         if(buyNowBtn) buyNowBtn.onclick = () => handleAddToCart(buyNowBtn, true);
     });
 </script>
+
+<style>
+    .variantOption.active-variant {
+        border-color: #5b2c2c !important;
+        background-color: #fdf6e3 !important;
+        color: #5b2c2c !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(91, 44, 44, 0.1);
+    }
+    #addToCartBtn:hover i { animation: trolley-shake 0.5s ease infinite; }
+    @keyframes trolley-shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-2px); }
+        50% { transform: translateX(2px); }
+    }
+</style>
 @endsection

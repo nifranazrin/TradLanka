@@ -92,7 +92,7 @@
 .full-card-height {
     display: flex;
     flex-direction: column;
-    height: 75%;
+    height: 95%;
     background: #ffffff;
     border-radius: 4px; /* Shorter radius is more modern */
     border: 1px solid #f2f2f2;

@@ -32,7 +32,7 @@
 
             <div class="space-y-4">
                 @foreach($orders as $order)
-                    {{-- Order Card with Backdrop Blur --}}
+                    {{-- Order Card --}}
                     <div class="bg-white/95 backdrop-blur-sm p-6 rounded-lg shadow-md hover:shadow-lg transition flex flex-col md:flex-row md:items-center md:justify-between border-l-4 border-[#5b2c2c]">
 
                         {{-- LEFT SIDE: Order Info --}}
@@ -43,19 +43,30 @@
                             <p class="text-sm text-gray-500 font-medium mt-1">
                                 <i class="far fa-calendar-alt mr-1"></i> Placed on {{ $order->created_at->format('d M Y') }}
                             </p>
-                            {{-- Optional: Show Status Badge --}}
+                            
+                            {{-- ✅ FIXED STATUS LOGIC --}}
                             <div class="mt-2">
-                                <span class="px-3 py-1 rounded-full text-xs font-bold border
-                                    {{ $order->status == '0' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-green-100 text-green-800 border-green-200' }}">
-                                    {{ $order->status == '0' ? 'Pending' : 'Completed' }}
-                                </span>
+                                @if($order->status == '5')
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold border bg-green-100 text-green-800 border-green-200">
+                                        Delivered
+                                    </span>
+                                @elseif($order->status == '6')
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold border bg-red-100 text-red-800 border-red-200">
+                                        Cancelled
+                                    </span>
+                                @else
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold border bg-yellow-100 text-yellow-800 border-yellow-200">
+                                        Pending / In Process
+                                    </span>
+                                @endif
                             </div>
                         </div>
 
                         {{-- RIGHT SIDE: Price & Link --}}
                         <div class="text-left md:text-right">
+                            {{-- ✅ FIXED DYNAMIC CURRENCY --}}
                             <p class="font-extrabold text-2xl text-[#5b2c2c] mb-2">
-                                Rs. {{ number_format($order->total_price, 2) }}
+                                {{ strtoupper($order->currency) == 'USD' ? '$' : 'Rs.' }} {{ number_format($order->total_price, 2) }}
                             </p>
 
                             {{-- "View Details" Link --}}
