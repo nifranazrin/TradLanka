@@ -16,45 +16,41 @@
 
     {{-- Body Message --}}
     <div style="padding: 30px; line-height: 1.6; color: #333;">
+        <p style="font-size: 18px; color: #5b2c2c; font-weight: bold;">Order Completed!</p>
         <p style="font-size: 16px;">Hi <strong>{{ $order->fname }} {{ $order->lname }}</strong>,</p>
         
-        <p>Thank you for your order! Your order <strong>#{{ $order->tracking_no }}</strong> has been successfully received.</p>
+        <p>Your order <strong>#{{ $order->tracking_no }}</strong> has been successfully delivered and is now complete.</p>
 
         <div style="background-color: #f9f9f9; border-left: 4px solid #5b2c2c; padding: 15px; margin: 20px 0;">
             <p style="margin: 0; padding-bottom: 5px;"><strong>Order Reference:</strong> {{ $order->tracking_no }}</p>
-            <p style="margin: 0; padding-bottom: 5px;"><strong>Total Payment:</strong> 
-                @if($order->currency == 'USD')
-                    ${{ number_format($order->total_price, 2) }}
+            <p style="margin: 0;"><strong>Payment Method:</strong> 
+                {{-- Robust check for COD vs Stripe using your table logic --}}
+                @if(str_contains(strtoupper($order->payment_mode), 'COD'))
+                    Cash on Delivery (Paid)
                 @else
-                    Rs. {{ number_format($order->total_price, 2) }}
-                @endif
-            </p>
-             <p style="margin: 0;"><strong>Payment Status:</strong> 
-                @if(strtolower($order->payment_mode) == 'cod')
-                    Cash on Delivery (Pending)
-                @else
-                    Successfully Paid Online
+                    Paid Online
                 @endif
             </p>
         </div>
 
-        <p>We will notify you when your order is out for delivery.</p>
-
-        {{-- Tracking Link --}}
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="http://127.0.0.1:8000/track-order?tracking_no={{ $order->tracking_no }}" 
-               style="background-color: #5b2c2c; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-                Track Your Order Here
+        {{-- Simple Review & Rate Link --}}
+        <div style="background-color: #fdf6e3; padding: 20px; border-radius: 8px; text-align: center; border: 1px dashed #5b2c2c; margin: 25px 0;">
+            <p style="font-weight: bold; color: #5b2c2c; margin-top: 0;">Give Us a Comment & Rate!</p>
+            <p style="font-size: 14px; color: #666;">Please share your feedback on our website to support our local sellers.</p>
+            
+            <a href="{{ url('/my-orders') }}" 
+               style="background-color: #5b2c2c; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 10px;">
+                Rate & Comment Here
             </a>
         </div>
 
-        <p style="font-size: 13px; color: #666; text-align: center;">
+        <p style="font-size: 13px; color: #666; text-align: center; margin-top: 30px;">
             Questions? Contact us at <a href="mailto:infotradlanka@gmail.com" style="color: #5b2c2c;">infotradlanka@gmail.com</a>
         </p>
     </div>
 
     {{-- Footer --}}
     <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #777;">
-        <p style="margin: 0;">Thank you for choosing TradLanka!</p>
+        <p style="margin: 0;">Thank you for shopping with TradLanka!</p>
     </div>
 </div>

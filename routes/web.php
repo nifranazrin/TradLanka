@@ -85,7 +85,7 @@ Route::get('/test-order-email', [MailTestController::class, 'sendTestEmail']);
 // Route to store the product review
 // Now it points to the correct ProductController where you added the code
 Route::post('/product/review/store', [App\Http\Controllers\Frontend\ProductController::class, 'storeReview'])->name('review.store')->middleware('auth');
-
+Route::get('/stripe-success', [CheckoutController::class, 'stripeSuccess'])->name('stripe.success');
 // 1. Requesting the Link (Forgot Password Page)
 Route::get('staff/password/reset', [StaffForgotPasswordController::class, 'showLinkRequestForm'])->name('staff.password.request');
 Route::post('staff/password/email', [StaffForgotPasswordController::class, 'sendResetLinkEmail'])->name('staff.password.email');

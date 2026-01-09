@@ -141,31 +141,35 @@ public function updateMilestone(Request $request, $id)
 {
     $riderId = Auth::guard('delivery')->id();
     
-    // Find the order assigned to this specific rider
-    $order = Order::where('id', $id)
+    // ✅ CRITICAL FIX: Load 'items.product' to prevent "property on null" error in email
+    $order = Order::with('items.product')
+        ->where('id', $id)
         ->where('delivery_boy_id', $riderId)
         ->firstOrFail();
 
-    // Update status to 5 (Delivered) and set the timestamp
+    // Update status to 5 (Delivered)
     $order->update([
         'status' => 5, 
         'delivered_at' => now()
     ]); 
 
-    // ✅ NEW: Trigger the Order Delivered Email
+    // ✅ Trigger the Email
     try {
-        Mail::to($order->email)->send(new OrderDeliveredMail($order));
+        Mail::to($order->email)->send(new \App\Mail\OrderDeliveredMail($order));
     } catch (\Exception $e) {
-        // ✅ Removed backslash since Log is now imported at the top
+        // This will log the specific Gmail or data error if it fails
         Log::error("Delivered email failed for Order #{$order->tracking_no}: " . $e->getMessage());
     }
 
     // Existing system notification
-    $order->user->notify(new OrderDeliveredNotification($order));
+    if ($order->user) {
+        $order->user->notify(new \App\Notifications\OrderDeliveredNotification($order));
+    }
     
-    return redirect()->route('delivery.my-deliveries')->with('success', 'Order completed and confirmation email sent!');
-}
-    /**
+    return redirect()->route('delivery.my-deliveries')->with('success', 'Order completed and email sent!');
+}  
+
+/**
      * ✅ UPDATED: Mark as Failed (moves to Pending Approval)
      */
     public function markAsFailed(Request $request, $id)
