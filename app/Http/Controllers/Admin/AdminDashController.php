@@ -26,7 +26,8 @@ class AdminDashController extends Controller
         $totalProducts = Product::count();
         $totalSellers = Staff::where('role', 'seller')->count();
         $pendingRequests = UserRequest::where('status', 'pending')->count(); 
-        
+        $totalReviews = \App\Models\Review::count();
+       
         // 2. Lively Activity Counts (Includes ALL payment modes)
         $orderCount = Order::whereMonth('created_at', $now->month)->count();
         $todaysOrders = Order::whereDate('created_at', $today)->count();
@@ -92,11 +93,12 @@ class AdminDashController extends Controller
             $revenueData[] = Order::whereDate('created_at', $date)->sum('total_price');
         }
 
-        return view('admin.dashboard', compact(
-            'totalCategories', 'totalProducts', 'totalSellers', 'pendingRequests',
-            'orderCount', 'todaysOrders', 'visitorCount', 'salesLkr', 'salesUsd',
-            'topProducts', 'topCategories', 'statusCounts', 'recentOrders', 
-            'days', 'revenueData'
-        ));
-    }
+        // ✅ Pass 'totalReviews' to the view
+    return view('admin.dashboard', compact(
+        'totalCategories', 'totalProducts', 'totalSellers', 'pendingRequests',
+        'orderCount', 'todaysOrders', 'visitorCount', 'salesLkr', 'salesUsd',
+        'topProducts', 'topCategories', 'statusCounts', 'recentOrders', 
+        'days', 'revenueData', 'totalReviews'
+    ));
+}
 }

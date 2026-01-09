@@ -83,14 +83,16 @@
                 <small class="text-muted">Active groupings</small>
             </div>
         </div>
+        
         <div class="col-md-2">
-            <div class="card dashboard-card p-3 accent-reviews h-100">
-                <span class="metric-label text-info">Reviews</span>
-                <h3 class="metric-value">{{ $totalReviews ?? 0 }}</h3>
-                <small class="text-danger fw-bold">Total Views</small>
-            </div>
+    <a href="{{ route('admin.reviews') }}" style="text-decoration: none; display: block;" class="h-100">
+        <div class="card dashboard-card p-3 accent-reviews h-100">
+            <span class="metric-label text-info">Reviews</span>
+            <h3 class="metric-value">{{ $totalReviews }}</h3>
+            <small class="text-muted fw-bold">Customer Feedback</small>
         </div>
-    </div>
+    </a>
+</div>
 
     {{-- Advanced Analytics Row --}}
     <div class="row g-4 mb-4">

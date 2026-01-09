@@ -12,14 +12,15 @@ class OrderDeliveredMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $order; // ✅ Makes order data available in the blade view
+    public $order; 
 
     /**
      * Create a new message instance.
+     * Ensure the order object is passed from the controller.
      */
     public function __construct($order)
     {
-        $this->order = $order; // ✅ Pass the order object from the controller
+        $this->order = $order;
     }
 
     /**
@@ -28,7 +29,7 @@ class OrderDeliveredMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Great news! Your TradLanka Order #' . $this->order->tracking_no . ' has been delivered',
+            subject: 'Delivered: Your TradLanka Order #' . $this->order->tracking_no,
         );
     }
 
@@ -38,13 +39,13 @@ class OrderDeliveredMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order_delivered', // ✅ Ensure this matches your blade file path
+            view: 'emails.order_delivered', // Ensure this file exists in resources/views/emails/
+            with: [
+                'order' => $this->order,
+            ],
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     */
     public function attachments(): array
     {
         return [];

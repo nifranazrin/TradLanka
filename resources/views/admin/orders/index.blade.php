@@ -165,7 +165,7 @@
                                                     @elseif($order->status == 8 || $order->status == 9)
                                                         {{-- Status 8 is Pending Approval, Status 9 is Failed --}}
                                                         <span class="badge rounded-pill bg-dark text-white px-3 py-2 fw-bold">
-                                                            <i class="bi bi-exclamation-triangle me-1"></i> Delivery Failed
+                                                            <i class="bi bi-exclamation-triangle me-1"></i> Order Failed
                                                         </span>
                                                         @if($order->cancel_reason)
                                                             <div class="small text-danger mt-1 fw-bold" style="font-size: 0.7rem;">
@@ -173,9 +173,9 @@
                                                             </div>
                                                         @endif
                                                     @elseif($order->status == 6)
-                                                        <span class="badge rounded-pill bg-secondary text-white px-3 py-2 fw-bold">
-                                                            <i class="bi bi-truck-flatbed me-1"></i> Delivery Cancelled
-                                                        </span>
+                                                        <span class="badge rounded-pill bg-danger text-white px-3 py-2 fw-bold">
+                                                        <i class="bi bi-person-x me-1"></i> Order cancle
+                                                    </span>
                                                     @endif
                                                 </td>
 

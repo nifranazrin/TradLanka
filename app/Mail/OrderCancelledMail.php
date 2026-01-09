@@ -12,14 +12,14 @@ class OrderCancelledMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $order; // ✅ Define public property so it's accessible in the view
+    public $order; 
 
     /**
      * Create a new message instance.
      */
     public function __construct($order)
     {
-        $this->order = $order; // ✅ Pass the order object
+        $this->order = $order;
     }
 
     /**
@@ -38,13 +38,13 @@ class OrderCancelledMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order_cancelled', // ✅ Ensure this matches your blade file path
+            view: 'emails.order_cancelled', // Ensure file exists at resources/views/emails/order_cancelled.blade.php
+            with: [
+                'order' => $this->order,
+            ],
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     */
     public function attachments(): array
     {
         return [];
