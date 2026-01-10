@@ -19,18 +19,60 @@
         <h2 class="h3 fw-bold text-dark mb-1">Platform Sales Analysis</h2>
         
         <div class="d-flex gap-3 align-items-center">
-            <a href="{{ route('admin.reports.sales.pdf', ['filter_date' => request('filter_date')]) }}" class="btn btn-danger shadow-sm d-flex align-items-center px-3">
-                <i class="bi bi-file-earmark-pdf me-2"></i> Download PDF
-            </a>
+            <a href="{{ route('admin.reports.sales.pdf', request()->all()) }}" class="btn btn-danger shadow-sm d-flex align-items-center px-3">
+    <i class="bi bi-file-earmark-pdf me-2"></i> Download PDF
+</a>
 
-            <form action="{{ route('admin.reports.sales') }}" method="GET" id="filterForm">
-                <div class="input-group shadow-sm">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar-event text-primary"></i></span>
-                    <input type="date" name="filter_date" class="form-control border-start-0" 
-                           value="{{ request('filter_date') }}" onchange="handleDateChange(this)">
-                </div>
-            </form>
-        </div>
+            {{-- ADVANCED FILTER FORM --}}
+  <form action="{{ route('admin.reports.sales') }}" method="GET" id="filterForm" class="d-flex flex-wrap gap-2">
+    
+    {{-- Month Filter --}}
+    <div class="input-group shadow-sm" style="width: 160px;">
+        <span class="input-group-text bg-white"><i class="bi bi-calendar-month text-primary"></i></span>
+        <select name="filter_month" class="form-select border-start-0" onchange="this.form.submit()">
+            <option value="">Month</option>
+            @foreach(range(1, 12) as $m)
+                <option value="{{ $m }}" {{ request('filter_month') == $m ? 'selected' : '' }}>
+                    {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+    {{-- Date Filter --}}
+    <div class="input-group shadow-sm" style="width: 170px;">
+        <input type="date" name="filter_date" class="form-control" 
+               value="{{ request('filter_date') }}" onchange="this.form.submit()">
+    </div>
+
+    {{-- Currency Filter --}}
+    <div class="input-group shadow-sm" style="width: 120px;">
+        <select name="filter_currency" class="form-select" onchange="this.form.submit()">
+            <option value="">Currency</option>
+            <option value="LKR" {{ request('filter_currency') == 'LKR' ? 'selected' : '' }}>LKR</option>
+            <option value="USD" {{ request('filter_currency') == 'USD' ? 'selected' : '' }}>USD</option>
+        </select>
+    </div>
+
+  {{-- Status Filter --}}
+<div class="input-group shadow-sm" style="width: 140px;">
+    <select name="filter_status" class="form-select" onchange="this.form.submit()">
+        <option value="">All Status</option>
+        <option value="5" {{ request('filter_status') == '5' ? 'selected' : '' }}>Success</option>
+        <option value="6" {{ request('filter_status') == '6' ? 'selected' : '' }}>Failed</option>
+        {{-- ✅ Added Pending option to match controller logic --}}
+        <option value="pending" {{ request('filter_status') == 'pending' ? 'selected' : '' }}>Pending</option>
+    </select>
+</div>
+
+    {{-- Reset --}}
+    @if(request()->anyFilled(['filter_month', 'filter_date', 'filter_currency', 'filter_status']))
+        <a href="{{ route('admin.reports.sales') }}" class="btn btn-light shadow-sm border">
+            <i class="bi bi-arrow-clockwise"></i>
+        </a>
+    @endif
+</form>
+</div>
     </div>
 
     <div class="row g-4 mb-5">
@@ -98,25 +140,32 @@
                 </thead>
                 <tbody>
                     @forelse($tableOrders as $order)
-                    <tr>
-                        <td class="ps-4 text-muted small">{{ $order->created_at->format('d M, Y') }}</td>
-                        <td class="fw-bold">#{{ $order->tracking_no }}</td>
-                        <td>{{ $order->fname }}</td>
-                        <td>
-                            <span class="badge {{ $order->status == 5 ? 'bg-success' : 'bg-danger' }}">
-                                {{ $order->status == 5 ? 'Delivered' : 'Cancelled' }}
-                            </span>
-                        </td>
-                        <td class="fw-bold text-end pe-4">
-                            {{ $order->currency == 'USD' ? '$' : 'Rs.' }} {{ number_format($order->total_price, 2) }}
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="5" class="text-center py-5 text-muted">No final transactions found.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                <tr>
+                    <td class="ps-4 text-muted small">{{ $order->created_at->format('d M, Y') }}</td>
+                    <td class="fw-bold">#{{ $order->tracking_no }}</td>
+                    <td>{{ $order->fname }} {{ $order->lname }}</td>
+                    <td>
+                        {{-- ✅ UPDATED STATUS BADGES --}}
+                        @if($order->status == 5)
+                            <span class="badge bg-success shadow-sm px-3">Delivered</span>
+                        @elseif($order->status == 6)
+                            <span class="badge bg-danger shadow-sm px-3">Cancelled</span>
+                        @else
+                            {{-- This covers all pending statuses (0,1,2,3,4,10) --}}
+                            <span class="badge bg-warning text-dark shadow-sm px-3">Pending</span>
+                        @endif
+                    </td>
+                    <td class="fw-bold text-end pe-4">
+                        {{ $order->currency == 'USD' ? '$' : 'Rs.' }} {{ number_format($order->total_price, 2) }}
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">No transactions found for the selected filters.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 
