@@ -110,5 +110,49 @@ View::composer('layouts.delivery', function ($view) {
         ]);
     }
 });
+
+
+
+// 4. ADMIN NOTIFICATION COUNTS
+\Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
+    // Standardize admin detection
+    $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user() 
+             ?? \App\Models\Staff::find(session('staff_id'));
+    
+    // Calculate counts for badges
+    $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
+    $pendingProducts     = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
+    
+    // ✅ Look for status 1 for reviews
+    $newReviews = \App\Models\Review::where('status', 1)->count();
+
+    // ✅ New orders count (Status 0)
+    $pendingOrders = \App\Models\Order::where('status', 0)->count();
+
+    // ✅ FIXED: Report Count matched to your sidebar logic
+    $pendingReports = \Illuminate\Support\Facades\DB::table('submitted_reports')
+                        ->where('status', 'pending')
+                        ->count();
+
+    // Logic for unread chat messages
+    $unreadMessagesCount = 0;
+    if ($admin) {
+        $unreadMessagesCount = \App\Models\Message::where('receiver_id', $admin->id)
+            ->where('receiver_type', 'admin')
+            ->where('is_read', 0)
+            ->count();
+    }
+
+    // Pass all variables to the view
+    $view->with([
+        'admin'               => $admin,
+        'pendingApplications' => $pendingApplications,
+        'pendingProducts'     => $pendingProducts,
+        'newReviews'          => $newReviews, 
+        'unreadMessages'      => $unreadMessagesCount,
+        'pendingOrders'       => $pendingOrders,
+        'pendingReports'      => $pendingReports, // Now available for the bell!
+    ]);
+});
     }
 }

@@ -56,6 +56,7 @@
     align-items: center; /* Changed from space-between to align-center for better icons */
     color: #4d4a4a;
     text-decoration: none;
+    justify-content: space-between;
     font-weight: 500;
     padding: 10px 12px;
     border-radius: 8px;
@@ -110,11 +111,18 @@
         }
 
         .badge-count {
-            width: 20px; height: 20px;
-            background: #dc3545; color: #fff;
-            border-radius: 50%; font-size: 11px;
-            display: flex; align-items: center; justify-content: center;
-        }
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    margin-left: 10px; /* Backup spacing if justify-content isn't enough */
+}
 
         @media(max-width: 992px) {
             .sidebar { display: none; }
@@ -133,6 +141,19 @@
     $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
     
     $pendingProducts = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
+
+    $newReviewsCount = \App\Models\Review::where('status', 1)->count();
+
+    $pendingOrdersCount = \App\Models\Order::where('status', 0)->count();
+
+   $unreadMessages = 0;
+    if ($admin) {
+        $unreadMessages = \App\Models\Message::where('receiver_id', $admin->id)
+            ->where('receiver_type', 'admin') // Ensure this matches your DB exactly
+            ->where('is_read', 0)
+            ->where('deleted_by_receiver', 0) // From your Message model
+            ->count();
+    }
 @endphp
 <div class="admin-navbar">
     <div class="nav-left">
@@ -145,29 +166,121 @@
 
     <div class="nav-center">ADMIN MANAGEMENT</div>
 
-    <div class="nav-right">
-        {{-- Notifications Dropdown --}}
-        <div class="dropdown">
-            <a href="#" class="position-relative text-white" data-bs-toggle="dropdown">
-                <i class="bi bi-bell fs-5"></i>
-                @if($admin && $admin->unreadNotifications->count() > 0)
-                    <span class="position-absolute top-0 start-100 translate-middle badge bg-danger rounded-pill" style="font-size:0.6rem;">
-                        {{ $admin->unreadNotifications->count() }}
-                    </span>
-                @endif
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end shadow" style="width:300px;">
-                <li><h6 class="dropdown-header">Recent Notifications</h6></li>
-                @forelse($admin->unreadNotifications->take(5) as $n)
-                     {{-- This now correctly points to UserApprovalController@readNotification --}}
-                        <li><a class="dropdown-item small" href="{{ route('admin.notifications.read', $n->id) }}">{{ $n->data['message'] }}</a></li>
-                @empty
-                    <li class="dropdown-item text-center small text-muted">No new alerts</li>
-                @endforelse
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-center small fw-bold text-primary" href="{{ route('admin.notifications.markAllRead') }}">Mark all as read</a></li>
-            </ul>
-        </div>
+    <div class="nav-right"> 
+ <div class="dropdown">
+    <a href="#" class="position-relative text-white" data-bs-toggle="dropdown">
+        <i class="bi bi-bell fs-5"></i>
+        @php
+            $totalAlerts = ($pendingOrders ?? 0) + ($pendingProducts ?? 0) + 
+                           ($newReviews ?? 0) + ($unreadMessages ?? 0) + 
+                           ($pendingReports ?? 0) + ($pendingApplications ?? 0) +
+                           ($admin ? $admin->unreadNotifications->count() : 0);
+        @endphp
+
+        @if($totalAlerts > 0)
+            <span class="position-absolute top-0 start-100 translate-middle badge bg-danger rounded-pill" style="font-size:0.6rem;">
+                {{ $totalAlerts }}
+            </span>
+        @endif
+    </a>
+    
+    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="width:320px;">
+        <li><h6 class="dropdown-header border-bottom pb-2 mb-2">All Notifications</h6></li>
+
+        {{-- 1. Orders --}}
+        @if(isset($pendingOrders) && $pendingOrders > 0)
+            <li>
+                <a class="dropdown-item py-2" href="{{ route('admin.orders.review') }}">
+                    <div class="d-flex flex-column">
+                        <span class="small text-wrap"><i class="bi bi-truck me-2 text-primary"></i><strong>{{ $pendingOrders }}</strong> New Orders to process</span>
+                        <small class="text-muted mt-1" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>Active Now</small>
+                    </div>
+                </a>
+            </li>
+        @endif
+
+        {{-- 2. Review Products --}}
+        @if(isset($pendingProducts) && $pendingProducts > 0)
+            <li>
+                <a class="dropdown-item py-2" href="{{ route('admin.products.index') }}">
+                    <div class="d-flex flex-column">
+                        <span class="small text-wrap"><i class="bi bi-bag-check me-2 text-info"></i><strong>{{ $pendingProducts }}</strong> Products waiting for review</span>
+                        <small class="text-muted mt-1" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>Active Now</small>
+                    </div>
+                </a>
+            </li>
+        @endif
+
+        {{-- 3. New Reviews --}}
+        @if(isset($newReviews) && $newReviews > 0)
+            <li>
+                <a class="dropdown-item py-2" href="{{ route('admin.reviews') }}">
+                    <div class="d-flex flex-column">
+                        <span class="small text-wrap"><i class="bi bi-star me-2 text-warning"></i><strong>{{ $newReviews }}</strong> New Reviews to check</span>
+                        <small class="text-muted mt-1" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>Active Now</small>
+                    </div>
+                </a>
+            </li>
+        @endif
+
+        {{-- 4. Staff Requests (Applications) --}}
+        @if(isset($pendingApplications) && $pendingApplications > 0)
+            <li>
+                <a class="dropdown-item py-2" href="{{ route('admin.seller.requests') }}">
+                    <div class="d-flex flex-column">
+                        <span class="small text-wrap"><i class="bi bi-person-badge me-2 text-primary"></i><strong>{{ $pendingApplications }}</strong> New Staff Requests</span>
+                        <small class="text-muted mt-1" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>Active Now</small>
+                    </div>
+                </a>
+            </li>
+        @endif
+
+        {{-- 5. Staff Chat Messages --}}
+        @if(isset($unreadMessages) && $unreadMessages > 0)
+            <li>
+                <a class="dropdown-item py-2" href="{{ route('admin.chat.index') }}">
+                    <div class="d-flex flex-column">
+                        <span class="small text-wrap"><i class="bi bi-chat-dots me-2 text-success"></i><strong>{{ $unreadMessages }}</strong> Unread Messages</span>
+                        <small class="text-muted mt-1" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>Active Now</small>
+                    </div>
+                </a>
+            </li>
+        @endif
+
+        {{-- 6. Reports & Analysis --}}
+        @if(isset($pendingReports) && $pendingReports > 0)
+            <li>
+                <a class="dropdown-item py-2" href="{{ route('admin.seller.analytics.index') }}">
+                    <div class="d-flex flex-column">
+                        <span class="small text-wrap"><i class="bi bi-bar-chart me-2 text-danger"></i><strong>{{ $pendingReports }}</strong> New Reports generated</span>
+                        <small class="text-muted mt-1" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>Active Now</small>
+                    </div>
+                </a>
+            </li>
+        @endif
+
+        {{-- 7. Recent Log Activity --}}
+        @forelse($admin->unreadNotifications->take(5) as $n)
+            <li class="border-top-light">
+                <a class="dropdown-item py-2" href="{{ route('admin.notifications.read', $n->id) }}">
+                    <div class="d-flex flex-column">
+                        <span class="small text-wrap"><i class="bi bi-info-circle me-2 text-secondary"></i>{{ $n->data['message'] }}</span>
+                        <small class="text-muted mt-1" style="font-size: 0.7rem;">
+                            <i class="bi bi-clock me-1"></i>{{ $n->created_at->diffForHumans() }}
+                        </small>
+                    </div>
+                </a>
+            </li>
+        @empty
+            @if($totalAlerts == 0)
+                <li class="dropdown-item text-center small text-muted py-4">No new notifications</li>
+            @endif
+        @endforelse
+
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item text-center small fw-bold text-primary" href="{{ route('admin.notifications.markAllRead') }}">Mark all as read</a></li>
+    </ul>
+</div>
 
         {{-- Profile --}}
         <div class="dropdown">
@@ -230,15 +343,25 @@
     </a>
 
     {{-- 6. Orders --}}
-    <a href="{{ route('admin.orders.review') }}" class="{{ request()->is('admin/orders*') || request()->is('admin/review-orders*') ? 'active' : '' }}">
-        <span><i class="bi bi-truck"></i> Orders</span>
-    </a>
+  
+<a href="{{ route('admin.orders.review') }}" 
+   class="nav-link {{ request()->is('admin/orders*') || request()->is('admin/review-orders*') ? 'active' : '' }} d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-truck me-2"></i>
+        <span>Orders</span>
+    </div>
+    @if(isset($pendingOrdersCount) && $pendingOrdersCount > 0)
+        <span class="badge-count">{{ $pendingOrdersCount }}</span>
+    @endif
+</a>
 
     {{-- 7. Reviews --}}
-<a href="{{ route('admin.reviews') }}" class="{{ request()->routeIs('admin.reviews') ? 'active' : '' }}">
-    <span><i class="bi bi-star"></i> Reviews</span>
+   <a href="{{ route('admin.reviews') }}">
+    <span>Reviews</span>
+    @if(isset($newReviews) && $newReviews > 0)
+        <span class="badge-count">{{ $newReviews }}</span>
+    @endif
 </a>
-    
     {{-- 8. Reports & Analysis Dropdown --}}
 <div class="nav-item">
     <a href="#reportSubmenu" data-bs-toggle="collapse" 
@@ -287,13 +410,13 @@
 </div>
 
 {{-- 8. Staff Chat --}}
-<a href="{{ route('admin.chat.index') }}" class="{{ request()->is('admin/chat*') ? 'active' : '' }}">
-    <span><i class="bi bi-chat-dots"></i> Staff Chat</span>
-    
-    @if(isset($admin_notif_counts['messages']) && $admin_notif_counts['messages'] > 0)
-        <span class="badge bg-danger rounded-pill" style="font-size: 10px; padding: 3px 6px;">
-            {{ $admin_notif_counts['messages'] }}
-        </span>
+<a href="{{ route('admin.chat.index') }}" class="nav-link {{ request()->is('admin/chat*') ? 'active' : '' }} d-flex align-items-center">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-chat-dots me-2"></i>
+        <span>Staff Chat</span>
+    </div>
+    @if(isset($unreadMessages) && $unreadMessages > 0)
+        <span class="badge-count ms-auto">{{ $unreadMessages }}</span>
     @endif
 </a>
     
