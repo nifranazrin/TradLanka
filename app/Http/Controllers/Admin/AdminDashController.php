@@ -32,7 +32,7 @@ class AdminDashController extends Controller
         $todaysOrders = Order::whereDate('created_at', $today)->count();
         $visitorCount = DB::table('sessions')->count(); 
         
-        // ✅ ADDED: Total Lifetime Orders (All time, no date filters)
+        //  ADDED: Total Lifetime Orders (All time, no date filters)
         $totalOrdersAllTime = Order::count(); 
 
         // 3. SYNCHRONIZED REVENUE LOGIC
@@ -120,7 +120,7 @@ class AdminDashController extends Controller
                                      ->sum('total_price');
         }
 
-        // ✅ Passed 'totalOrdersAllTime' to the view
+        //  Passed 'totalOrdersAllTime' to the view
         return view('admin.dashboard', compact(
             'totalCategories', 'totalProducts', 'totalSellers', 'pendingRequests',
             'orderCount', 'todaysOrders', 'visitorCount', 'totalOrdersAllTime',

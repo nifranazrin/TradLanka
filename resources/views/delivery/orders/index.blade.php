@@ -170,7 +170,7 @@
                                     </a>
                                     
                                     @if($isUSD)
-                                        {{-- ✅ INTERNATIONAL STRIPE WORKFLOW --}}
+                                        {{--  INTERNATIONAL STRIPE WORKFLOW --}}
                                         @if($order->status == 4)
                                             <button type="button" class="btn btn-sm btn-primary btn-action" onclick="updateMilestone({{ $order->id }}, 10, 'Arrived at Destination Country')">
                                                 <i class="bi bi-airplane me-1"></i> Arrived in Country
@@ -184,7 +184,7 @@
                                             </button>
                                         @endif
                                     @else
-                                        {{-- ✅ LOCAL COD WORKFLOW --}}
+                                        {{--  LOCAL COD WORKFLOW --}}
                                         @if($order->status == 4)
                                             <button type="button" class="btn btn-sm btn-success btn-action" onclick="confirmAction({{ $order->id }}, 'delivered')">
                                                 Complete

@@ -240,7 +240,9 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
+
+        <div class="d-flex justify-content-center mt-4 mb-5">
+        {{ $orders->appends(request()->query())->links('pagination::bootstrap-5') }}
     </div>
 </div>
 

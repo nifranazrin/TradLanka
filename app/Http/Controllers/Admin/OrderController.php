@@ -18,8 +18,8 @@ class OrderController extends Controller
      */
     public function reviewOrders()
 {
-    // ✅ ADD 0 and 1 to the list so new COD and Paid orders show up
-    $orders = Order::whereIn('status', [ 1, 3, 4, 5, 8,9, 6])
+   
+    $orders = Order::whereIn('status', [ 3, 4, 5, 8,9, 6,10])
         ->latest()
         ->paginate(15);
 
@@ -54,25 +54,23 @@ class OrderController extends Controller
     /**
      * Assign order to a Rider and update status to 4
      */
-    public function assignOrder(Request $request, $id)
-    {
-        // Validate that the rider exists in the staff table
-        $request->validate([
-            'rider_id' => 'required|exists:staff,id',
-        ]);
+   public function assignOrder(Request $request, $id)
+{
+    $request->validate(['rider_id' => 'required|exists:staff,id']);
+    $order = Order::findOrFail($id);
 
-        $order = Order::findOrFail($id);
-
-        // ✅ DATABASE SYNC: Using 'delivery_boy_id' as seen in your DB table
-        // Setting status to 4 makes it visible to the Delivery Person
-        $order->update([
-            'status' => 4,
-            'delivery_boy_id' => $request->rider_id, 
-        ]);
-
-        return redirect()->route('admin.orders.review')->with('success', 'Order assigned and handed over to delivery partner successfully.');
+    // Prevent assignment if the order isn't physically at the office yet
+    if ($order->status != 3) {
+        return redirect()->back()->with('error', 'Order must be at Head Office before assignment.');
     }
-     
+
+    $order->update([
+        'status' => 4,
+        'delivery_boy_id' => $request->rider_id, 
+    ]);
+
+    return redirect()->route('admin.orders.review')->with('success', 'Order handed over to rider.');
+}
 
    public function finalizeRefund($id)
 {
@@ -99,7 +97,6 @@ class OrderController extends Controller
                 'rider_seen' => 0 
             ]); 
 
-            // ✅ NEW: Trigger the Order Cancelled Email
             try {
                 Mail::to($order->email)->send(new OrderCancelledMail($order));
             } catch (\Exception $e) {
