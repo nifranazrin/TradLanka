@@ -102,10 +102,12 @@
             <div class="card dashboard-card p-3 bg-orders-solid h-100">
                 <span class="metric-label">Today's Orders</span>
                 <h3 class="metric-value">{{ $todaysOrders }}</h3>
+                
                 <div class="divider-white"></div>
-                <span class="metric-label">Monthly Total</span>
-                <h5 class="fw-bold mb-0 text-white">{{ $orderCount }}</h5>
-                <small class="text-white-80" style="font-size: 10px;">Orders this month</small>
+                
+                <span class="metric-label">Total Orders</span>
+                <h5 class="fw-bold mb-0 text-white">{{ $totalOrdersAllTime }}</h5>
+                <small class="text-white-80" style="font-size: 10px;">Lifetime activity</small>
             </div>
         </div>
 
@@ -141,7 +143,7 @@
         <div class="card dashboard-card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="fw-bold text-dark mb-0">Revenue Growth</h5>
-                {{-- ✅ Toggle Buttons for Days/Months --}}
+                {{--  Toggle Buttons for Days/Months --}}
                 <div class="btn-group shadow-sm" role="group">
                     <button type="button" class="btn btn-outline-primary btn-sm active" id="btnDays" onclick="updateChart('days')">Last 8 Days</button>
                     <button type="button" class="btn btn-outline-primary btn-sm" id="btnMonths" onclick="updateChart('months')">Monthly</button>
@@ -200,7 +202,7 @@
                             <td class="text-center fw-bold text-muted" style="width: 20%;">{{ $product->total_sold ?? 0 }} sold</td>
                             <td class="text-end">
                                 <div class="progress" style="height: 8px; border-radius: 10px; width: 100%;">
-                                    {{-- ✅ Fixed percentage logic: max sold item is 100% --}}
+                                    {{--  Fixed percentage logic: max sold item is 100% --}}
                                     <div class="progress-bar" style="width: {{ ($product->total_sold / (max($topProducts->first()->total_sold, 1))) * 100 }}%; background: {{ $barColors[$index % 5] }};"></div>
                                 </div>
                             </td>
@@ -216,7 +218,7 @@
         <div class="card dashboard-card p-4 h-100">
             <h5 class="fw-bold text-dark text-start mb-4">Order Breakdown</h5>
             <div style="height: 300px;">
-                {{-- ✅ Bar chart is better for comparing many statuses --}}
+                {{--  Bar chart is better for comparing many statuses --}}
                 <canvas id="orderStatusBarChart"></canvas>
             </div>
         </div>

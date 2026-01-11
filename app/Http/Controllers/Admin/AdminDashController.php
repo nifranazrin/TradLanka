@@ -31,6 +31,9 @@ class AdminDashController extends Controller
         // 2. Activity Counts
         $todaysOrders = Order::whereDate('created_at', $today)->count();
         $visitorCount = DB::table('sessions')->count(); 
+        
+        // ✅ ADDED: Total Lifetime Orders (All time, no date filters)
+        $totalOrdersAllTime = Order::count(); 
 
         // 3. SYNCHRONIZED REVENUE LOGIC
         // Global logic to match SQL Audit (Total success regardless of date)
@@ -94,7 +97,6 @@ class AdminDashController extends Controller
         $recentOrders = Order::latest()->take(5)->get();
 
         // 8. DYNAMIC REVENUE ANALYTICS (Days vs Months)
-        
         // Last 8 Days Data
         $days = [];
         $revenueData = [];
@@ -118,9 +120,10 @@ class AdminDashController extends Controller
                                      ->sum('total_price');
         }
 
+        // ✅ Passed 'totalOrdersAllTime' to the view
         return view('admin.dashboard', compact(
             'totalCategories', 'totalProducts', 'totalSellers', 'pendingRequests',
-            'orderCount', 'todaysOrders', 'visitorCount', 
+            'orderCount', 'todaysOrders', 'visitorCount', 'totalOrdersAllTime',
             'salesLkr', 'pendingLkr', 'successLKRCount', 'pendingLKRCount',
             'salesUsd', 'pendingUsd', 'successUSDCount', 'pendingUSDCount',
             'topProducts', 'topCategories', 'statusCounts', 'recentOrders', 
