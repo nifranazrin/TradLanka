@@ -26,9 +26,7 @@ class UserReviewController extends Controller
             ->with(['product', 'order'])
             ->get()
             ->filter(function ($item) use ($userId) {
-                // DARAZ-STYLE FILTER:
-                // We only show the item if NO review exists that was created 
-                // AFTER this specific order was placed.
+                
                 return !Review::where('user_id', $userId)
                     ->where('product_id', $item->product_id)
                     ->where('created_at', '>=', $item->created_at) 

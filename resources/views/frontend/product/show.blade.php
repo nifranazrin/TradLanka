@@ -211,120 +211,139 @@
         <p id="toastMessage" class="text-sm">Added to cart!</p>
     </div>
 </div>
-
 {{-- ================= REVIEWS SECTION ================= --}}
 <section id="reviews-section" class="mt-20">
     <div class="max-w-6xl mx-auto px-6">
 
+        @php
+            // 1. Filter only approved reviews (status 1) to ensure data accuracy
+            $approvedReviews = $product->reviews->where('status', 1);
+            
+            // 2. Calculate global totals and average
+            $totalReviews = $approvedReviews->count();
+            $avgRating = $totalReviews ? round($approvedReviews->avg('rating'), 1) : 0;
 
-@php
-    $totalReviews = $product->reviews->count();
-    $avgRating = $totalReviews ? round($product->reviews->avg('rating'), 1) : 0;
+            // 3. Count distribution for the star bars
+            $ratingCounts = [
+                5 => $approvedReviews->where('rating', 5)->count(),
+                4 => $approvedReviews->where('rating', 4)->count(),
+                3 => $approvedReviews->where('rating', 3)->count(),
+                2 => $approvedReviews->where('rating', 2)->count(),
+                1 => $approvedReviews->where('rating', 1)->count(),
+            ];
+        @endphp
 
-    $ratingCounts = [
-        5 => $product->reviews->where('rating', 5)->count(),
-        4 => $product->reviews->where('rating', 4)->count(),
-        3 => $product->reviews->where('rating', 3)->count(),
-        2 => $product->reviews->where('rating', 2)->count(),
-        1 => $product->reviews->where('rating', 1)->count(),
-    ];
-@endphp
+        {{-- SUMMARY CARD: AVERAGE & DISTRIBUTION --}}
+        <div class="bg-white border rounded-xl p-8 mb-10 shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
 
-<div class="bg-white border rounded-xl p-6 mb-10">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                {{-- LEFT: TOTAL AVERAGE --}}
+                <div class="text-center md:text-left">
+                    <h4 class="text-gray-500 uppercase tracking-wider text-xs font-bold mb-2">Overall Rating</h4>
+                    <div class="text-5xl font-extrabold text-gray-800">
+                        {{ $avgRating }}<span class="text-xl text-gray-400">/5</span>
+                    </div>
 
-        {{-- LEFT: AVERAGE --}}
-        <div>
-            <div class="text-4xl font-bold text-gray-800">
-                {{ $avgRating }}<span class="text-lg text-gray-500">/5</span>
-            </div>
+                    <div class="flex justify-center md:justify-start text-yellow-400 text-xl mt-3">
+                        @for($i=1;$i<=5;$i++)
+                            <i class="{{ $i <= round($avgRating) ? 'fas' : 'far' }} fa-star"></i>
+                        @endfor
+                    </div>
 
-            <div class="flex text-yellow-400 text-lg mt-2">
-                @for($i=1;$i<=5;$i++)
-                    <i class="{{ $i <= round($avgRating) ? 'fas' : 'far' }} fa-star"></i>
-                @endfor
-            </div>
-
-            <p class="text-sm text-gray-500 mt-1">
-                {{ $totalReviews }} Ratings
-            </p>
-        </div>
-
-        {{-- RIGHT: DISTRIBUTION --}}
-        <div class="space-y-2">
-            @foreach([5,4,3,2,1] as $star)
-                @php
-                    $percent = $totalReviews
-                        ? ($ratingCounts[$star] / $totalReviews) * 100
-                        : 0;
-                @endphp
-
-                <div class="flex items-center gap-3 text-sm">
-                    <span class="w-8 text-gray-600">{{ $star }}★</span>
-
-                    {{-- FIXED BAR WIDTH --}}
-                    <div class="flex-1 h-3 bg-gray-200 rounded overflow-hidden">
-                <div class="h-3 bg-yellow-400" style="width: {{ $percent }}%"></div>
-            </div>
-                    <span class="text-gray-500 w-6">
-                        {{ $ratingCounts[$star] }}
-                    </span>
-                </div>
-            @endforeach
-        </div>
-    </div>
-</div>
-
-<div class="bg-white border rounded-xl p-6">
-    <h3 class="text-lg font-semibold text-gray-800 mb-6">
-        Product Reviews
-    </h3>
-
-    @forelse($product->reviews as $review)
-        <div class="border-b last:border-b-0 pb-6 mb-6 last:mb-0">
-
-            <div class="flex justify-between items-center mb-2">
-                <div class="flex items-center gap-2">
-                    <span class="font-semibold text-sm text-gray-800">
-                        {{ $review->is_anonymous ? 'Anonymous' : $review->user->name }}
-                    </span>
-
-                    <span class="flex items-center gap-1 text-green-600 text-xs">
-                        <i class="fas fa-check-circle"></i>
-                        Verified Purchase
-                    </span>
+                    <p class="text-sm text-gray-500 mt-2 font-medium">
+                        Based on {{ $totalReviews }} Verified Ratings
+                    </p>
                 </div>
 
-                <span class="text-xs text-gray-400">
-                    {{ $review->created_at->format('d M Y') }}
-                </span>
+                {{-- RIGHT: PROGRESS BARS --}}
+                <div class="space-y-3">
+                    @foreach([5,4,3,2,1] as $star)
+                        @php
+                            $percent = $totalReviews ? ($ratingCounts[$star] / $totalReviews) * 100 : 0;
+                        @endphp
+
+                        <div class="flex items-center gap-4 text-sm">
+                            <span class="w-10 font-bold text-gray-600">{{ $star }} Star</span>
+                            <div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-yellow-400 transition-all duration-500" style="width: {{ $percent }}%"></div>
+                            </div>
+                            <span class="text-gray-400 w-8 text-right font-medium">
+                                {{ $ratingCounts[$star] }}
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
             </div>
-
-            <div class="flex text-yellow-400 text-sm mb-2">
-                @for($i=1;$i<=5;$i++)
-                    <i class="{{ $i <= $review->rating ? 'fas' : 'far' }} fa-star"></i>
-                @endfor
-            </div>
-
-            <p class="text-gray-700 text-sm mb-2">
-                {{ $review->comment }}
-            </p>
-
-            @if($review->image)
-                <img src="{{ asset('storage/' . $review->image) }}"
-                     class="mt-2 w-24 h-24 object-cover rounded-lg border">
-            @endif
         </div>
-    @empty
-        <p class="text-gray-400 italic">
-            No reviews yet.
-        </p>
-    @endforelse
-</div>
+
+        {{-- DETAILED REVIEWS LIST --}}
+        <div class="bg-white border rounded-xl p-8 shadow-sm">
+            <h3 class="text-xl font-bold text-gray-800 mb-8 flex items-center gap-2">
+                <i class="fas fa-comments text-[#5b2c2c]"></i>
+                Customer Feedback
+            </h3>
+
+            @forelse($approvedReviews->sortByDesc('created_at') as $review)
+                <div class="border-b last:border-b-0 pb-8 mb-8 last:mb-0">
+                    
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <span class="font-bold text-gray-900">
+                                    {{ $review->is_anonymous ? 'Anonymous User' : $review->user->name }}
+                                </span>
+                                <span class="bg-green-50 text-green-700 text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md border border-green-100 flex items-center gap-1">
+                                    <i class="fas fa-check-circle"></i> Verified
+                                </span>
+                            </div>
+                            
+                            {{-- STAR RATING --}}
+                            <div class="flex text-yellow-400 text-xs">
+                                @for($i=1;$i<=5;$i++)
+                                    <i class="{{ $i <= $review->rating ? 'fas' : 'far' }} fa-star"></i>
+                                @endfor
+                            </div>
+                        </div>
+
+                        <span class="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded">
+                            {{ $review->created_at->format('M d, Y') }}
+                        </span>
+                    </div>
+
+                    {{-- REVIEW CONTENT --}}
+                    <div class="pl-0 md:pl-2">
+                        @if($review->comment)
+                            <p class="text-gray-700 leading-relaxed text-sm italic">
+                                "{{ $review->comment }}"
+                            </p>
+                        @else
+                            {{-- Placeholder for star-only reviews so the UI stays balanced --}}
+                            <p class="text-gray-400 text-xs italic">
+                                User submitted a {{ $review->rating }}-star rating without a written comment.
+                            </p>
+                        @endif
+
+                        {{-- REVIEW IMAGE --}}
+                        @if($review->image)
+                            <div class="mt-4 group relative inline-block">
+                                <img src="{{ asset('storage/' . $review->image) }}"
+                                     class="w-28 h-28 object-cover rounded-xl border-2 border-gray-100 shadow-sm cursor-zoom-in hover:opacity-90 transition-opacity">
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                                    <i class="fas fa-search-plus text-white text-lg"></i>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="py-12 text-center">
+                    <i class="far fa-star-half-alt text-4xl text-gray-200 mb-3"></i>
+                    <p class="text-gray-400 font-medium">No reviews yet. Be the first to share your thoughts!</p>
+                </div>
+            @endforelse
+        </div>
     </div>
 </section>
-
-
 
 <script>
     // 1. LIGHTBOX LOGIC
