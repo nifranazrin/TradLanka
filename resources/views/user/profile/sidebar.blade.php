@@ -44,11 +44,11 @@
             </span>
 
             {{-- Badge logic: Displays red circle if there are pending reviews to be written --}}
-            @if(isset($toReviewCount) && $toReviewCount > 0)
-                <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">
-                    {{ $toReviewCount }}
-                </span>
-            @endif
+           @if(isset($toReviewCount) && $toReviewCount > 0)
+    <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">
+        {{ $toReviewCount }}
+    </span>
+@endif
         </a>
     </li>
 </ul>

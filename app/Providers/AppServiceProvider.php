@@ -170,5 +170,27 @@ View::composer('layouts.delivery', function ($view) {
                                  $latestChatsNotify->count() + $pendingOrders + $pendingReports
     ]);
 });
+
+// 5. USER PENDING REVIEWS COUNT (Global for Sidebar)
+// 5. USER PENDING REVIEWS COUNT (Global for Sidebar)
+\Illuminate\Support\Facades\View::composer(['layouts.frontend', 'user.profile.*'], function ($view) {
+    if (Auth::check()) {
+        $userId = Auth::id();
+
+        $toReviewCount = \App\Models\OrderItem::whereHas('order', function ($query) use ($userId) {
+                $query->where('user_id', $userId)->where('status', 5); 
+            })
+            ->whereHas('product') // ✅ ONLY count if the product still exists in the DB
+            ->get()
+            ->filter(function ($item) use ($userId) {
+                return !\App\Models\Review::where('user_id', $userId)
+                    ->where('product_id', $item->product_id)
+                    ->where('created_at', '>=', $item->created_at) 
+                    ->exists();
+            })->count();
+
+        $view->with('toReviewCount', $toReviewCount);
+    }
+});
     }
 }

@@ -9,35 +9,36 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
+use App\Models\OrderItem;
 
 class UserReviewController extends Controller
 {
+    
     public function index()
     {
         $userId = Auth::id();
 
-        // 1. PRODUCTS TO REVIEW
-        // We look for Status 5 (Delivered) to match the tracking logic
-        $toReview = Order::where('user_id', $userId)
-            ->where('status', 5) 
-            ->with('orderItems.product')
-            ->whereHas('orderItems.product')
-            ->get()
-            ->flatMap(function ($order) {
-                return $order->orderItems;
+        // 1. Get all items from Delivered orders (Status 5)
+        $toReview = OrderItem::whereHas('order', function ($query) use ($userId) {
+                $query->where('user_id', $userId)->where('status', 5); 
             })
+            ->whereHas('product')
+            ->with(['product', 'order'])
+            ->get()
             ->filter(function ($item) use ($userId) {
-                // Only show items that haven't been reviewed yet
+                // DARAZ-STYLE FILTER:
+                // We only show the item if NO review exists that was created 
+                // AFTER this specific order was placed.
                 return !Review::where('user_id', $userId)
                     ->where('product_id', $item->product_id)
+                    ->where('created_at', '>=', $item->created_at) 
                     ->exists();
             });
 
         $toReviewCount = $toReview->count();
 
-        // 2. REVIEW HISTORY
+        // 2. Fetch past review history
         $history = Review::where('user_id', $userId)
-            ->whereHas('product')
             ->with('product')
             ->latest()
             ->get();
@@ -46,16 +47,15 @@ class UserReviewController extends Controller
     }
 
     public function markAllRead()
-{
-    Auth::guard('web')->user()->unreadNotifications->markAsRead();
-    return back()->with('success', 'All notifications marked as read.');
-}
+    {
+        Auth::guard('web')->user()->unreadNotifications->markAsRead();
+        return back()->with('success', 'All notifications marked as read.');
+    }
 
     public function create($product_id)
     {
         $product = Product::findOrFail($product_id);
         
-        // ✅ FIXED: Changed status from 4 to 5 to match delivery success
         $hasPurchased = Order::where('user_id', Auth::id())
             ->where('status', 5) 
             ->whereHas('orderItems', function($q) use ($product_id) {
@@ -81,7 +81,6 @@ class UserReviewController extends Controller
 
         $userId = Auth::id();
 
-        // ✅ FIXED: Changed status from 4 to 5 for security check
         $hasPurchased = Order::where('user_id', $userId)
             ->where('status', 5)
             ->whereHas('orderItems', function($q) use ($request) {
@@ -92,10 +91,7 @@ class UserReviewController extends Controller
             return back()->with('error', 'Security check failed. Order must be delivered to review it.');
         }
 
-        if (Review::where('user_id', $userId)->where('product_id', $request->product_id)->exists()) {
-            return redirect()->route('user.reviews.index')->with('error', 'You have already reviewed this product.');
-        }
-
+        // We allow the store process because our index filter handles the visibility.
         DB::beginTransaction();
         try {
             $review = new Review();
