@@ -227,10 +227,15 @@ def recommend_text():
         
         recommendations = []
         for i, score in sim_scores:
+            # If the similarity is less than 15%, STOP. Do not show random items.
+            if score < 0.15: 
+                break 
+                
             pid = product_ids[i]
-            if pid not in history_ids: # Exclude seen
-                recommendations.append(pid)
-                if len(recommendations) >= 10: break
+
+            recommendations.append(pid)
+            if len(recommendations) >= 7: 
+                break
                 
         return jsonify(recommendations)
     except Exception as e:

@@ -411,25 +411,28 @@ Route::prefix('delivery')->name('delivery.')->middleware([DeliveryPersonMiddlewa
 
 // Route to export product data to JSON for Python
 Route::get('/export-products', function() {
-    // Fetch approved products
-    $products = \App\Models\Product::where('status', 'approved')
+    $products = \App\Models\Product::whereIn('status', ['approved', 'reapproved'])
         ->where('is_active', 1)
         ->get()
         ->map(function($p) {
+            // Get the category name
+            $cat = $p->category->name ?? '';
+            
+            // REPEAT the category 5 times to force the AI to respect it
+            // "Tea Tea Tea Tea Tea" is much stronger than "antioxidants"
+            $boostedCategory = str_repeat($cat . " ", 5); 
+
             return [
                 'id' => $p->id,
-                // Combine Name + Description + Category for better matching
-                'text' => $p->name . " " . $p->description . " " . ($p->category->name ?? ''),
+                // Name + Description + BOOSTED Category
+                'text' => $p->name . " " . $p->description . " " . $boostedCategory,
             ];
         });
 
-    // Save to the python_ai folder
-    // Ensure the folder 'python_ai' exists in your root directory first!
     \Illuminate\Support\Facades\File::put(base_path('ai_service/products.json'), $products->toJson());
 
-    return "Products exported to ai_service/products.json! Count: " . $products->count();
+    return "Products exported with Category Boost! Count: " . $products->count();
 });
-
 
  
 

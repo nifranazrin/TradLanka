@@ -120,6 +120,7 @@
                                 </div>
 
                                 <button type="submit" class="w-full bg-[#5b2c2c] hover:bg-[#4a2424] text-white py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-lg transition transform active:scale-95 uppercase tracking-wide">
+      
                                     LOGIN
                                 </button>
                             </form>
