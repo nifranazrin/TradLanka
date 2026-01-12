@@ -226,6 +226,7 @@
 </div>
     
 {{-- Real Store Activity Table --}}
+{{-- Real Store Activity Table --}}
 <div class="card dashboard-card p-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h5 class="fw-bold text-dark mb-0">Recent Store Activity</h5>
@@ -246,13 +247,15 @@
                         @php
                             $numStatus = (string)$order->status;
                             $statusMap = [
-                                '0' => ['Pending', 'badge-pending', '#dc2626'],
+                                '0' => ['Pending', 'badge-pending', '#dc2626'], //
                                 '1' => ['Processing', 'badge-processing', '#d97706'],
                                 '4' => ['Shipping', 'badge-shipping', '#ea580c'],
                                 '5' => ['Delivered', 'badge-delivered', '#16a34a'],
-                                '6' => ['Cancelled', 'badge-cancelled', '#991b1b'] // Added Cancelled logic
+                                '6' => ['Cancelled', 'badge-cancelled', '#991b1b'] 
                             ];
-                            $current = $statusMap[$numStatus] ?? ['Review', 'bg-secondary', '#6c757d'];
+                            
+                            // FIXED: Changed fallback from 'Review' to 'Pending' to match image_3fa3c5
+                            $current = $statusMap[$numStatus] ?? ['Pending', 'badge-pending', '#dc2626'];
                         @endphp
                         <span class="status-badge {{ $current[1] }}">
                             <span class="status-dot" style="background: {{ $current[2] }}"></span>{{ $current[0] }}
@@ -264,43 +267,101 @@
         </table>
     </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 let revenueChart;
-// Ensure these variables are coming from the controller accurately
+
+// Data sourced from AdminDashController
 const dailyLabels = @json($days);
-const dailyData = @json($revenueData);
+const dailySalesData = @json($salesData);   // Potential Revenue (All active orders)
+const dailyRevenueData = @json($revenueData); // Confirmed Revenue (Delivered only)
+
 const monthlyLabels = @json($months ?? []); 
-const monthlyData = @json($monthlyRevenue ?? []); 
+const monthlySalesData = @json($monthlySalesData ?? []); 
+const monthlyRevenueData = @json($monthlyRevenue ?? []); 
 
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. Revenue Growth Chart
+    // 1. Revenue Growth Chart (Dual Line - Multi-Color Style)
     const revCtx = document.getElementById('revenueChart').getContext('2d');
+    
+    // Create Blue Gradient for Total Sales
+    const gradientSales = revCtx.createLinearGradient(0, 0, 0, 400);
+    gradientSales.addColorStop(0, 'rgba(59, 130, 246, 0.4)'); // Light Blue
+    gradientSales.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+    // Create Orange Gradient for Total Revenue
+    const gradientRevenue = revCtx.createLinearGradient(0, 0, 0, 400);
+    gradientRevenue.addColorStop(0, 'rgba(255, 138, 0, 0.4)'); // Brand Orange
+    gradientRevenue.addColorStop(1, 'rgba(255, 138, 0, 0.0)');
+
     revenueChart = new Chart(revCtx, {
         type: 'line',
         data: {
             labels: dailyLabels,
-            datasets: [{
-                label: 'Successful Revenue',
-                data: dailyData,
-                borderColor: '#ff8a00',
-                backgroundColor: 'rgba(255, 138, 0, 0.1)',
-                fill: true, 
-                tension: 0.4,
-                pointRadius: 4, 
-                pointBackgroundColor: '#fff', 
-                pointBorderWidth: 2
-            }]
+            datasets: [
+                {
+                    label: 'Total Sales',
+                    data: dailySalesData,
+                    borderColor: '#3b82f6', // Solid Blue
+                    backgroundColor: gradientSales,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#3b82f6',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'Total Revenue',
+                    data: dailyRevenueData,
+                    borderColor: '#ff8a00', // Solid Orange
+                    backgroundColor: gradientRevenue,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#ff8a00',
+                    pointBorderWidth: 2
+                }
+            ]
         },
         options: { 
             responsive: true, 
             maintainAspectRatio: false, 
             plugins: { 
-                legend: { display: false },
-                tooltip: { enabled: true } // Added tooltips for better UX
-            } 
+                legend: { 
+                    display: true, 
+                    position: 'top',
+                    labels: { 
+                        usePointStyle: true, 
+                        padding: 20,
+                        font: { weight: 'bold' } 
+                    }
+                },
+                tooltip: { 
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': Rs. ' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                } 
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rs. ' + value.toLocaleString();
+                        }
+                    }
+                },
+                x: { grid: { display: false } }
+            }
         }
     });
 
@@ -321,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function () {
             maintainAspectRatio: false, 
             plugins: { 
                 legend: { display: false },
-                tooltip: { enabled: true } // This fixes the "names not showing" issue on hover
+                tooltip: { enabled: true } 
             } 
         }
     });
@@ -345,23 +406,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 legend: { display: false } 
             },
             scales: {
-                x: { beginAtZero: true } // Ensures bars start from 0
+                x: { beginAtZero: true }
             }
         }
     });
 });
 
+/**
+ * Handles toggling between Daily and Monthly views
+ */
 function updateChart(type) {
     if (type === 'days') {
         revenueChart.data.labels = dailyLabels;
-        revenueChart.data.datasets[0].data = dailyData;
+        revenueChart.data.datasets[0].data = dailySalesData;
+        revenueChart.data.datasets[1].data = dailyRevenueData;
         document.getElementById('btnDays').classList.add('active');
         document.getElementById('btnMonths').classList.remove('active');
     } else {
-        // Only update if data exists
         if(monthlyLabels.length > 0) {
             revenueChart.data.labels = monthlyLabels;
-            revenueChart.data.datasets[0].data = monthlyData;
+            revenueChart.data.datasets[0].data = monthlySalesData;
+            revenueChart.data.datasets[1].data = monthlyRevenueData;
             document.getElementById('btnMonths').classList.add('active');
             document.getElementById('btnDays').classList.remove('active');
         }
@@ -369,5 +434,4 @@ function updateChart(type) {
     revenueChart.update();
 }
 </script>
-
 @endsection
