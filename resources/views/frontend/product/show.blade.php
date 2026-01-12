@@ -144,37 +144,44 @@
                 <p class="text-gray-700 leading-relaxed mb-6 text-sm">{!! nl2br(e($product->description)) !!}</p>
 
                  
-                {{-- ✅ PRODUCT BUYING SECTION --}}
+             {{-- ✅ MODERN COMPACT VARIANT SECTION --}}
 @if ($hasVariants)
-    <div class="mt-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
-        <label class="flex items-center gap-2 text-sm font-bold text-gray-700 mb-4">
-            <i class="fas fa-layer-group text-[#5b2c2c]"></i> 
-            Select Size / Option: <span class="text-red-500">*</span>
+    @php
+        $firstVariant = $product->variants->first();
+        $isDefaultOnly = ($product->variants->count() === 1 && strtolower($firstVariant->unit_label) === 'default');
+    @endphp
+
+    @if (!$isDefaultOnly)
+    <div class="mt-6 mb-6">
+        {{-- Slimmer, professional label --}}
+        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 block">
+            Select {{ $product->category->name ?? 'Option' }}
         </label>
         
-        <div class="flex gap-3 flex-wrap" id="variantContainer">
+        <div class="flex flex-wrap gap-2" id="variantContainer">
             @foreach ($product->variants as $variant)
                 <button
                     type="button"
-                    class="variantOption px-5 py-2.5 border-2 border-gray-100 rounded-xl text-sm font-bold transition-all duration-200
-                        hover:border-[#5b2c2c] hover:bg-gray-50 flex flex-col items-center
-                        {{ $variant->stock == 0 ? 'opacity-40 cursor-not-allowed bg-gray-50 border-dashed' : 'bg-white shadow-sm' }}"
+                    class="variantOption min-w-[70px] px-4 py-2 border rounded-md text-sm font-semibold transition-all duration-200
+                        {{ $variant->stock == 0 ? 'bg-gray-50 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white border-gray-300 hover:border-[#5b2c2c] text-gray-700' }}"
                     {{ $variant->stock == 0 ? 'disabled' : '' }}
                     data-id="{{ $variant->id }}"
                     data-price="{{ $variant->price }}" 
-                    data-stock="{{ $variant->stock }}"
-                    data-label="{{ $variant->unit_label }}">
+                    data-stock="{{ $variant->stock }}">
                     
-                    <span>{{ $variant->unit_label }}</span>
+                    {{ $variant->unit_label }}
                     
                     @if($variant->stock == 0) 
-                        <span class="text-[10px] text-red-500 font-bold uppercase">Sold Out</span> 
+                        <div class="text-[8px] leading-none text-red-500 mt-0.5 font-bold">OUT OF STOCK</div> 
                     @endif
                 </button>
             @endforeach
         </div>
-        <input type="hidden" id="selectedVariantId" value="">
     </div>
+    @endif
+    
+    {{-- Pre-fill for Default items so they skip the "Pick a Size" alert --}}
+    <input type="hidden" id="selectedVariantId" value="{{ $isDefaultOnly ? $firstVariant->id : '' }}">
 @endif
 
 {{-- ✅ MODERN QUANTITY & BUTTON BAR --}}
@@ -211,6 +218,7 @@
         <p id="toastMessage" class="text-sm">Added to cart!</p>
     </div>
 </div>
+
 {{-- ================= REVIEWS SECTION ================= --}}
 <section id="reviews-section" class="mt-20">
     <div class="max-w-6xl mx-auto px-6">
@@ -378,6 +386,7 @@
         const addToCartBtn = document.getElementById('addToCartBtn');
         const buyNowBtn = document.getElementById('buyNowBtn');
         
+        // Default product stock as fallback
         let currentStock = {{ $product->stock }}; 
 
         const tradLankaTheme = {
@@ -393,14 +402,21 @@
             }
         };
 
+        // ✅ FIXED: Initialize Stock if a variant (like "Default") is pre-selected
+        if (hiddenVariantInput && hiddenVariantInput.value) {
+            const preSelectedBtn = document.querySelector(`.variantOption[data-id="${hiddenVariantInput.value}"]`);
+            if (preSelectedBtn) {
+                currentStock = parseInt(preSelectedBtn.dataset.stock);
+            }
+        }
+
         // ✅ HELPER: Update Header Cart Icon (Sync with Homepage ID)
         function updateCartIcon(count) {
             const badge = document.getElementById('cart-badge'); 
             if(badge) {
                 badge.innerText = count;
-                badge.classList.remove('hidden'); // Ensure it shows if it was hidden
+                badge.classList.remove('hidden'); 
                 
-                // Pop Animation
                 badge.style.transition = "transform 0.3s ease";
                 badge.style.transform = "scale(1.5)";
                 setTimeout(() => { badge.style.transform = "scale(1)"; }, 300);
@@ -454,11 +470,11 @@
             if(val > 1) qtyInput.value = val - 1;
         };
 
-
-        // ✅ THE ACTION FUNCTION
+        // THE ACTION FUNCTION
         function handleAddToCart(btn, isBuyNow) {
+            // ✅ IMPROVED CHECK: If hiddenVariantInput has a value (Default), this will NOT trigger
             if(hasVariants && !hiddenVariantInput.value) {
-                Swal.fire({ title: 'Pick a Size!', icon: 'info' });
+                Swal.fire({ ...tradLankaTheme, title: 'Pick a Size!', icon: 'info' });
                 return;
             }
 
@@ -490,7 +506,6 @@
                 btn.disabled = false;
 
                 if (data.status === 'success') {
-                    // Update Header
                     if (data.cart_count !== undefined) {
                         updateCartIcon(data.cart_count); 
                     }
@@ -525,11 +540,10 @@
         if(buyNowBtn) buyNowBtn.onclick = () => handleAddToCart(buyNowBtn, true);
     });
 
-function shareProduct() {
+    function shareProduct() {
         const productTitle = "{{ $product->name }}";
         const productUrl = window.location.href;
 
-        // Check if the browser supports native sharing (mostly Mobile)
         if (navigator.share) {
             navigator.share({
                 title: productTitle,
@@ -538,7 +552,6 @@ function shareProduct() {
             })
             .catch((error) => console.log('Error sharing', error));
         } else {
-            // Fallback for Desktop: Copy to Clipboard
             const tempInput = document.createElement('input');
             document.body.appendChild(tempInput);
             tempInput.value = productUrl;
@@ -546,7 +559,6 @@ function shareProduct() {
             document.execCommand('copy');
             document.body.removeChild(tempInput);
 
-            // Notify User using your existing theme
             Swal.fire({
                 background: '#fdf6e3',
                 color: '#5b2c2c',
@@ -559,22 +571,65 @@ function shareProduct() {
             });
         }
     }
-
 </script>
 
+
 <style>
-    .variantOption.active-variant {
-        border-color: #5b2c2c !important;
-        background-color: #fdf6e3 !important;
-        color: #5b2c2c !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(91, 44, 44, 0.1);
+    /* 1. Base Variant Button Style */
+    .variantOption {
+        position: relative;
+        transition: all 0.2s ease-in-out;
+        outline: none !important;
+        cursor: pointer;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 80px; /* Standard professional width */
+        border: 1px solid #e5e7eb; /* Subtle gray border */
     }
-    #addToCartBtn:hover i { animation: trolley-shake 0.5s ease infinite; }
+
+    /* 2. Professional Active State (Daraz Style) */
+    .variantOption.active-variant {
+        border-color: #5b2c2c !important; /* Your brand color */
+        border-width: 2px;
+        background-color: #fff9f9 !important; /* Very light tint */
+        color: #5b2c2c !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(91, 44, 44, 0.05); /* Softer shadow for cleaner look */
+    }
+
+    /* 3. Hover Effect for Available Items */
+    .variantOption:not(:disabled):hover {
+        border-color: #5b2c2c;
+        background-color: #fafafa;
+    }
+
+    /* 4. Sold Out / Disabled State */
+    .variantOption:disabled {
+        background-color: #f9fafb !important;
+        border-color: #f3f4f6 !important;
+        color: #9ca3af !important;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    /* 5. Add to Cart Animation */
+    #addToCartBtn:hover i { 
+        animation: trolley-shake 0.5s ease infinite; 
+    }
+
     @keyframes trolley-shake {
         0%, 100% { transform: translateX(0); }
         25% { transform: translateX(-2px); }
         50% { transform: translateX(2px); }
+    }
+
+    /* 6. Quantity Input Polish */
+    #productQty {
+        background-color: transparent;
+        border: none;
+        user-select: none;
     }
 </style>
 @endsection

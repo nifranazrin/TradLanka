@@ -138,65 +138,6 @@ def search():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- ENDPOINT 2: HYBRID RECOMMENDATION (Pandas + Visual Fallback) ---
-@app.route('/recommend', methods=['POST'])
-def recommend():
-    # Expects JSON: { "product_ids": [10, 20], "filenames": ["img1.jpg", "img2.jpg"] }
-    data = request.json
-    req_pids = data.get('product_ids', [])
-    req_files = data.get('filenames', [])
-    recommendations = []
-
-    print(f"\n[REQ] Processing Hybrid recommendation for IDs: {req_pids}")
-
-    # STRATEGY A: Try Pandas (User Behavior) FIRST
-    if db_engine and req_pids:
-        try:
-            # Fetch History Data
-            query = "SELECT user_id, product_id, count(*) as view_count FROM product_views GROUP BY user_id, product_id"
-            df = pd.read_sql(query, db_engine)
-            
-            if len(df) > 5: # Only run if we have enough data
-                user_item_matrix = df.pivot_table(index='user_id', columns='product_id', values='view_count').fillna(0)
-                item_similarity = cosine_similarity(user_item_matrix.T)
-                sim_df = pd.DataFrame(item_similarity, index=user_item_matrix.columns, columns=user_item_matrix.columns)
-                
-                # Find similar items to the last viewed product
-                last_id = req_pids[0]
-                
-                if last_id in sim_df.index:
-                    # Get top 5 similar products (excluding itself)
-                    similar_products = sim_df[last_id].sort_values(ascending=False).iloc[1:6]
-                    print(f"[PANDAS] Found behavioral matches: {similar_products.index.tolist()}")
-                    
-                    # Note: The logic to convert these IDs back to filenames or models happens in Laravel
-                    # We could return them here, but for now we fall through to Visual if this list is empty
-                    # or if you want to mix them.
-        except Exception as e:
-            print(f"[PANDAS] Skipped (Error): {e}")
-
-    # STRATEGY B: Visual AI (The Fallback)
-    if not recommendations and req_files and filenames:
-        print("[VISUAL] Using Visual AI fallback...")
-        target_indices = []
-        for fname in req_files:
-            if fname in filenames:
-                target_indices.append(filenames.index(fname))
-        
-        if target_indices:
-            selected_features = [feature_list[i] for i in target_indices]
-            user_vector = np.mean(selected_features, axis=0)
-            user_vector = user_vector / np.linalg.norm(user_vector)
-            
-            distances, indices = neighbors.kneighbors([user_vector], n_neighbors=10)
-            
-            for i in range(len(indices[0])):
-                idx = indices[0][i]
-                if filenames[idx] not in req_files:
-                    recommendations.append({"filename": filenames[idx]})
-
-    return jsonify(recommendations)
-
 
 # --- ENDPOINT 3: TEXT RECOMMENDATION (Product History IDs) ---
 # This is what your new FrontendController uses!
