@@ -113,45 +113,61 @@ View::composer('layouts.delivery', function ($view) {
 
 
 
-// 4. ADMIN NOTIFICATION COUNTS
+// 4. ADMIN NOTIFICATION COUNTS & DETAILED BELL DATA
 \Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
     // Standardize admin detection
     $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user() 
              ?? \App\Models\Staff::find(session('staff_id'));
     
-    // Calculate counts for badges
-    $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
-    $pendingProducts     = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
+    // --- 1. DETAILED DATA FOR DROPDOWN (With Eager Loading) ---
+    $latestOrdersNotify = \App\Models\Order::where('status', 0)->latest()->take(3)->get();
     
-    // ✅ Look for status 1 for reviews
-    $newReviews = \App\Models\Review::where('status', 1)->count();
+    $latestProductsNotify = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])
+                                                ->latest()->take(3)->get();
+    
+    // Eager load 'user' to pull the reviewer's name instead of blank
+    $latestReviewsNotify = \App\Models\Review::with('user')->where('status', 1)
+                                              ->latest()->take(3)->get();
+                                              
+    $latestSellerRequestsNotify = \App\Models\UserRequest::where('status', 'pending')
+                                                         ->latest()->take(3)->get();
 
-    // ✅ New orders count (Status 0)
-    $pendingOrders = \App\Models\Order::where('status', 0)->count();
-
-    // ✅ FIXED: Report Count matched to your sidebar logic
-    $pendingReports = \Illuminate\Support\Facades\DB::table('submitted_reports')
-                        ->where('status', 'pending')
-                        ->count();
-
-    // Logic for unread chat messages
-    $unreadMessagesCount = 0;
+    $latestChatsNotify = collect();
     if ($admin) {
-        $unreadMessagesCount = \App\Models\Message::where('receiver_id', $admin->id)
+        // Eager load 'sender' (Staff) specifically
+        $latestChatsNotify = \App\Models\Message::with('sender')
+            ->where('receiver_id', $admin->id)
             ->where('receiver_type', 'admin')
             ->where('is_read', 0)
-            ->count();
+            ->latest()->take(3)->get();
     }
 
-    // Pass all variables to the view
+    // --- 2. COUNTS FOR BADGES ---
+    $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
+    $pendingProducts     = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
+    $newReviews          = \App\Models\Review::where('status', 1)->count();
+    $pendingOrders       = \App\Models\Order::where('status', 0)->count();
+    $pendingReports      = \Illuminate\Support\Facades\DB::table('submitted_reports')
+                                ->where('status', 'pending')->count();
+
+    // Pass variables globally to fix 500 errors on other pages
     $view->with([
         'admin'               => $admin,
         'pendingApplications' => $pendingApplications,
         'pendingProducts'     => $pendingProducts,
         'newReviews'          => $newReviews, 
-        'unreadMessages'      => $unreadMessagesCount,
+        'unreadMessages'      => $latestChatsNotify->count(),
         'pendingOrders'       => $pendingOrders,
-        'pendingReports'      => $pendingReports, // Now available for the bell!
+        'pendingReports'      => $pendingReports,
+        
+        'latestOrdersNotify'  => $latestOrdersNotify,
+        'latestProductsNotify'=> $latestProductsNotify,
+        'latestReviewsNotify' => $latestReviewsNotify,
+        'latestSellerRequestsNotify' => $latestSellerRequestsNotify,
+        'latestChatsNotify'   => $latestChatsNotify,
+        
+        'totalAlerts'         => $pendingApplications + $pendingProducts + $newReviews + 
+                                 $latestChatsNotify->count() + $pendingOrders + $pendingReports
     ]);
 });
     }

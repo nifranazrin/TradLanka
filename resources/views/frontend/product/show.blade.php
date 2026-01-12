@@ -117,6 +117,11 @@
                     </span>
                 </div>      
 
+                <div class="mb-6">
+    <button onclick="shareProduct()" class="flex items-center gap-2 text-sm font-bold text-[#5b2c2c] hover:text-[#e95b2c] transition-all bg-white px-5 py-2.5 rounded-xl shadow-sm border border-gray-200 hover:shadow-md active:scale-95">
+        <i class="fas fa-share-alt"></i> Share this Product
+    </button>
+</div>
                 
                         <div class="flex items-baseline gap-2 mb-4">
                             <span class="text-sm text-gray-500">Price:</span>
@@ -430,6 +435,7 @@
             if(val > 1) qtyInput.value = val - 1;
         };
 
+
         // ✅ THE ACTION FUNCTION
         function handleAddToCart(btn, isBuyNow) {
             if(hasVariants && !hiddenVariantInput.value) {
@@ -499,6 +505,42 @@
         if(addToCartBtn) addToCartBtn.onclick = () => handleAddToCart(addToCartBtn, false);
         if(buyNowBtn) buyNowBtn.onclick = () => handleAddToCart(buyNowBtn, true);
     });
+
+function shareProduct() {
+        const productTitle = "{{ $product->name }}";
+        const productUrl = window.location.href;
+
+        // Check if the browser supports native sharing (mostly Mobile)
+        if (navigator.share) {
+            navigator.share({
+                title: productTitle,
+                text: 'Check out this product: ' + productTitle,
+                url: productUrl,
+            })
+            .catch((error) => console.log('Error sharing', error));
+        } else {
+            // Fallback for Desktop: Copy to Clipboard
+            const tempInput = document.createElement('input');
+            document.body.appendChild(tempInput);
+            tempInput.value = productUrl;
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            // Notify User using your existing theme
+            Swal.fire({
+                background: '#fdf6e3',
+                color: '#5b2c2c',
+                icon: 'success',
+                title: 'Link Copied!',
+                text: 'The product link has been copied to your clipboard.',
+                confirmButtonColor: '#5b2c2c',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+    }
+
 </script>
 
 <style>

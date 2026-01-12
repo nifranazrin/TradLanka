@@ -27,7 +27,13 @@ class AdminDashController extends Controller
         $totalSellers = Staff::where('role', 'seller')->count();
         $pendingRequests = UserRequest::where('status', 'pending')->count(); 
         $totalReviews = \App\Models\Review::count();
-       
+
+
+        $latestOrdersNotify = Order::where('status', 0)->latest()->take(3)->get();
+        $latestProductsNotify = Product::where('status', 'pending')->latest()->take(3)->get();
+        $latestReviewsNotify = \App\Models\Review::latest()->take(3)->get();
+        $latestSellerRequestsNotify = UserRequest::where('status', 'pending')->latest()->take(3)->get();
+            
         // 2. Activity Counts
         $todaysOrders = Order::whereDate('created_at', $today)->count();
         $visitorCount = DB::table('sessions')->count(); 
@@ -36,7 +42,7 @@ class AdminDashController extends Controller
         $totalOrdersAllTime = Order::count(); 
 
         // 3. SYNCHRONIZED REVENUE LOGIC
-        // Global logic to match SQL Audit (Total success regardless of date)
+    
         $pendingStatuses = [0, 1, 2, 3, 4, 10]; 
         $successStatus = 5; 
 
@@ -97,81 +103,87 @@ class AdminDashController extends Controller
         $recentOrders = Order::latest()->take(5)->get();
 
        // 8. DYNAMIC REVENUE ANALYTICS (Days vs Months)
-$successStatus = 5; // Delivered
-$pendingStatuses = [0, 1, 2, 3, 4, 10]; // All active order types
-$chartStatuses = array_merge([$successStatus], $pendingStatuses);
+        $successStatus = 5; // Delivered
+        $pendingStatuses = [0, 1, 2, 3, 4, 10]; // All active order types
+        $chartStatuses = array_merge([$successStatus], $pendingStatuses);
 
-// --- Last 8 Days Data ---
-$days = [];
-$revenueData = []; // Confirmed Revenue (Line 1)
-$salesData = [];   // Total Sales Volume (Line 2)
+        // --- Last 8 Days Data ---
+        $days = [];
+        $revenueData = []; // Confirmed Revenue (Line 1)
+        $salesData = [];   // Total Sales Volume (Line 2)
 
-for ($i = 7; $i >= 0; $i--) {
-    $date = Carbon::now()->subDays($i);
-    $days[] = $date->format('d M');
+        for ($i = 7; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $days[] = $date->format('d M');
 
-    // 1. Confirmed Revenue (Only Delivered/Status 5)
-    $revenueData[] = Order::whereDate('created_at', $date)
-                            ->where('status', $successStatus)
-                            ->sum('total_price');
+            // 1. Confirmed Revenue (Only Delivered/Status 5)
+            $revenueData[] = Order::whereDate('created_at', $date)
+                                    ->where('status', $successStatus)
+                                    ->sum('total_price');
 
-    // 2. Total Sales Volume (All Active/Potential Revenue)
-    $salesData[] = Order::whereDate('created_at', $date)
-                            ->whereIn('status', $chartStatuses)
-                            ->sum('total_price');
-}
-
-// --- Last 6 Months Data ---
-$months = [];
-$monthlyRevenue = [];
-$monthlySalesData = [];
-
-for ($i = 5; $i >= 0; $i--) {
-    $monthDate = Carbon::now()->subMonths($i);
-    $months[] = $monthDate->format('F');
-    
-    // 1. Confirmed Monthly Revenue
-    $monthlyRevenue[] = Order::whereMonth('created_at', $monthDate->month)
-                                ->whereYear('created_at', $monthDate->year)
-                                ->where('status', $successStatus)
-                                ->sum('total_price');
-                                
-    // 2. Total Monthly Sales Volume
-    $monthlySalesData[] = Order::whereMonth('created_at', $monthDate->month)
-                                    ->whereYear('created_at', $monthDate->year)
+            // 2. Total Sales Volume (All Active/Potential Revenue)
+            $salesData[] = Order::whereDate('created_at', $date)
                                     ->whereIn('status', $chartStatuses)
                                     ->sum('total_price');
-}
-        //  Passed 'totalOrdersAllTime' to the view
-      return view('admin.dashboard', compact(
-    'totalCategories', 
-    'totalProducts', 
-    'totalSellers', 
-    'pendingRequests',
-    'orderCount', 
-    'todaysOrders', 
-    'visitorCount', 
-    'totalOrdersAllTime',
-    'salesLkr', 
-    'pendingLkr', 
-    'successLKRCount', 
-    'pendingLKRCount',
-    'salesUsd', 
-    'pendingUsd', 
-    'successUSDCount', 
-    'pendingUSDCount',
-    'topProducts', 
-    'topCategories', 
-    'statusCounts', 
-    'recentOrders', 
-    'days', 
-    'revenueData', 
-    'salesData',          // ✅ Added for the dual-line chart
-    'months', 
-    'monthlyRevenue', 
-    'monthlySalesData',   // ✅ Added for the dual-line chart
-    'totalReviews'
-));
-        
-    }
-}
+        }
+
+                        // --- Last 6 Months Data ---
+                        $months = [];
+                        $monthlyRevenue = [];
+                        $monthlySalesData = [];
+
+                        for ($i = 5; $i >= 0; $i--) {
+                            $monthDate = Carbon::now()->subMonths($i);
+                            $months[] = $monthDate->format('F');
+                            
+                            // 1. Confirmed Monthly Revenue
+                            $monthlyRevenue[] = Order::whereMonth('created_at', $monthDate->month)
+                                                        ->whereYear('created_at', $monthDate->year)
+                                                        ->where('status', $successStatus)
+                                                        ->sum('total_price');
+                                                        
+                            // 2. Total Monthly Sales Volume
+                            $monthlySalesData[] = Order::whereMonth('created_at', $monthDate->month)
+                                                            ->whereYear('created_at', $monthDate->year)
+                                                            ->whereIn('status', $chartStatuses)
+                                                            ->sum('total_price');
+                        }
+                                //  Passed 'totalOrdersAllTime' to the view
+                            // --- UPDATE THE RETURN STATEMENT ---
+                        return view('admin.dashboard', compact(
+                            'totalCategories', 
+                            'totalProducts', 
+                            'totalSellers', 
+                            'pendingRequests',
+                            'orderCount', 
+                            'todaysOrders', 
+                            'visitorCount', 
+                            'totalOrdersAllTime',
+                            'salesLkr', 
+                            'pendingLkr', 
+                            'successLKRCount', 
+                            'pendingLKRCount',
+                            'salesUsd', 
+                            'pendingUsd', 
+                            'successUSDCount', 
+                            'pendingUSDCount',
+                            'topProducts', 
+                            'topCategories', 
+                            'statusCounts', 
+                            'recentOrders', 
+                            'days', 
+                            'revenueData', 
+                            'salesData',
+                            'months', 
+                            'monthlyRevenue', 
+                            'monthlySalesData',
+                            'totalReviews',
+                        
+                            'latestOrdersNotify',
+                            'latestProductsNotify',
+                            'latestReviewsNotify',
+                            'latestSellerRequestsNotify'
+                        ));
+                                
+                            }
+                        }
