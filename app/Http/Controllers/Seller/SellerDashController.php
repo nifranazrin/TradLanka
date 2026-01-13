@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\InquiryReplyMail;
+use Illuminate\Support\Facades\DB;
 
 
 class SellerDashController extends Controller
@@ -22,101 +23,127 @@ class SellerDashController extends Controller
         $this->middleware('auth:seller');
     }
 
-    /**
-     * ===============================
-     * Seller Dashboard (Statistics)
-     * ===============================
-     */
-    public function dashboard()
+public function dashboard()
     {
         $sellerId = Auth::guard('seller')->id();
 
-        // Total Products owned by seller
-        $totalProducts = Product::where('seller_id', $sellerId)->count();
+        // 1. Product Statistics (Including Approved & Rejected breakdown)
+        $productQuery = Product::where('seller_id', $sellerId);
+        
+        $totalProducts = (clone $productQuery)->count();
+        $approvedProducts = (clone $productQuery)->whereIn('status', ['approved', 'active', 'reapproved'])->count();
+        $rejectedProducts = (clone $productQuery)->where('status', 'rejected')->count();
 
-        // Orders Today (Filtered by seller's products in the order)
-        $ordersToday = Order::whereHas('items.product', function ($q) use ($sellerId) {
+        // 2. Orders Today Breakdown (LKR vs USD)
+        $todayQuery = Order::whereHas('items.product', function ($q) use ($sellerId) {
             $q->where('seller_id', $sellerId);
-        })->whereDate('created_at', today())->count();
+        })->whereDate('created_at', today());
 
-        // Pending Deliveries (Status 1, 2, or 3)
-        $pendingDeliveries = Order::whereHas('items.product', function ($q) use ($sellerId) {
+        $ordersToday = (clone $todayQuery)->count();
+        $ordersTodayLocal = (clone $todayQuery)->where('currency', 'LKR')->count();
+        $ordersTodayForeign = (clone $todayQuery)->where('currency', 'USD')->count();
+
+        // 3. Pending Deliveries Breakdown (Status 1, 2, 3)
+        $pendingQuery = Order::whereHas('items.product', function ($q) use ($sellerId) {
             $q->where('seller_id', $sellerId);
-        })->whereIn('status', [1, 2, 3])->count();
+        })->whereIn('status', [1, 2, 3]);
 
-        // Monthly Revenue (Delivered only - Status 4)
-        $monthlyRevenue = Order::where('status', 4)
-            ->whereHas('items.product', function ($q) use ($sellerId) {
-                $q->where('seller_id', $sellerId);
-            })->whereMonth('created_at', now()->month)
-            ->sum('total_price');
+        $pendingDeliveries = (clone $pendingQuery)->count();
+        $pendingLocal = (clone $pendingQuery)->where('currency', 'LKR')->count();
+        $pendingForeign = (clone $pendingQuery)->where('currency', 'USD')->count();
 
-        // Recent Orders for the table
-        $recentOrders = Order::whereHas('items.product', function ($q) use ($sellerId) {
+        // 4. Total Orders Breakdown (LKR vs USD)
+        $ordersQuery = Order::whereHas('items.product', function ($q) use ($sellerId) {
             $q->where('seller_id', $sellerId);
-        })->latest()->take(5)->get();
+        });
 
-        // Initial Chart Placeholders
-        $chartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        $chartData   = [0, 0, 0, 0, 0, 0, 0];
+        $totalOrders = (clone $ordersQuery)->count();
+        $localOrders = (clone $ordersQuery)->where('currency', 'LKR')->count();
+        $foreignOrders = (clone $ordersQuery)->where('currency', 'USD')->count();
+
+        // 5. Recent Orders for Table
+        $recentOrders = (clone $ordersQuery)->latest()->take(5)->get();
+
+        // 6. Top Selling Products (Sum of units sold)
+        $topProducts = Product::where('seller_id', $sellerId)
+            ->withCount(['orderItems as total_sold' => function($query) {
+                $query->select(DB::raw('IFNULL(sum(qty), 0)')); 
+            }])
+            ->orderBy('total_sold', 'desc')->take(5)->get();
 
         return view('seller.dashboard', compact(
-            'totalProducts',
-            'ordersToday',
-            'pendingDeliveries',
-            'monthlyRevenue',
-            'recentOrders',
-            'chartLabels',
-            'chartData'
+            'totalProducts', 'approvedProducts', 'rejectedProducts',
+            'ordersToday', 'ordersTodayLocal', 'ordersTodayForeign',
+            'pendingDeliveries', 'pendingLocal', 'pendingForeign',
+            'totalOrders', 'localOrders', 'foreignOrders',
+            'recentOrders', 'topProducts'
         ));
     }
 
     /**
-     * LIVE AJAX DATA for Lively Charts and Cards
-     * This ensures the dashboard updates without refreshing
+     * AJAX DATA for Lively Charts & Monthly View
      */
-    public function getChartData()
-{
-    $sellerId = Auth::guard('seller')->id();
+    public function getChartData(Request $request)
+    {
+        $sellerId = Auth::guard('seller')->id();
+        $viewType = $request->query('view', '8days'); 
+        
+        $baseOrderQuery = Order::whereHas('items.product', function($q) use($sellerId){
+            $q->where('seller_id', $sellerId);
+        });
 
-    // Pie Chart Data
-    $processing = Order::where('status', 0)->whereHas('items.product', function($q) use($sellerId){
-        $q->where('seller_id', $sellerId);
-    })->count();
-    $shipped = Order::where('status', 1)->whereHas('items.product', function($q) use($sellerId){
-        $q->where('seller_id', $sellerId);
-    })->count();
-    $delivered = Order::where('status', 4)->whereHas('items.product', function($q) use($sellerId){
-        $q->where('seller_id', $sellerId);
-    })->count();
+        $labels = []; $total = []; $success = []; $canceled = [];
+        $iterations = ($viewType === 'monthly') ? 30 : 8;
 
-    // Line Chart Data (Last 7 Days)
-    $labels = []; $sales = [];
-    for ($i = 6; $i >= 0; $i--) {
-        $date = now()->subDays($i);
-        $labels[] = $date->format('D');
-        $sales[] = Order::whereDate('created_at', $date->format('Y-m-d'))
-            ->whereHas('items.product', function($q) use($sellerId){
-                $q->where('seller_id', $sellerId);
-            })->count();
+        for ($i = ($iterations - 1); $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $labels[] = $date->format('M d'); // Admin style: "Jan 12"
+            
+            $dayQuery = (clone $baseOrderQuery)->whereDate('created_at', $date->format('Y-m-d'));
+            
+            $total[] = (clone $dayQuery)->count();
+            $success[] = (clone $dayQuery)->where('status', 5)->count(); // Status 5 = Success
+            $canceled[] = (clone $dayQuery)->where('status', 6)->count(); // Status 6 = Canceled
+        }
+
+        return response()->json([
+            // Product Breakdown
+            'totalProducts' => Product::where('seller_id', $sellerId)->count(),
+            'approvedProducts' => Product::where('seller_id', $sellerId)->whereIn('status', ['approved', 'active', 'reapproved'])->count(),
+            'rejectedProducts' => Product::where('seller_id', $sellerId)->where('status', 'rejected')->count(),
+            
+            // Order Today Breakdown (Added Local/Foreign)
+            'ordersToday' => (clone $baseOrderQuery)->whereDate('created_at', today())->count(),
+            'ordersTodayLocal' => (clone $baseOrderQuery)->whereDate('created_at', today())->where('currency', 'LKR')->count(),
+            'ordersTodayForeign' => (clone $baseOrderQuery)->whereDate('created_at', today())->where('currency', 'USD')->count(),
+            
+            // Pending Breakdown
+            'pendingDeliveries' => (clone $baseOrderQuery)->whereIn('status', [1, 2, 3])->count(),
+            'pendingLocal' => (clone $baseOrderQuery)->whereIn('status', [1, 2, 3])->where('currency', 'LKR')->count(),
+            'pendingForeign' => (clone $baseOrderQuery)->whereIn('status', [1, 2, 3])->where('currency', 'USD')->count(),
+            
+            // Total Order Breakdown
+            'totalOrders' => (clone $baseOrderQuery)->count(),
+            'localOrders' => (clone $baseOrderQuery)->where('currency', 'LKR')->count(),
+            'foreignOrders' => (clone $baseOrderQuery)->where('currency', 'USD')->count(),
+            
+            // Pie Chart Data
+            'pie' => [
+                'processing' => (clone $baseOrderQuery)->where('status', 0)->count(),
+                'shipped' => (clone $baseOrderQuery)->where('status', 1)->count(),
+                'delivered' => (clone $baseOrderQuery)->where('status', 5)->count()
+            ],
+            
+            // Triple Line Chart Data
+            'line' => [
+                'labels' => $labels,
+                'total' => $total,
+                'success' => $success,
+                'canceled' => $canceled
+            ]
+        ]);
     }
 
-    return response()->json([
-        'totalProducts'     => Product::where('seller_id', $sellerId)->count(),
-        'ordersToday'       => Order::whereDate('created_at', today())->whereHas('items.product', function($q) use($sellerId){ $q->where('seller_id', $sellerId); })->count(),
-        'pendingDeliveries' => Order::whereIn('status', [1, 2, 3])->whereHas('items.product', function($q) use($sellerId){ $q->where('seller_id', $sellerId); })->count(),
-        'monthlyRevenue'    => number_format(Order::where('status', 4)->whereMonth('created_at', now()->month)->whereHas('items.product', function($q) use($sellerId){ $q->where('seller_id', $sellerId); })->sum('total_price'), 2),
-        'pie' => [
-            'processing' => $processing,
-            'shipped'    => $shipped,
-            'delivered'  => $delivered
-        ],
-        'line' => [
-            'labels' => $labels,
-            'data'   => $sales
-        ]
-    ]);
-}
     /**
      * =====================================
      * Seller Inquiries (Global + Claimed)
