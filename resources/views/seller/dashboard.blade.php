@@ -290,14 +290,14 @@
                         fill: true, tension: 0.4, pointRadius: 4 
                     },
                     { 
-                        label: 'Delivered (Status 5)', 
+                        label: 'Delivered', 
                         data: data.line.success, 
                         borderColor: '#1cc88a', 
                         backgroundColor: 'transparent', 
                         fill: false, tension: 0.4, pointRadius: 4 
                     },
                     { 
-                        label: 'Canceled (Status 6)', 
+                        label: 'Canceled', 
                         data: data.line.canceled, 
                         borderColor: '#e74a3b', 
                         backgroundColor: 'transparent', 

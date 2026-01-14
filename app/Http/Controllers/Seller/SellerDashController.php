@@ -189,68 +189,42 @@ public function reviews(Request $request)
 
     return view('seller.reviews.index', compact('reviews'));
 }
-    /**
-     * ===============================
-     * Mark ALL notifications as read
-     * ===============================
-     */
-    public function markAllRead()
-    {
-        $seller = Auth::guard('seller')->user();
+   
 
-        if ($seller) {
-            $seller->unreadNotifications->markAsRead();
-        }
-
-        return redirect()->back()->with('success', 'All notifications marked as read.');
-    }
-
-    /**
+/**
      * ======================================
      * Mark SINGLE notification as read
      * ======================================
      */
     public function readNotification($id)
-{
-    $seller = Auth::guard('seller')->user();
+    {
+        $notification = Auth::guard('seller')->user()->notifications()->findOrFail($id);
+        
+        // Mark as read
+        $notification->markAsRead();
 
-    if (!$seller) {
-        abort(403);
+        // Redirect based on the data type you set in your Admin controller
+        $type = $notification->data['type'] ?? 'dashboard';
+        
+        return match($type) {
+            'product' => redirect()->route('seller.products.index')->with('success', 'Product update viewed.'),
+            'order'   => redirect()->route('seller.orders.index')->with('success', 'New order viewed.'),
+            'inquiry' => redirect()->route('seller.inquiries')->with('success', 'New inquiry viewed.'),
+            'review'  => redirect()->route('seller.reviews')->with('success', 'New review viewed.'),
+            default   => redirect()->route('seller.dashboard'),
+        };
     }
-
-    // ✅ Correct way to get notification
-    $notification = $seller->notifications
-        ->where('id', $id)
-        ->firstOrFail();
-
-    // Mark as read
-    $notification->markAsRead();
-
-    // Redirect based on type
-    $type = $notification->data['type'] ?? null;
-
-    switch ($type) {
-        case 'message':
-        case 'chat':
-            return redirect()->route('seller.chat.index');
-
-        case 'inquiry':
-            return redirect()->route('seller.inquiries');
-
-        case 'order':
-            return redirect()->route('seller.orders.index');
-
-        case 'product':
-            return redirect()->route('seller.products.index');
-
-        default:
-            return redirect()->back();
-    }
-}
-
-
 
     /**
+     * Mark all unread notifications as read.
+     */
+    public function markAllRead()
+    {
+        Auth::guard('seller')->user()->unreadNotifications->markAsRead();
+        return back()->with('success', 'All notifications marked as read.');
+    }
+
+/**
      * ======================================
      * Reply to Inquiry (CLAIMS inquiry)
      * ======================================
@@ -270,32 +244,29 @@ public function reviews(Request $request)
             })
             ->firstOrFail();
 
-        // Prevent double reply
         if ($inquiry->status === 'replied') {
-            return redirect()->back()
-                ->with('error', 'This inquiry has already been replied.');
+            return redirect()->back()->with('error', 'This inquiry has already been replied.');
         }
 
         try {
+            // Your Email logic remains the same
             Mail::to($inquiry->email)->send(
-                new InquiryReplyMail(
-                    $request->reply_message,
-                    $inquiry->first_name
-                )
+                new InquiryReplyMail($request->reply_message, $inquiry->first_name)
             );
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Email could not be sent. Please try again.');
+            return redirect()->back()->with('error', 'Email could not be sent. Please try again.');
         }
 
-        // Claim & update inquiry
+        // UPDATED: Syncing 'status' and 'is_read' for correct sidebar counts
         $inquiry->update([
             'seller_id'     => $sellerId,
             'status'        => 'replied',
+            'is_read'       => 1,           // THIS FIXES THE NOTIFICATION COUNT
             'reply_message' => $request->reply_message,
             'replied_at'    => now(),
         ]);
 
+        // This key MUST match your Blade's session('success') check
         return redirect()->back()->with('success', 'Reply sent successfully!');
     }
 
@@ -318,13 +289,10 @@ public function reviews(Request $request)
         $message->update([
             'seller_id'  => $sellerId,
             'status'     => 'replied',
+            'is_read'    => 1,           // Syncing count
             'replied_at' => now(),
         ]);
 
-        return redirect()->back()
-            ->with('success', 'Inquiry marked as replied!');
+        return redirect()->back()->with('success', 'Inquiry marked as replied and read!');
     }
-
-
-   
 }

@@ -262,37 +262,44 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-// Logic preserved exactly
-function openReplyModal(e,id,email){
+/**
+ * Opens the reply modal and sets the form action to match the send-reply route
+ */
+function openReplyModal(e, id, email) {
     e.preventDefault();
     const replyForm = document.getElementById('replyForm');
     const modalCustomerEmail = document.getElementById('modalCustomerEmail');
     const replyModal = document.getElementById('replyModal');
     
-    replyForm.action="/seller/inquiries/"+id+"/send-reply";
-    modalCustomerEmail.innerText=email;
-    replyModal.style.display="flex";
-    document.body.style.overflow="hidden";
+    // MATCHED: This now matches your Route::post('/inquiries/{id}/send-reply')
+    replyForm.action = "/seller/inquiries/" + id + "/send-reply"; 
+    
+    modalCustomerEmail.innerText = email;
+    replyModal.style.display = "flex";
+    document.body.style.overflow = "hidden";
 }
 
-function closeReplyModal(){
-    document.getElementById('replyModal').style.display="none";
-    document.body.style.overflow="auto";
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = "none";
+    document.body.style.overflow = "auto";
 }
 
-function openViewHistory(name,msg,reply){
-    document.getElementById('viewCustomerName').innerText=name;
-    document.getElementById('viewOriginalMsg').innerText=msg;
-    document.getElementById('viewReplyMsg').innerText=reply;
-    document.getElementById('viewReplyModal').style.display="flex";
-    document.body.style.overflow="hidden";
+/**
+ * Opens conversation history
+ */
+function openViewHistory(name, msg, reply) {
+    document.getElementById('viewCustomerName').innerText = name;
+    document.getElementById('viewOriginalMsg').innerText = msg;
+    document.getElementById('viewReplyMsg').innerText = reply;
+    document.getElementById('viewReplyModal').style.display = "flex";
+    document.body.style.overflow = "hidden";
 }
 
-function closeViewReply(){
-    document.getElementById('viewReplyModal').style.display="none";
-    document.body.style.overflow="auto";
+function closeViewReply() {
+    document.getElementById('viewReplyModal').style.display = "none";
+    document.body.style.overflow = "auto";
 }
 </script>
-
 @endsection

@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View; 
 use Illuminate\Support\Facades\Auth; 
+use Illuminate\Support\Facades\DB;
 use App\Models\Category; 
 use App\Models\Order;
 use App\Models\Message;
@@ -28,22 +29,69 @@ class AppServiceProvider extends ServiceProvider
                 ->get());
         });
 
-        // 2. Existing Seller Notification Counts
-        View::composer('*', function ($view) {
-            if (Auth::guard('seller')->check()) {
-                $seller = Auth::guard('seller')->user();
-                $unread = $seller->unreadNotifications;
+      
+// AppServiceProvider.php
 
-                $view->with('notif_counts', [
-                    'products'  => $unread->where('data.type', 'product')->count(),
-                    'orders'    => $unread->where('data.type', 'order')->count(),
-                    'inquiries' => $unread->where('data.type', 'inquiry')->count(),
-                    'reviews'   => $unread->where('data.type', 'review')->count(),
-                    'messages'  => $unread->where('data.type', 'message')->count(),
-                    'total'     => $unread->count(),
-                ]);
-            }
-        });
+// 2. SELLER NOTIFICATION COUNTS & DETAILED BELL DATA
+\Illuminate\Support\Facades\View::composer('*', function ($view) {
+    if (\Illuminate\Support\Facades\Auth::guard('seller')->check()) {
+        $seller = \Illuminate\Support\Facades\Auth::guard('seller')->user();
+        $sellerId = $seller->id;
+
+        // --- 1. DETAILED DATA FOR DROPDOWN (Recent First) ---
+        $latestOrdersNotify = \App\Models\Order::whereHas('items.product', function ($q) use ($sellerId) {
+                $q->where('seller_id', $sellerId);
+            })->whereIn('status', [0, 1])->latest()->take(3)->get();
+
+        $latestProductsNotify = $seller->unreadNotifications()
+            ->where('data->type', 'product')->latest()->take(3)->get();
+
+        $latestInquiriesNotify = \Illuminate\Support\Facades\DB::table('contact_messages')
+            ->where('status', 'pending')
+            ->where(function ($q) use ($sellerId) {
+                $q->where('seller_id', $sellerId)->orWhereNull('seller_id');
+            })->latest()->take(3)->get();
+
+        // FIXED: Fetch real Chat messages instead of empty collect()
+        $latestChatsNotify = \App\Models\Message::where('receiver_id', $sellerId)
+            ->where('receiver_type', 'seller')
+            ->where('is_read', 0)->latest()->take(3)->get();
+
+        // FIXED: Fetch real Reviews instead of empty collect()
+        $latestReviewsNotify = \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {
+                $q->where('seller_id', $sellerId);
+            })->where('status', 1)->latest()->take(3)->get();
+
+        // --- 2. COUNTS FOR SIDEBAR BADGES ---
+        $productCount = \Illuminate\Support\Facades\DB::table('notifications')
+            ->where('notifiable_id', $sellerId)->whereNull('read_at')
+            ->where('data', 'like', '%"type":"product"%')->count();
+
+        $inquiryCount = \Illuminate\Support\Facades\DB::table('contact_messages')->where('status', 'pending')->count();
+        $chatCount    = $latestChatsNotify->count();
+        $reviewCount  = $latestReviewsNotify->count();
+        $orderCount   = $latestOrdersNotify->count();
+
+        $total = $productCount + $orderCount + $inquiryCount + $chatCount + $reviewCount;
+
+        $view->with([
+            'latestOrdersNotify'    => $latestOrdersNotify,
+            'latestProductsNotify'  => $latestProductsNotify,
+            'latestInquiriesNotify' => $latestInquiriesNotify,
+            'latestReviewsNotify'   => $latestReviewsNotify,
+            'latestChatsNotify'     => $latestChatsNotify,
+            'notif_counts' => [
+                'product' => $productCount,
+                'order'   => $orderCount,
+                'inquiry' => $inquiryCount,
+                'chat'    => $chatCount,
+                'reviews' => $reviewCount,
+                'total'   => $total
+            ],
+            'totalAlerts' => $total
+        ]);
+    }
+});
 
         // 3. NEW: Delivery Person Notification Counts & Bell Data
 View::composer('layouts.delivery', function ($view) {
@@ -180,7 +228,7 @@ View::composer('layouts.delivery', function ($view) {
         $toReviewCount = \App\Models\OrderItem::whereHas('order', function ($query) use ($userId) {
                 $query->where('user_id', $userId)->where('status', 5); 
             })
-            ->whereHas('product') // ✅ ONLY count if the product still exists in the DB
+            ->whereHas('product') //  ONLY count if the product still exists in the DB
             ->get()
             ->filter(function ($item) use ($userId) {
                 return !\App\Models\Review::where('user_id', $userId)
