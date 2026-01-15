@@ -97,6 +97,10 @@ class OrderController extends Controller
                 'rider_seen' => 0 
             ]); 
 
+            if ($order->user) {
+        $order->user->notify(new \App\Notifications\OrderCancelledNotification($order));
+    }
+
             try {
                 Mail::to($order->email)->send(new OrderCancelledMail($order));
             } catch (\Exception $e) {

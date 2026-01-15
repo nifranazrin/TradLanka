@@ -44,15 +44,19 @@
 
     @include('frontend.partials.footer')
 
+
+
+   {{-- Chatbot (GLOBAL) --}}
+    @include('frontend.partials.chatbot')
+
     {{-- ========================================== --}}
     {{--      FLOATING ACTION BUTTONS (Global)      --}}
     {{-- ========================================== --}}
-    <div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3 z-50">
+    <div class="fixed bottom-24 right-6 flex flex-col items-center space-y-3 z-40">
+
         
         {{-- Chatbot Button --}}
-        <a href="#" id="chatbotBtn" class="bg-[#5b2c2c] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
-            <i class="fas fa-robot text-xl"></i>
-        </a>
+       
 
         {{-- WhatsApp Button (Updated with your number) --}}
         <a href="https://wa.me/94757679793?text=Hello%20TradLanka%2C%20I%20am%20interested%20in%20your%20products." 

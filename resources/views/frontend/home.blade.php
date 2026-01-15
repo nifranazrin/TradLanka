@@ -153,12 +153,6 @@
     cursor: pointer;
 }
 
-.floating-buttons {
-    position: fixed !important;
-    bottom: 24px;
-    right: 24px;
-    z-index: 999999 !important; /* above everything */
-}
 </style>
 
 @php
@@ -487,12 +481,7 @@
 <div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3 z-50">
 
     <!-- Chatbot Button -->
-    <a href="#" id="chatbotBtn"
-       class="bg-[#5b2c2c] text-white w-12 h-12 rounded-full shadow-lg
-              flex items-center justify-center hover:scale-110
-              transition-transform duration-300">
-        <i class="fas fa-robot text-xl"></i>
-    </a>
+    
 
   <a href="https://wa.me/94757679793" target="_blank"
    class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg
@@ -545,15 +534,6 @@
             });
         @endif
 
-        // 3. Chatbot Toggle Logic
-        const chatbotBtn = document.getElementById('chatbotBtn');
-        const chatbot = document.getElementById('tradlankaChatbot');
-        if (chatbotBtn && chatbot) {
-            chatbotBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                chatbot.hasAttribute('open') ? chatbot.removeAttribute('open') : chatbot.setAttribute('open', '');
-            });
-        }
 
         // ============================================
 // 4. UNIVERSAL ADD TO CART LOGIC (CORRECTED)
@@ -662,18 +642,6 @@ buttons.forEach(btn => {
 });
     }); 
 </script>
-
-
-<!-- ===== Dialogflow Chatbot (Hidden) ===== -->
-<script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
-
-<df-messenger
-  id="tradlankaChatbot"
-  intent="WELCOME"
-  chat-title="TradLanka Assistant"
-  agent-id="a0932c0e-d13d-448d-b167-e22321412c89"
-  language-code="en">
-</df-messenger>
 
 
 

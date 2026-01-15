@@ -122,7 +122,7 @@
         {{-- Unified Icons Row --}}
         <div class="flex items-center gap-5 text-xl">
           
-        {{-- 1. NOTIFICATION BELL --}}
+      {{-- 1. NOTIFICATION BELL --}}
 @auth('web')
   <div class="relative group pt-2 pb-2">
       <button class="hover:text-yellow-400 relative transition cursor-pointer flex items-center focus:outline-none">
@@ -133,7 +133,6 @@
           @endphp
 
           @if($unreadCount > 0)
-              {{-- Badge remains perfectly aligned using translate-x/y --}}
               <span class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-500 text-[10px] text-white font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
                   {{ $unreadCount > 9 ? '9+' : $unreadCount }}
               </span>
@@ -148,9 +147,9 @@
           
           <div class="max-h-80 overflow-y-auto custom-scroll">
               @forelse(Auth::guard('web')->user()->notifications->take(5) as $notification)
-                  {{-- ✅ DYNAMIC LINK: Checks if 'url' exists (Reviews), otherwise goes to Tracking --}}
                   @php
                     $targetUrl = $notification->data['url'] ?? url('track-order?tracking_no=' . ($notification->data['tracking_no'] ?? ''));
+                    $notifType = $notification->data['type'] ?? '';
                   @endphp
 
                   <a href="{{ $targetUrl }}" 
@@ -160,9 +159,18 @@
                          {{ $notification->data['message'] ?? 'Order update received.' }}
                       </p>
 
-                      {{-- Helpful sub-text for successful deliveries --}}
-                      @if(isset($notification->data['type']) && $notification->data['type'] == 'delivery_success')
-                        <span class="text-[9px] font-bold text-green-600 uppercase mt-1 block">Click to leave a review!</span>
+                      {{-- 1. Sub-text for successful deliveries --}}
+                      @if($notifType == 'delivery_success')
+                        <span class="text-[9px] font-bold text-green-600 uppercase mt-1 block">
+                            <i class="fas fa-star text-[8px]"></i> Click to leave a review!
+                        </span>
+                      @endif
+
+                      {{-- 2. NEW: Sub-text for Cancellations --}}
+                      @if($notifType == 'order_cancelled')
+                        <span class="text-[9px] font-bold text-red-600 uppercase mt-1 block">
+                            <i class="fas fa-times-circle text-[8px]"></i> Cancellation Finalized
+                        </span>
                       @endif
                       
                       <div class="flex justify-between items-center mt-2">
@@ -182,7 +190,6 @@
               @endforelse
           </div>
 
-          {{--  MARK ALL AS READ SECTION --}}
           @if($unreadCount > 0)
               <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 flex justify-center">
                   <form action="{{ route('user.notifications.markAllRead') }}" method="POST">
