@@ -22,6 +22,7 @@ class Staff extends Authenticatable implements CanResetPassword
         'nic_number',   
         'role',
         'status',
+        'id_image',
         'image',  
     ];
 

@@ -97,7 +97,8 @@ class UserApprovalController extends Controller
             'role'       => $request->role ?? 'seller',
             'password'   => Hash::make($plainPassword), 
             'status'     => 'active',
-            'image'      => $request->nic_image, 
+            'id_image'   => $request->nic_image,
+            'image'      => null,
         ]);
 
         session()->flash('seller_approved_data', $approvedData);
