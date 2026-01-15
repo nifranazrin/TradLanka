@@ -1,6 +1,25 @@
 @extends('layouts.admin')
 
 @section('content')
+
+{{-- 1. Add the Header Section Here --}}
+    
+    {{-- Header Section --}}
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            @php
+                $firstName = explode(' ', Auth::guard('admin')->user()->name)[0];
+            @endphp
+            <h1 class="fw-bold mb-1" style="font-size: 2.2rem;">Welcome back, {{ $firstName }}</h1>
+            <h5 class="text-muted fw-normal">Admin Dashboard Overview</h5>
+        </div>
+       <div class="col-12 col-md-6 text-md-end">
+            <span class="badge bg-white text-dark border p-2 rounded-pill px-3 fw-bold shadow-sm">
+                <i class="bi bi-calendar3 text-primary me-2"></i> {{ now()->format('l, F d, Y') }}
+            </span>
+        </div>
+    </div>
+
 {{-- Structured Dashboard Styling --}}
 <style>
     .dashboard-card {
@@ -59,6 +78,7 @@
     .btn-action { background: #ff8a00; color: white; border-radius: 8px; padding: 6px 16px; border: none; font-weight: 600; text-decoration: none; font-size: 0.8rem; }
     .btn-action:hover { background: #e67e00; color: white; }
 </style>
+
 
 <div class="container-fluid px-4 py-4">
     <div class="row g-3 mb-4 text-start">
@@ -187,32 +207,45 @@
 {{-- Performance & Breakdown Row --}}
 <div class="row g-4 mb-4">
     <div class="col-lg-7">
-        <div class="card dashboard-card p-4 h-100">
+       <div class="card shadow-sm border-0 h-100" style="border-radius: 15px; background: #ffffff;">
+        <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="fw-bold text-dark mb-0">Product Performance</h5>
-                <a href="{{ url('admin/products') }}" class="text-muted small">Manage Stock</a>
+                <h5 class="fw-bold text-dark mb-0">Top Selling Products</h5>
+                <a href="{{ url('admin/products') }}" class="text-muted small text-decoration-none">Manage Stock</a>
             </div>
-            <div class="table-responsive">
-                <table class="table table-borderless align-middle mb-0">
-                    <tbody>
-                        @php $barColors = ['#3b82f6', '#d63384', '#10b981', '#6f42c1', '#ff8a00']; @endphp
-                        @foreach($topProducts as $index => $product)
-                        <tr>
-                            <td style="width: 45%"><span class="fw-bold text-dark" style="font-size: 0.85rem;">{{ $product->name }}</span></td>
-                            <td class="text-center fw-bold text-muted" style="width: 20%;">{{ $product->total_sold ?? 0 }} sold</td>
-                            <td class="text-end">
-                                <div class="progress" style="height: 8px; border-radius: 10px; width: 100%;">
-                                    {{--  Fixed percentage logic: max sold item is 100% --}}
-                                    <div class="progress-bar" style="width: {{ ($product->total_sold / (max($topProducts->first()->total_sold, 1))) * 100 }}%; background: {{ $barColors[$index % 5] }};"></div>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            
+            <div class="list-group list-group-flush">
+                @forelse($topProducts as $tp)
+                    <div class="list-group-item px-0 border-0 d-flex align-items-center gap-3 mb-3">
+                        {{-- Product Image with rounded corners and shadow --}}
+                        <div class="flex-shrink-0">
+                          <img src="{{ asset('storage/'.$tp->image) }}" class="rounded shadow-sm" width="55" height="55" style="object-fit: cover;">
+                        </div>
+
+                        {{-- Product Details --}}
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.2;">
+                                {{ Str::limit($tp->name, 35) }}
+                            </h6>
+                            <span class="text-muted small">{{ number_format($tp->total_sold) }} units sold</span>
+                        </div>
+
+                        {{-- Ranking Badge --}}
+                        <span class="badge rounded-pill px-3 py-2" 
+                              style="background: #eef2ff; color: #4338ca; font-weight: 700; font-size: 0.75rem;">
+                            #{{ $loop->iteration }}
+                        </span>
+                    </div>
+                @empty
+                    <div class="text-center py-5">
+                        <i class="bi bi-box-seam text-muted fs-1 mb-3"></i>
+                        <p class="text-muted">No sales data available yet.</p>
+                    </div>
+                @endforelse
             </div>
         </div>
     </div>
+</div>
 
     <div class="col-lg-5">
         <div class="card dashboard-card p-4 h-100">
@@ -224,8 +257,7 @@
         </div>
     </div>
 </div>
-    
-{{-- Real Store Activity Table --}}
+
 {{-- Real Store Activity Table --}}
 <div class="card dashboard-card p-4">
     <div class="d-flex justify-content-between align-items-center mb-4">

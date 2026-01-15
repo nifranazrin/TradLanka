@@ -23,7 +23,7 @@ class DeliveryOrderController extends Controller
 
         $query = Order::with(['items.product'])
             ->where('delivery_boy_id', $riderId)
-              // ✅ Include 4 (Assigned) and 10 (Arrived in Country) as active tasks
+              // Include 4 (Assigned) and 10 (Arrived in Country) as active tasks
             ->whereIn('status', [4, 10]);// Only active tasks
 
         if ($request->has('search') && !empty($request->search)) {
@@ -69,7 +69,7 @@ class DeliveryOrderController extends Controller
 }
 
     /**
- * ✅ NEW: Handle intermediate milestones for International/Stripe orders.
+ * NEW: Handle intermediate milestones for International/Stripe orders.
  */
 public function updateMilestone(Request $request, $id)
 {

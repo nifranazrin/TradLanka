@@ -23,7 +23,7 @@ class AdminDashController extends Controller
 
         // 1. Core System Statistics
         $totalCategories = Category::count();
-        $totalProducts = Product::count();
+        $totalProducts = Product::whereIn('status', ['approved', 'reapproved'])->count();
         $totalSellers = Staff::where('role', 'seller')->count();
         $pendingRequests = UserRequest::where('status', 'pending')->count(); 
         $totalReviews = \App\Models\Review::count();
@@ -66,15 +66,18 @@ class AdminDashController extends Controller
                            ->count();
 
         // 4. Top Selling Products (Filtered to Status 5 - Delivered Only)
-        $topProducts = Product::select('id', 'name')
-            ->withCount(['orderItems as total_sold' => function($query) use ($successStatus) {
-                $query->join('orders', 'order_items.order_id', '=', 'orders.id')
-                      ->where('orders.status', $successStatus)
-                      ->select(DB::raw('sum(qty)'));
-            }])
-            ->orderBy('total_sold', 'desc')
-            ->take(5)
-            ->get();
+         // AdminDashboardController.php
+$successStatus = 5; // Delivered
+
+$topProducts = Product::select('id', 'name', 'image')
+    ->withCount(['orderItems as total_sold' => function($query) use ($successStatus) {
+        $query->join('orders', 'order_items.order_id', '=', 'orders.id')
+              ->where('orders.status', $successStatus)
+              ->select(DB::raw('IFNULL(sum(order_items.qty), 0)')); // Use sum(qty) not count(*)
+    }])
+    ->orderBy('total_sold', 'desc')
+    ->take(5)
+    ->get();
 
         // 5. Top Categories (Revenue Based)
         $topCategories = Category::select('categories.id', 'categories.name')

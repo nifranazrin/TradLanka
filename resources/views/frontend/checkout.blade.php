@@ -27,7 +27,7 @@
     <div class="container mx-auto px-4 lg:px-12">
         <form id="checkoutForm" action="{{ route('checkout.placeorder') }}" method="POST">
 
-            {{-- Add this above <form id="checkoutForm" ...> --}}
+         
 
 @if ($errors->any())
     <div class="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
@@ -265,7 +265,7 @@ $(document).ready(function () {
     const currency = "{{ session('currency', 'LKR') }}";
     let currentDelivery = (currency === 'USD') ? 5000 : 500;
 
-    // ✅ GLOBAL country map (FIXED)
+    //  GLOBAL country map (FIXED)
     const countryMap = { 
         "Sri Lanka": "lk",
         "United Arab Emirates": "ae",
@@ -290,7 +290,7 @@ $(document).ready(function () {
         "Maldives": "mv"
     };
 
-    // ✅ Phone input
+    //  Phone input
     const phoneInput = window.intlTelInput(
         document.querySelector("#phoneInput"), {
             initialCountry: (currency === 'USD') ? "gb" : "lk",
@@ -299,7 +299,7 @@ $(document).ready(function () {
         }
     );
 
-    // ✅ Select2 flag rendering
+    //  Select2 flag rendering
     function formatState(state) {
         if (!state.id) return state.text;
         const flag = $(state.element).data('flag');
@@ -312,7 +312,7 @@ $(document).ready(function () {
         width: '100%'
     });
 
-    // ✅ Country change handler
+    //  Country change handler
     $('#countrySelect').on('change', function () {
 
         const country = $(this).val();
@@ -328,13 +328,13 @@ $(document).ready(function () {
             $('#grand-total-text').text('Rs ' + newGrandTotalLKR.toLocaleString());
         }
 
-        // ✅ Auto switch phone flag
+        //  Auto switch phone flag
         if (countryMap[country]) {
             phoneInput.setCountry(countryMap[country]);
         }
     });
 
-    // ✅ Confirm & Place Order button
+    //  Confirm & Place Order button
     $('#placeOrderBtn').on('click', function () {
 
         const form = document.getElementById('checkoutForm');

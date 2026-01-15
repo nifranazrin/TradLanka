@@ -19,129 +19,165 @@
         </div>
     </div>
 
-    {{-- Colorful Gradient Summary Cards --}}
-    <div class="row g-4 mb-5">
-        {{-- 1. Orders Today with Currency Split --}}
-<div class="col-md-3">
-    <div class="card border-0 shadow h-100" style="border-radius: 20px; background: linear-gradient(45deg, #1cc88a, #13855c);">
-        <div class="card-body p-4 text-white">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h6 class="text-white-50 small text-uppercase fw-extrabold mb-2" style="letter-spacing: 1px;">Orders Today</h6>
-                    <h2 class="fw-bold text-white mb-0" id="stat-orders-today" style="font-size: 2.5rem;">{{ $ordersToday }}</h2>
+
+    
+{{-- Fully Corrected 5-Card Single Row with Larger Numbers --}}
+<div class="row row-cols-1 row-cols-md-5 g-3 mb-5">
+    
+    {{-- 1. Orders Today --}}
+    <div class="col">
+        <div class="card border-0 shadow h-100" style="border-radius: 15px; background: linear-gradient(45deg, #1cc88a, #13855c);">
+            <div class="card-body p-3 text-white">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="text-white-51 small text-uppercase fw-bold mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Orders Today</h6>
+                        {{-- Enlarged Main Number --}}
+                        <h3 class="fw-bold text-white mb-0" id="stat-orders-today" style="font-size: 2.2rem;">{{ $ordersToday }}</h3>
+                    </div>
+                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px; flex-shrink: 0;">
+                        <i class="bi bi-cart-check fs-4 text-success"></i>
+                    </div>
                 </div>
-                {{-- FIXED ICON: Success Color on solid White Circle --}}
-                <div class="bg-white rounded-circle p-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 60px; height: 60px;">
-                    <i class="bi bi-cart-check fs-2 text-success"></i>
+                <div class="pt-2 border-top border-white border-opacity-25 d-flex justify-content-between align-items-end">
+                    <div class="text-center w-50">
+                        {{-- Enlarged Currency Number --}}
+                        <div class="fw-bold" id="stat-orders-today-local" style="font-size: 1.1rem;">{{ $ordersTodayLocal ?? 0 }}</div>
+                        <div class="text-white-50 small" style="font-size: 0.85rem;">LKR</div>
+                    </div>
+                    <div class="vr bg-white bg-opacity-25" style="width: 1px; height: 25px;"></div>
+                    <div class="text-center w-50">
+                        <div class="fw-bold" id="stat-orders-today-foreign" style="font-size: 1.1rem;">{{ $ordersTodayForeign ?? 0 }}</div>
+                        <div class="text-white-50 small" style="font-size: 0.85rem;">USD</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 2. Total Products --}}
+    <div class="col">
+        <div class="card border-0 shadow h-100" style="border-radius: 15px; background: linear-gradient(45deg, #4e73df, #224abe);">
+            <div class="card-body p-3 text-white">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="text-white-51 small text-uppercase fw-bold mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Total Products</h6>
+                        <h3 class="fw-bold text-white mb-0" id="stat-total-products" style="font-size: 2.2rem;">{{ $totalProducts }}</h3>
+                    </div>
+                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px; flex-shrink: 0;">
+                        <i class="bi bi-box-seam fs-4 text-primary"></i>
+                    </div>
+                </div>
+                <div class="pt-2 border-top border-white border-opacity-25 d-flex justify-content-between align-items-end">
+                    <div class="text-center w-50">
+                        <div class="fw-bold" id="stat-approved-products" style="font-size: 1.1rem;">{{ $approvedProducts ?? 0 }}</div>
+                        <div class="text-white-50 small" style="font-size: 0.85rem;">Approved</div>
+                    </div>
+                    <div class="vr bg-white bg-opacity-25" style="width: 1px; height: 25px;"></div>
+                    <div class="text-center w-50">
+                        <div class="fw-bold" id="stat-rejected-products" style="font-size: 1.1rem;">{{ $rejectedProducts ?? 0 }}</div>
+                        <div class="text-white-50 small" style="font-size: 0.85rem;">Reject</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 3. Pending Deliveries --}}
+    <div class="col">
+        <div class="card border-0 shadow h-100" style="border-radius: 15px; background: linear-gradient(45deg, #e74a3b, #be2617);">
+            <div class="card-body p-3 text-white">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="text-white-51 small text-uppercase fw-bold mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Pending</h6>
+                        <h3 class="fw-bold text-white mb-0" id="stat-pending" style="font-size: 2.2rem;">{{ $pendingDeliveries }}</h3>
+                    </div>
+                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px; flex-shrink: 0;">
+                        <i class="bi bi-clock-history fs-4 text-danger"></i>
+                    </div>
+                </div>
+                <div class="pt-2 border-top border-white border-opacity-25 d-flex justify-content-between align-items-end">
+                    <div class="text-center w-50">
+                        <div class="fw-bold" id="stat-pending-local" style="font-size: 1.1rem;">{{ $pendingLocal ?? 0 }}</div>
+                        <div class="text-white-50 small" style="font-size: 0.85rem;">LKR</div>
+                    </div>
+                    <div class="vr bg-white bg-opacity-25" style="width: 1px; height: 25px;"></div>
+                    <div class="text-center w-50">
+                        <div class="fw-bold" id="stat-pending-foreign" style="font-size: 1.1rem;">{{ $pendingForeign ?? 0 }}</div>
+                        <div class="text-white-50 small" style="font-size: 0.85rem;">USD</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 4. Total Orders --}}
+    <div class="col">
+        <div class="card border-0 shadow h-100" style="border-radius: 15px; background: linear-gradient(45deg, #f6c23e, #dda20a);">
+            <div class="card-body p-3 text-white">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="text-white-51 small text-uppercase fw-bold mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Total Orders</h6>
+                        <h3 class="fw-bold text-white mb-0" id="stat-total-orders" style="font-size: 2.2rem;">{{ $totalOrders }}</h3>
+                    </div>
+                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px; flex-shrink: 0;">
+                        <i class="bi bi-bag-check fs-4 text-warning"></i>
+                    </div>
+                </div>
+                <div class="pt-2 border-top border-white border-opacity-25 d-flex justify-content-between align-items-end">
+                    <div class="text-center w-50">
+                        <div class="fw-bold" id="stat-local-orders" style="font-size: 1.1rem;">{{ $localOrders ?? 0 }}</div>
+                        <div class="text-white-50 small" style="font-size: 0.85rem;">LKR</div>
+                    </div>
+                    <div class="vr bg-white bg-opacity-25" style="width: 1px; height: 25px;"></div>
+                    <div class="text-center w-50">
+                        <div class="fw-bold" id="stat-foreign-orders" style="font-size: 1.1rem;">{{ $foreignOrders ?? 0 }}</div>
+                        <div class="text-white-50 small" style="font-size: 0.85rem;">USD</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 5. Financials Card --}}
+<div class="col">
+    <div class="card border-0 shadow h-100" style="border-radius: 15px; background: linear-gradient(45deg, #6e2727, #4a1a1a);">
+        <div class="card-body p-3 text-white">
+            {{-- Header --}}
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="text-white-51 small text-uppercase fw-bold mb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Financials</h6>
+                </div>
+                <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px; flex-shrink: 0;">
+                    <i class="bi bi-cash-stack fs-6" style="color: #6e2727;"></i>
                 </div>
             </div>
 
-            {{-- Today's Currency Split Footer --}}
-            <div class="pt-3 border-top border-white border-opacity-25 d-flex justify-content-between">
-                <div class="text-center w-50">
-                    <h4 class="fw-bold mb-0" id="stat-orders-today-local" style="font-size: 1.4rem;">{{ $ordersTodayLocal ?? 0 }}</h4>
-                    <div class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">LKR</div>
+            <div class="pt-1">
+                {{-- Success Section (Top Half) --}}
+                <div class="pb-2">
+                    <div class="text-white-50 fw-bold small text-uppercase mb-0" style="font-size: 0.55rem;">Success</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold" style="font-size: 1.1rem;">LKR <span id="stat-success-lkr">{{ number_format($successRevenueLKR, 2) }}</span></span>
+                        <span class="fw-bold text-white-50 text-end" style="font-size: 0.9rem;">USD <span id="stat-success-usd">{{ number_format($successRevenueUSD, 2) }}</span></span>
+                    </div>
                 </div>
-                <div class="vr bg-white bg-opacity-25"></div>
-                <div class="text-center w-50">
-                    <h4 class="fw-bold mb-0" id="stat-orders-today-foreign" style="font-size: 1.4rem;">{{ $ordersTodayForeign ?? 0 }}</h4>
-                    <div class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">USD</div>
+
+                {{-- Separating Line between Success and Canceled --}}
+                <div class="pt-2 mt-2 border-top border-white border-opacity-10">
+                    {{-- Canceled Section (Bottom Half) --}}
+                    <div class="text-warning fw-bold small text-uppercase mb-0" style="font-size: 0.55rem; opacity: 0.8;">Canceled</div>
+                    <div class="d-flex justify-content-between align-items-center text-warning">
+                        <span class="fw-bold" style="font-size: 1.1rem;">LKR <span id="stat-canceled-lkr">{{ number_format($canceledRevenueLKR, 2) }}</span></span>
+                        <span class="fw-bold opacity-75 text-end" style="font-size: 0.9rem;">USD <span id="stat-canceled-usd">{{ number_format($canceledRevenueUSD, 2) }}</span></span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+</div>
 
-        
-        {{-- 2. Total Products with Approval Breakdown --}}
-        <div class="col-md-3">
-            <div class="card border-0 shadow h-100" style="border-radius: 20px; background: linear-gradient(45deg, #4e73df, #224abe);">
-                <div class="card-body p-4 text-white">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h6 class="text-white-50 small text-uppercase fw-extrabold mb-2" style="letter-spacing: 1px;">Total Products</h6>
-                            <h2 class="fw-bold text-white mb-0" id="stat-total-products" style="font-size: 2.5rem;">{{ $totalProducts }}</h2>
-                        </div>
-                        {{-- FIXED ICON: Primary Color on solid White Circle for maximum visibility --}}
-                        <div class="bg-white rounded-circle p-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 60px; height: 60px;">
-                            <i class="bi bi-box-seam fs-2 text-primary"></i> 
-                        </div>
-                    </div>
 
-                    {{-- Approval Breakdown Footer --}}
-                    <div class="pt-3 border-top border-white border-opacity-25 d-flex justify-content-between">
-                        <div class="text-center w-50">
-                            <h4 class="fw-bold mb-0" id="stat-approved-products" style="font-size: 1.4rem;">{{ $approvedProducts ?? 0 }}</h4>
-                            <div class="text-white-50 text-uppercase fw-bold" style="font-size: 0.7rem;">Approved</div>
-                        </div>
-                        <div class="vr bg-white bg-opacity-25"></div>
-                        <div class="text-center w-50">
-                            <h4 class="fw-bold mb-0" id="stat-rejected-products" style="font-size: 1.4rem;">{{ $rejectedProducts ?? 0 }}</h4>
-                            <div class="text-white-50 text-uppercase fw-bold" style="font-size: 0.7rem;">Rejected</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- 3. Pending Deliveries with Currency Split --}}
-        <div class="col-md-3">
-            <div class="card border-0 shadow h-100" style="border-radius: 20px; background: linear-gradient(45deg, #e74a3b, #be2617);">
-                <div class="card-body p-4 text-white">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h6 class="text-white-50 small text-uppercase fw-extrabold mb-1" style="letter-spacing: 1px;">Pending</h6>
-                            <h2 class="fw-bold text-white mb-0" id="stat-pending" style="font-size: 2.5rem;">{{ $pendingDeliveries }}</h2>
-                        </div>
-                        {{-- FIXED ICON: Danger Color on solid White Circle --}}
-                        <div class="bg-white rounded-circle p-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 60px; height: 60px;">
-                            <i class="bi bi-clock-history fs-2 text-danger"></i>
-                        </div>
-                    </div>
-                    <div class="pt-3 border-top border-white border-opacity-25 d-flex justify-content-between">
-                        <div class="text-center w-50">
-                            <h4 class="fw-bold mb-0" id="stat-pending-local" style="font-size: 1.4rem;">{{ $pendingLocal ?? 0 }}</h4>
-                            <div class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">LKR</div>
-                        </div>
-                        <div class="vr bg-white bg-opacity-25"></div>
-                        <div class="text-center w-50">
-                            <h4 class="fw-bold mb-0" id="stat-pending-foreign" style="font-size: 1.4rem;">{{ $pendingForeign ?? 0 }}</h4>
-                            <div class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">USD</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- 4. Total Orders with Currency Split --}}
-        <div class="col-md-3">
-            <div class="card border-0 shadow h-100" style="border-radius: 20px; background: linear-gradient(45deg, #f6c23e, #dda20a);">
-                <div class="card-body p-4 text-white">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h6 class="text-white-50 small text-uppercase fw-extrabold mb-1" style="letter-spacing: 1px;">Total Orders</h6>
-                            <h2 class="fw-bold text-white mb-0" id="stat-total-orders" style="font-size: 2.5rem;">{{ $totalOrders }}</h2>
-                        </div>
-                        {{-- FIXED ICON: Warning Color on solid White Circle --}}
-                        <div class="bg-white rounded-circle p-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 60px; height: 60px;">
-                            <i class="bi bi-bag-check fs-2 text-warning"></i>
-                        </div>
-                    </div>
-                    <div class="pt-3 border-top border-white border-opacity-25 d-flex justify-content-between">
-                        <div class="text-center w-50">
-                            <h4 class="fw-bold mb-0" id="stat-local-orders" style="font-size: 1.4rem;">{{ $localOrders ?? 0 }}</h4>
-                            <div class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">LKR</div>
-                        </div>
-                        <div class="vr bg-white bg-opacity-25"></div>
-                        <div class="text-center w-50">
-                            <h4 class="fw-bold mb-0" id="stat-foreign-orders" style="font-size: 1.4rem;">{{ $foreignOrders ?? 0 }}</h4>
-                            <div class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">USD</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     {{-- Sale Performance Triple Chart & Top Selling Section --}}
     <div class="row mb-5 g-4">
@@ -316,34 +352,60 @@
         });
     }
 
-    function refreshDashboard() {
+    
+   function refreshDashboard() {
         fetch(`{{ route('seller.dashboard.chart-data') }}?view=${currentView}`)
             .then(res => res.json())
             .then(data => {
-                // Update Product Stats
-            document.getElementById('stat-orders-today').innerText = data.ordersToday;
-            document.getElementById('stat-orders-today-local').innerText = data.ordersTodayLocal;
-            document.getElementById('stat-orders-today-foreign').innerText = data.ordersTodayForeign;
+                const formatter = new Intl.NumberFormat('en-US');
 
-                // Update Order Stats
-                document.getElementById('stat-orders-today').innerText = data.ordersToday;
-                document.getElementById('stat-pending').innerText = data.pendingDeliveries;
-                document.getElementById('stat-pending-local').innerText = data.pendingLocal;
-                document.getElementById('stat-pending-foreign').innerText = data.pendingForeign;
-                document.getElementById('stat-total-orders').innerText = data.totalOrders;
-                document.getElementById('stat-local-orders').innerText = data.localOrders;
-                document.getElementById('stat-foreign-orders').innerText = data.foreignOrders;
+                // Function to safely update text if element exists
+                const safeUpdate = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = value;
+                };
 
-                if (!lineChart) {
-                    initCharts(data);
-                } else {
-                    lineChart.data.labels = data.line.labels;
-                    lineChart.data.datasets[0].data = data.line.total;
-                    lineChart.data.datasets[1].data = data.line.success;
-                    lineChart.data.datasets[2].data = data.line.canceled;
-                    lineChart.update();
+                // --- 1. Standard Stats ---
+                safeUpdate('stat-orders-today', data.ordersToday);
+                safeUpdate('stat-orders-today-local', data.ordersTodayLocal);
+                safeUpdate('stat-orders-today-foreign', data.ordersTodayForeign);
+
+                safeUpdate('stat-total-products', data.totalProducts);
+                safeUpdate('stat-approved-products', data.approvedProducts);
+                safeUpdate('stat-rejected-products', data.rejectedProducts);
+
+                safeUpdate('stat-pending', data.pendingDeliveries);
+                safeUpdate('stat-pending-local', data.pendingLocal);
+                safeUpdate('stat-pending-foreign', data.pendingForeign);
+
+                safeUpdate('stat-total-orders', data.totalOrders);
+                safeUpdate('stat-local-orders', data.localOrders);
+                safeUpdate('stat-foreign-orders', data.foreignOrders);
+
+                // --- 2. Revenue Card (Success vs Canceled) ---
+                // Removed the "Estimated Total" update to prevent crashes
+                
+                safeUpdate('stat-success-lkr', formatter.format(data.successRevenueLKR));
+                safeUpdate('stat-success-usd', parseFloat(data.successRevenueUSD).toFixed(2));
+                safeUpdate('stat-canceled-lkr', formatter.format(data.canceledRevenueLKR));
+                safeUpdate('stat-canceled-usd', parseFloat(data.canceledRevenueUSD).toFixed(2));
+
+                // --- 3. Chart Updates (Sale Performance) ---
+                // CRITICAL: This must be inside the .then block
+                const canvas = document.getElementById('salesLineChart');
+                if (canvas) {
+                    if (!lineChart) {
+                        initCharts(data); 
+                    } else {
+                        lineChart.data.labels = data.line.labels;
+                        lineChart.data.datasets[0].data = data.line.total;
+                        lineChart.data.datasets[1].data = data.line.success;
+                        lineChart.data.datasets[2].data = data.line.canceled;
+                        lineChart.update();
+                    }
                 }
-            });
+            })
+            .catch(error => console.error('Dashboard Refresh Error:', error));
     }
 
     // Toggle View Script
@@ -370,16 +432,37 @@
     .fw-extrabold { font-weight: 800; }
     .card { transition: transform 0.2s ease-in-out; border-radius: 15px; }
     .card:hover { transform: translateY(-5px); }
-    .vr { width: 2px; }
-    /* Icon alignment helper */
+    .vr { width: 1px; height: 100%; } /* Thinner vertical rule for better space */
+    
+    /* Perfect Icon Centering */
     .bi { display: inline-flex; align-items: center; justify-content: center; }
 
+    /* Custom 5-Column Grid Fix */
+    @media (min-width: 768px) {
+        .row-cols-md-5 > * {
+            flex: 0 0 auto;
+            width: 20%;
+        }
+    }
+
+    /* Table Hover Effects */
     .table tbody tr:hover {
         background-color: rgba(78, 115, 223, 0.02);
         transform: scale(1.002);
     }
-    .avatar-sm {
-        flex-shrink: 0;
-    }
+    
+    .avatar-sm { flex-shrink: 0; }
+
+    /* Card Text Scaling for 5-column layout */
+    .row-cols-md-5 h3 { font-size: 1.6rem !important; }
+    .row-cols-md-5 h6 { font-size: 0.6rem !important; }
+    .row-cols-md-5 .small, .row-cols-md-5 small { font-size: 0.65rem !important; }
+
+
+    .vr { 
+    width: 1px; 
+    height: 25px; 
+    background-color: rgba(255,255,255,0.25); 
+}
 </style>
 @endsection

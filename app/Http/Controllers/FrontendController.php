@@ -151,7 +151,7 @@ class FrontendController extends Controller
                 ->paginate(12);
         }
 
-        // ✅ NEW: Add Currency Conversion to Search Results
+        //  NEW: Add Currency Conversion to Search Results
         if ($currency === 'USD') {
             if ($products instanceof \Illuminate\Pagination\LengthAwarePaginator) {
                 $products->getCollection()->transform(function ($p) {

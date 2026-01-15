@@ -299,7 +299,7 @@
                     class="addToCartBtn custom-cart-btn active:scale-95"
                     data-id="{{ $item->id }}" 
                     data-name="{{ $item->name }}" 
-                    {{-- ✅ FIX: Use raw price --}}
+                    {{--  FIX: Use raw price --}}
                     data-price="{{ $item->price }}" 
                     data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
                 Add to Cart
@@ -368,7 +368,7 @@
         class="addToCartBtn custom-cart-btn active:scale-95"
         data-id="{{ $item->id }}" 
         data-name="{{ $item->name }}" 
-        {{-- ✅ FIX: Use raw price --}}
+        {{--  FIX: Use raw price --}}
         data-price="{{ $item->price }}" 
         data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
     Add to Cart
@@ -511,7 +511,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // ✅ FIX 1: Define isLoggedIn at the top level so all functions can see it.
+    //  FIX 1: Define isLoggedIn at the top level so all functions can see it.
     const isLoggedIn = {{ auth()->check() ? 'true' : 'false' }};
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -526,6 +526,24 @@
                 badge.classList.remove('hidden');
             }
         }
+
+        // --- SUCCESS ORDER ALERT ---
+        @if(session('order_success'))
+            Swal.fire({
+                title: 'Thank You! ⭐',
+                text: 'Your order has been placed successfully. We will notify you once it is out for delivery.',
+                icon: 'success',
+                confirmButtonText: '<i class="fas fa-shopping-bag"></i> Continue Shopping',
+                customClass: {
+                    popup: 'cart-alert-popup' // This uses your existing maroon styles
+                }
+            }).then((result) => {
+                // Optional: Ensure they stay on the shop page or refresh to clear the cart visually
+                if (result.isConfirmed) {
+                    window.location.href = "{{ route('home') }}";
+                }
+            });
+        @endif
 
         // 3. Chatbot Toggle Logic
         const chatbotBtn = document.getElementById('chatbotBtn');
@@ -557,7 +575,7 @@ buttons.forEach(btn => {
             // 1. Backup to LocalStorage
             localStorage.setItem('pendingCartItem', JSON.stringify({ id: productId, qty: productQty }));
 
-            // 2. ✅ SAVE INTENT TO SESSION (This makes AuthPopupController work)
+            // 2.  SAVE INTENT TO SESSION (This makes AuthPopupController work)
             // We send a quick background request to store this item in the session
             fetch("{{ route('cart.save-intent') }}", {
                 method: "POST",
@@ -614,7 +632,7 @@ buttons.forEach(btn => {
                 });
                 const currencySymbol = "{{ session('currency') === 'USD' ? '$' : 'Rs.' }}";
 
-                // ✅ Maroon Themed Success Alert
+                //  Maroon Themed Success Alert
                 Swal.fire({
                     title: 'Added to Cart',
                     html: `

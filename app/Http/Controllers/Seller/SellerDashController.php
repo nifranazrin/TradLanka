@@ -65,18 +65,40 @@ public function dashboard()
         $recentOrders = (clone $ordersQuery)->latest()->take(5)->get();
 
         // 6. Top Selling Products (Sum of units sold)
-        $topProducts = Product::where('seller_id', $sellerId)
-            ->withCount(['orderItems as total_sold' => function($query) {
-                $query->select(DB::raw('IFNULL(sum(qty), 0)')); 
-            }])
-            ->orderBy('total_sold', 'desc')->take(5)->get();
+        $successStatus = 5; // Delivered
+        $sellerId = Auth::guard('seller')->id();
 
-        return view('seller.dashboard', compact(
-            'totalProducts', 'approvedProducts', 'rejectedProducts',
-            'ordersToday', 'ordersTodayLocal', 'ordersTodayForeign',
-            'pendingDeliveries', 'pendingLocal', 'pendingForeign',
-            'totalOrders', 'localOrders', 'foreignOrders',
-            'recentOrders', 'topProducts'
+        $topProducts = Product::where('seller_id', $sellerId)
+            ->select('id', 'name', 'image')
+            ->withCount(['orderItems as total_sold' => function($query) use ($successStatus) {
+                $query->join('orders', 'order_items.order_id', '=', 'orders.id')
+                    ->where('orders.status', $successStatus)
+                    ->select(DB::raw('IFNULL(sum(order_items.qty), 0)')); 
+            }])
+            ->orderBy('total_sold', 'desc')
+            ->take(5)
+            ->get();
+
+            // 7. Revenue Statistics (Successful vs Canceled)
+        $baseRevenueQuery = Order::whereHas('items.product', function ($q) use ($sellerId) {
+            $q->where('seller_id', $sellerId);
+        });
+
+        // Success Revenue (Status 5 = Delivered)
+        $successRevenueLKR = (clone $baseRevenueQuery)->where('status', 5)->where('currency', 'LKR')->sum('total_price');
+        $successRevenueUSD = (clone $baseRevenueQuery)->where('status', 5)->where('currency', 'USD')->sum('total_price');
+
+        // Canceled Revenue (Status 6 = Canceled)
+        $canceledRevenueLKR = (clone $baseRevenueQuery)->where('status', 6)->where('currency', 'LKR')->sum('total_price');
+        $canceledRevenueUSD = (clone $baseRevenueQuery)->where('status', 6)->where('currency', 'USD')->sum('total_price');
+
+       return view('seller.dashboard', compact(
+        'totalProducts', 'approvedProducts', 'rejectedProducts',
+        'ordersToday', 'ordersTodayLocal', 'ordersTodayForeign',
+        'pendingDeliveries', 'pendingLocal', 'pendingForeign',
+        'totalOrders', 'localOrders', 'foreignOrders',
+        'recentOrders', 'topProducts',
+        'successRevenueLKR', 'successRevenueUSD', 'canceledRevenueLKR', 'canceledRevenueUSD' 
         ));
     }
 
@@ -126,6 +148,11 @@ public function dashboard()
             'totalOrders' => (clone $baseOrderQuery)->count(),
             'localOrders' => (clone $baseOrderQuery)->where('currency', 'LKR')->count(),
             'foreignOrders' => (clone $baseOrderQuery)->where('currency', 'USD')->count(),
+
+            'successRevenueLKR' => (clone $baseOrderQuery)->where('status', 5)->where('currency', 'LKR')->sum('total_price'),
+            'successRevenueUSD' => (clone $baseOrderQuery)->where('status', 5)->where('currency', 'USD')->sum('total_price'),
+            'canceledRevenueLKR' => (clone $baseOrderQuery)->where('status', 6)->where('currency', 'LKR')->sum('total_price'),
+            'canceledRevenueUSD' => (clone $baseOrderQuery)->where('status', 6)->where('currency', 'USD')->sum('total_price'),
             
             // Pie Chart Data
             'pie' => [
