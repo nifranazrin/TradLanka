@@ -83,7 +83,7 @@ Route::get('/test-order-email', [MailTestController::class, 'sendTestEmail']);
 
 
 // Route to store the product review
-// Now it points to the correct ProductController where you added the code
+
 Route::post('/product/review/store', [App\Http\Controllers\Frontend\ProductController::class, 'storeReview'])->name('review.store')->middleware('auth');
 Route::get('/stripe-success', [CheckoutController::class, 'stripeSuccess'])->name('stripe.success');
 // 1. Requesting the Link (Forgot Password Page)
@@ -91,7 +91,7 @@ Route::get('staff/password/reset', [StaffForgotPasswordController::class, 'showL
 Route::post('staff/password/email', [StaffForgotPasswordController::class, 'sendResetLinkEmail'])->name('staff.password.email');
 
 // 2. Resetting the Password (The Link in the Email)
-// Note: name('password.reset') MUST stay exactly like this for the email link to work.
+
 Route::get('staff/password/reset/{token}', [StaffForgotPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('staff/password/reset', [StaffForgotPasswordController::class, 'reset'])->name('password.update');
 
@@ -264,7 +264,7 @@ Route::post('/clear/{receiverId}/{type}', [AdminChatController::class, 'clearCha
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/inventory', [ReportController::class, 'inventoryReport'])->name('inventory');
         Route::get('/sales', [ReportController::class, 'salesReport'])->name('sales');
-        // ✅ This matches: route('admin.reports.sales.pdf')
+       
         Route::get('/sales/pdf', [ReportController::class, 'downloadPDF'])->name('sales.pdf');
     });
 

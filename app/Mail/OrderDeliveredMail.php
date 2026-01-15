@@ -14,24 +14,44 @@ class OrderDeliveredMail extends Mailable
 
     public $order; 
 
+    /**
+     * Create a new message instance.
+     */
     public function __construct($order)
     {
-        // Keep it simple to match your working confirmation mail
+        // Matches the structure of your working confirmation mail
         $this->order = $order;
     }
 
+    /**
+     * Get the message envelope.
+     */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order Delivered: #' . $this->order->tracking_no,
+            subject: 'Order Delivered - TradLanka #' . $this->order->tracking_no,
         );
     }
 
+    /**
+     * Get the message content definition.
+     */
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order_delivered',
-            with: ['order' => $this->order],
+           
+            view: 'emails.delivered', 
+            with: [
+                'order' => $this->order,
+            ],
         );
+    }
+
+    /**
+     * Get the attachments for the message.
+     */
+    public function attachments(): array
+    {
+        return [];
     }
 }
