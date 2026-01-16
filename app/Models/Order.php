@@ -26,6 +26,7 @@ class Order extends Model
         'lname',
         'email',
         'phone',
+        'country',
 
         // Address
         'address1',
@@ -33,7 +34,6 @@ class Order extends Model
         'city',
         'state',
         'zipcode',
-        'country',
         'message',
 
         // Order info
