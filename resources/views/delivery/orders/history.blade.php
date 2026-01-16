@@ -42,38 +42,71 @@
 </style>
 
 <div class="container-fluid px-4 py-5">
-    {{-- HEADER WITH DOWNLOAD BUTTON --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    {{-- HEADER WITH DYNAMIC DOWNLOAD BUTTON --}}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <div>
-            <h2 class="h3 fw-bold text-dark">Task History</h2>
-            <p class="text-muted">Review your completed and failed delivery attempts.</p>
+            <h2 class="h3 fw-bold text-dark mb-1">Task History</h2>
+            <p class="text-muted mb-0">Review your completed and failed delivery attempts.</p>
         </div>
-        {{--  DOWNLOAD BUTTON --}}
-        <a href="{{ route('delivery.report.download') }}" class="btn btn-primary d-flex align-items-center shadow-sm px-4 py-2" style="border-radius: 10px;">
-            <i class="bi bi-file-earmark-pdf-fill me-2"></i> Download Performance Report
+
+        {{-- ✅ Updated: The download link now includes current filters via request()->query() --}}
+        <a href="{{ route('delivery.report.download', request()->query()) }}" 
+           class="btn btn-primary d-flex align-items-center shadow-sm px-4 py-2" 
+           style="border-radius: 10px;">
+            <i class="bi bi-file-earmark-pdf-fill me-2"></i> Download Filtered Report
         </a>
     </div>
 
-    {{-- SEARCH BAR --}}
-    <div class="row mb-4">
-        <div class="col-md-6 col-lg-5">
-            <form action="{{ route('delivery.task-history') }}" method="GET">
-                <div class="input-group shadow-sm" style="border-radius: 12px; overflow: hidden;">
-                    <input type="text" name="search" class="form-control border-0 py-2 ps-3" 
-                           placeholder="Search by ID, Name, or City..." 
-                           value="{{ request('search') }}"
-                           style="background: #f8f9fa; font-size: 0.95rem;">
-                    
-                    <button class="btn px-4" type="submit" style="background-color: #5b2c2c; color: white; border: none;">
-                        <i class="bi bi-search"></i>
+    {{-- ADVANCED FILTER BAR --}}
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+        <div class="card-body p-3">
+            <form action="{{ route('delivery.task-history') }}" method="GET" class="row g-3">
+                
+                {{-- 1. Search Box --}}
+                <div class="col-12 col-lg-4">
+                    <div class="input-group" style="border-radius: 10px; overflow: hidden; border: 1px solid #dee2e6;">
+                        <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-0 py-2" 
+                               placeholder="ID, Name, or City..." value="{{ request('search') }}">
+                    </div>
+                </div>
+
+                {{-- 2. Status Filter --}}
+                <div class="col-6 col-md-3 col-lg-2">
+                    <select name="status" class="form-select border-light-subtle py-2" style="border-radius: 10px;">
+                        <option value="all">All Status</option>
+                        <option value="delivered" {{ request('status') == 'delivered' ? 'selected' : '' }}>Delivered</option>
+                        <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed / Pending</option>
+                    </select>
+                </div>
+
+                {{-- 3. Currency Filter --}}
+                <div class="col-6 col-md-3 col-lg-2">
+                    <select name="currency" class="form-select border-light-subtle py-2" style="border-radius: 10px;">
+                        <option value="all">All Currencies</option>
+                        <option value="LKR" {{ request('currency') == 'LKR' ? 'selected' : '' }}>LKR (Local)</option>
+                        <option value="USD" {{ request('currency') == 'USD' ? 'selected' : '' }}>USD (International)</option>
+                    </select>
+                </div>
+
+                {{-- 4. Country Filter --}}
+                <div class="col-8 col-md-4 col-lg-2">
+                    <input type="text" name="country" class="form-control border-light-subtle py-2" 
+                           placeholder="Country..." value="{{ request('country') }}" style="border-radius: 10px;">
+                </div>
+
+                {{-- 5. Action Buttons --}}
+                <div class="col-4 col-md-2 col-lg-2 d-flex gap-2">
+                    <button class="btn w-100 fw-bold" type="submit" style="background-color: #5b2c2c; color: white; border-radius: 10px;">
+                        Filter
                     </button>
-                    
-                    @if(request('search'))
-                        <a href="{{ route('delivery.task-history') }}" class="btn btn-light d-flex align-items-center border-start">
-                            <i class="bi bi-x-lg text-danger"></i>
+                    @if(request()->anyFilled(['search', 'status', 'currency', 'country']))
+                        <a href="{{ route('delivery.task-history') }}" class="btn btn-light border" style="border-radius: 10px;">
+                            <i class="bi bi-arrow-counterclockwise"></i>
                         </a>
                     @endif
                 </div>
+
             </form>
         </div>
     </div>

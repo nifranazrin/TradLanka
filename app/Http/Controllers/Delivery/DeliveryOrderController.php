@@ -43,28 +43,40 @@ class DeliveryOrderController extends Controller
     public function taskHistory(Request $request)
 {
     $riderId = Auth::guard('delivery')->id();
+    $query = Order::with(['items.product'])->where('delivery_boy_id', $riderId);
 
-    // Clear notifications for these orders
-    Order::where('delivery_boy_id', $riderId)
-        ->where('rider_seen', 0)
-        ->update(['rider_seen' => 1]);
+    // Filter by Status
+    if ($request->has('status') && $request->status !== 'all') {
+        if ($request->status == 'delivered') {
+            $query->where('status', 5);
+        } elseif ($request->status == 'failed') {
+            $query->whereIn('status', [6, 8, 9]);
+        }
+    } else {
+        $query->whereIn('status', [5, 6, 8, 9]);
+    }
 
-    $query = Order::with(['items.product'])
-        ->where('delivery_boy_id', $riderId)
-        ->whereIn('status', [5, 6, 8, 9]); // 5:Delivered, 6:Failed, 8:Pending Review, 9:Final Fail
+    // Filter by Country
+    if ($request->filled('country')) {
+        $query->where('country', $request->country);
+    }
 
-    if ($request->has('search') && !empty($request->search)) {
+    // Filter by Currency
+    if ($request->has('currency') && $request->currency !== 'all') {
+        $query->where('currency', $request->currency);
+    }
+
+    // Existing Search
+    if ($request->filled('search')) {
         $search = $request->search;
         $query->where(function($q) use ($search) {
             $q->where('tracking_no', 'LIKE', "%$search%")
               ->orWhere('fname', 'LIKE', "%$search%")
-              ->orWhere('lname', 'LIKE', "%$search%")
               ->orWhere('city', 'LIKE', "%$search%");
         });
     }
 
-    // Latest shows most recent first, but includes all dates
-    $orders = $query->latest()->paginate(10)->appends(['search' => $request->search]);
+    $orders = $query->latest()->paginate(10)->withQueryString();
     return view('delivery.orders.history', compact('orders'));
 }
 
@@ -90,41 +102,34 @@ public function updateMilestone(Request $request, $id)
     /**
      * Generate and download the PDF performance report.
      */
-    public function downloadReport()
-    {
-        $riderId = Auth::guard('delivery')->id();
-        
-        // ✅ Included Status 8 in the report data
-        $tasks = Order::where('delivery_boy_id', $riderId)
-            ->whereIn('status', [5, 6, 8, 9])
-            ->orderBy('status', 'asc') 
-            ->orderBy('updated_at', 'desc')
-            ->get();
+    public function downloadReport(Request $request)
+{
+    $riderId = Auth::guard('delivery')->id();
+    $query = Order::where('delivery_boy_id', $riderId);
 
-        // Financial Calculation: Only Delivered (Status 5) AND COD orders
-        $totalLKR = $tasks->where('status', 5)->filter(function($order) {
-            $payMode = strtoupper($order->payment_mode);
-            return str_contains($payMode, 'COD') && !str_contains($payMode, 'USD');
-        })->sum('total_price');
+    // APPLY THE SAME FILTERS AS taskHistory
+    if ($request->status == 'delivered') $query->where('status', 5);
+    elseif ($request->status == 'failed') $query->whereIn('status', [6, 8, 9]);
+    else $query->whereIn('status', [5, 6, 8, 9]);
 
-        $totalUSD = $tasks->where('status', 5)->filter(function($order) {
-            $payMode = strtoupper($order->payment_mode);
-            return str_contains($payMode, 'COD') && str_contains($payMode, 'USD');
-        })->sum('total_price');
+    if ($request->filled('country')) $query->where('country', $request->country);
+    if ($request->has('currency') && $request->currency !== 'all') $query->where('currency', $request->currency);
 
-        $stats = [
-            'delivered' => $tasks->where('status', 5)->count(),
-            // ✅ Combined 6, 8, and 9 for the total failed/reported count
-            'failed'    => $tasks->whereIn('status', [6, 8, 9])->count(),
-            'total_lkr' => $totalLKR,
-            'total_usd' => $totalUSD,
-            'rider_name'=> Auth::guard('delivery')->user()->name,
-            'date'      => now()->format('d M Y, h:i A')
-        ];
+    $tasks = $query->orderBy('updated_at', 'desc')->get();
 
-        $pdf = Pdf::loadView('delivery.orders.report_pdf', compact('tasks', 'stats'));
-        return $pdf->download('TradLanka_Performance_Report.pdf');
-    }
+    // Recalculate stats based on filtered data
+    $stats = [
+        'delivered' => $tasks->where('status', 5)->count(),
+        'failed'    => $tasks->whereIn('status', [6, 8, 9])->count(),
+        'total_lkr' => $tasks->where('status', 5)->where('currency', 'LKR')->sum('total_price'),
+        'total_usd' => $tasks->where('status', 5)->where('currency', 'USD')->sum('total_price'),
+        'rider_name'=> Auth::guard('delivery')->user()->name,
+        'date'      => now()->format('d M Y, h:i A')
+    ];
+
+    $pdf = Pdf::loadView('delivery.orders.report_pdf', compact('tasks', 'stats'));
+    return $pdf->download('Filtered_Performance_Report.pdf');
+}
 
     public function show($id)
     {
