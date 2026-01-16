@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\OrderItem;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Staff;
 
 class Order extends Model
 {
@@ -32,6 +33,7 @@ class Order extends Model
         'city',
         'state',
         'zipcode',
+        'country',
         'message',
 
         // Order info
@@ -47,6 +49,8 @@ class Order extends Model
         'currency', 
 
         'rider_seen',
+        'latitude',
+         'longitude',
     ];
 
     /**
@@ -59,6 +63,8 @@ class Order extends Model
         'status'      => 'integer',
         // ✅ ADDED: Ensure it handles as boolean
         'rider_seen'  => 'boolean', 
+        'latitude'    => 'float',
+        'longitude'   => 'float',
     ];
 
     /**

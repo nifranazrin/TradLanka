@@ -15,58 +15,67 @@ class DeliveryDashController extends Controller
         $riderId = Auth::guard('delivery')->id();
         $today = Carbon::today();
         
+        // Data range for performance trend charts
         $startDate = Carbon::create(2026, 1, 1);
         $endDate = Carbon::now();
 
-        // 1. Stats: Today vs Total
+        // --- 1. STATS: Today vs Total ---
         $pendingTotal = Order::where('delivery_boy_id', $riderId)->whereIn('status', [4, 10])->count();
         $deliveredTotal = Order::where('delivery_boy_id', $riderId)->where('status', 5)->count();
         $failedTotal = Order::where('delivery_boy_id', $riderId)->whereIn('status', [6, 9])->count();
 
         $pendingToday = Order::where('delivery_boy_id', $riderId)->whereIn('status', [4, 10])->whereDate('updated_at', $today)->count();
-        
-        // FIX: Change created_at to updated_at or delivered_at to show 0 if nothing was delivered today
-        $deliveredToday = Order::where('delivery_boy_id', $riderId)
-            ->where('status', 5)
-            ->whereDate('updated_at', $today) 
-            ->count();
-
+        $deliveredToday = Order::where('delivery_boy_id', $riderId)->where('status', 5)->whereDate('updated_at', $today)->count();
         $failedToday = Order::where('delivery_boy_id', $riderId)->whereIn('status', [6, 9])->whereDate('updated_at', $today)->count();
 
-        // 2. Financial Logic: COD Only
-        // Delivered COD: Filtered by $riderId to fix the 104k error
-        $deliveredCodTotal = Order::where('delivery_boy_id', $riderId)
-            ->where('status', 5)
-            ->where(function($query) {
-                $query->where('payment_mode', 'COD')
-                      ->orWhere('payment_mode', 'cod')
-                      ->orWhere('payment_mode', 'Cash on Delivery');
-            })
-            ->sum('total_price') ?? 0;
-
-        // Pending COD: Correctly captures your Rs. 830.00 active task
-        $pendingCodTotal = Order::where('delivery_boy_id', $riderId)
-            ->whereIn('status', [4, 10])
-            ->where(function($q) {
+        // --- 2. FINANCIAL LOGIC: COD Only ---
+        $codQuery = function($query) {
+            $query->where(function($q) {
                 $q->where('payment_mode', 'LIKE', '%COD%')
                   ->orWhere('payment_mode', 'LIKE', '%Cash%');
-            })
-            ->sum('total_price') ?? 0;
+            });
+        };
 
-        $fullCodPotential = $deliveredCodTotal + $pendingCodTotal;
+        $deliveredCodTotal = Order::where('delivery_boy_id', $riderId)->where('status', 5)->where($codQuery)->sum('total_price') ?? 0;
+        $pendingCodTotal = Order::where('delivery_boy_id', $riderId)->whereIn('status', [4, 10])->where($codQuery)->sum('total_price') ?? 0;
+        $cancelledCodTotal = Order::where('delivery_boy_id', $riderId)->whereIn('status', [6, 9])->where($codQuery)->sum('total_price') ?? 0;
 
-        // 3. Recent Assigned Tasks
+        // --- 3. REVENUE BY CITY ---
+        $topCitiesRevenue = Order::where('delivery_boy_id', $riderId)
+            ->where('status', 5)
+            ->select('city', 'currency', DB::raw('SUM(total_price) as total_amount'))
+            ->groupBy('city', 'currency')
+            ->orderBy('total_amount', 'desc')
+            ->get();
+
+        $topLocalCity = $topCitiesRevenue->where('currency', 'LKR')->first();
+        $topInternationalCity = $topCitiesRevenue->where('currency', 'USD')->first();
+
+        // --- 4. MAP DATA (Pre-segmented for Dynamic Filter) ---
+        // Active Tasks Pins (Blue Pointers) - Added ID for Routing
         $activeDeliveries = Order::where('delivery_boy_id', $riderId)
             ->whereIn('status', [4, 10])
-            ->latest()->take(5)->get();
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->select('id', 'tracking_no', 'city', 'latitude', 'longitude', 'currency', 'fname', 'lname', 'total_price')
+            ->get();
 
-        // 4. Optimized Chart Data
+        // Hotspots (Red Circles)
+        $deliveryHotspots = Order::where('delivery_boy_id', $riderId)
+            ->where('status', 5)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->select('city', 'currency', 'latitude as lat', 'longitude as lng', DB::raw('count(*) as count'))
+            ->groupBy('city', 'currency', 'latitude', 'longitude')
+            ->get();
+
+        // --- 5. CHART DATA: Performance Trend ---
+        $dates = []; $deliveredSeries = []; $failedSeries = [];
         $chartData = Order::where('delivery_boy_id', $riderId)
             ->whereBetween('updated_at', [$startDate, $endDate])
             ->select(DB::raw('DATE(updated_at) as date'), 'status', DB::raw('count(*) as count'))
             ->groupBy('date', 'status')->get();
 
-        $dates = $deliveredSeries = $failedSeries = [];
         $tempDate = $startDate->copy();
         while ($tempDate <= $endDate) {
             $dateStr = $tempDate->format('Y-m-d');
@@ -78,7 +87,9 @@ class DeliveryDashController extends Controller
 
         return view('delivery.dashboard', compact(
             'pendingToday', 'pendingTotal', 'deliveredToday', 'deliveredTotal', 'failedToday', 'failedTotal',
-            'deliveredCodTotal', 'pendingCodTotal', 'fullCodPotential', 'activeDeliveries',
+            'deliveredCodTotal', 'pendingCodTotal', 'cancelledCodTotal',
+            'activeDeliveries', 'deliveryHotspots', 'topCitiesRevenue',
+            'topLocalCity', 'topInternationalCity',
             'dates', 'deliveredSeries', 'failedSeries'
         ));
     }

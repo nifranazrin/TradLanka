@@ -32,7 +32,7 @@ class Staff extends Authenticatable implements CanResetPassword
     }
 
     /**
-     * ✅ Relationship for messages RECEIVED by this staff member.
+     *  Relationship for messages RECEIVED by this staff member.
      * Essential for unread badge counts.
      */
     public function messagesReceived()
@@ -41,11 +41,17 @@ class Staff extends Authenticatable implements CanResetPassword
     }
 
     /**
-     * ✅ Relationship for messages SENT by this staff member.
+     *  Relationship for messages SENT by this staff member.
      * Essential for sorting the sidebar by "latest interaction".
      */
     public function messagesSent()
     {
         return $this->hasMany(Message::class, 'sender_id');
     }
+
+
+    public function deliveries()
+{
+    return $this->hasMany(\App\Models\Order::class, 'delivery_boy_id');
+}
 }

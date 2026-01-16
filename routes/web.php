@@ -406,6 +406,8 @@ Route::prefix('delivery')->name('delivery.')->middleware([DeliveryPersonMiddlewa
         Route::get('/staff-profile/{type}/{id}', [ChatController::class, 'getStaffProfile'])->name('staff_profile');
         Route::post('/clear/{receiverId}/{type}', [ChatController::class, 'clearChat'])->name('clear');
         Route::post('/mark-read/{id}/{type}', [ChatController::class, 'markAsRead'])->name('mark-read');
+
+        
     });
 });
 

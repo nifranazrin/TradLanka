@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Message;
 use Illuminate\Pagination\Paginator;
+use App\Observers\OrderObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Order::observe(OrderObserver::class);
 
         Paginator::useBootstrapFive();
         // 1. Existing Category Logic (Global)
@@ -240,5 +242,8 @@ View::composer('layouts.delivery', function ($view) {
         $view->with('toReviewCount', $toReviewCount);
     }
 });
+
+
+
     }
 }
