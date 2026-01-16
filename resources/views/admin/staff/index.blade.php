@@ -74,6 +74,16 @@
     border: none !important;
 }
 
+.id-thumb {
+    transition: transform 0.2s;
+    cursor: zoom-in;
+}
+.id-thumb:hover {
+    transform: scale(2.5);
+    z-index: 100;
+    position: relative;
+}
+
 .bg-primary.badge-role { background-color: #6f00ff !important; }
 .bg-info.badge-role { background-color: #17a2b8 !important; color: #fff !important; }
 </style>
@@ -107,45 +117,63 @@
                         <th class="py-3">Company Email</th>
                         <th class="py-3">Phone Number</th>
                         <th class="py-3">NIC Number</th>
+                        <th class="text-center py-3">ID Image</th>
                         <th class="py-3">Address</th>
                         <th class="text-center py-3">Status</th>
                         <th class="text-center py-3">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($staff as $member)
-                        <tr>
-                            <td class="text-center fw-bold">#{{ $member->id }}</td>
-                            <td class="fw-bold text-dark">{{ $member->name }}</td>
-                            <td>
-                                <span class="badge-role {{ $member->role == 'delivery' ? 'bg-primary text-white' : 'bg-info text-dark' }}">
-                                    {{ strtoupper($member->role) }}
-                                </span>
-                            </td>
-                            <td>{{ $member->email }}</td>
-                            <td>{{ $member->phone }}</td>
-                            <td class="text-secondary">{{ $member->nic_number ?? 'N/A' }}</td>
-                            <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                {{ $member->address ?? 'N/A' }}
-                            </td>
-                            <td class="text-center">
-                                <span class="badge {{ $member->status == 'active' ? 'bg-success' : 'bg-danger' }} rounded-pill">
-                                    {{ ucfirst($member->status) }}
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <form action="{{ route('admin.staff.toggle', $member->id) }}" method="POST" class="toggle-staff-form">
-                                    @csrf
-                                    @method('PUT')
-                                    <button type="submit" class="btn btn-sm {{ $member->status === 'active' ? 'btn-outline-danger' : 'btn-outline-success' }}" 
-                                            data-action="{{ $member->status === 'active' ? 'inactivate' : 'activate' }}">
-                                        <i class="bi {{ $member->status === 'active' ? 'bi-person-x' : 'bi-person-check' }}"></i>
-                                        {{ $member->status === 'active' ? 'Inactivate' : 'Activate' }}
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
+                  @foreach($staff as $member)
+    <tr>
+        <td class="text-center fw-bold">#{{ $member->id }}</td>
+        <td class="fw-bold text-dark">{{ $member->name }}</td>
+        <td>
+            <span class="badge-role {{ $member->role == 'delivery' ? 'bg-primary text-white' : 'bg-info text-dark' }}">
+                {{ strtoupper($member->role) }}
+            </span>
+        </td>
+        <td>{{ $member->email }}</td>
+        <td>{{ $member->phone }}</td>
+        <td class="text-secondary">{{ $member->nic_number ?? 'N/A' }}</td>
+
+        
+        <td class="text-center">
+            @if($member->id_image)
+                <div class="position-relative d-inline-block">
+                    <img src="{{ asset('storage/' . $member->id_image) }}" 
+                         alt="ID Proof" 
+                         class="rounded border shadow-sm"
+                         style="width: 60px; height: 40px; object-fit: cover; cursor: pointer;"
+                         onclick="window.open(this.src, '_blank')">
+                </div>
+            @else
+                <span class="text-muted small">No Image</span>
+            @endif
+        </td>
+
+        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {{ $member->address ?? 'N/A' }}
+        </td>
+
+        <td class="text-center">
+            <span class="badge {{ $member->status == 'active' ? 'bg-success' : 'bg-danger' }} rounded-pill">
+                {{ ucfirst($member->status) }}
+            </span>
+        </td>
+        <td class="text-center">
+            <form action="{{ route('admin.staff.toggle', $member->id) }}" method="POST" class="toggle-staff-form">
+                @csrf
+                @method('PUT')
+                <button type="submit" class="btn btn-sm {{ $member->status === 'active' ? 'btn-outline-danger' : 'btn-outline-success' }}" 
+                        data-action="{{ $member->status === 'active' ? 'inactivate' : 'activate' }}">
+                    <i class="bi {{ $member->status === 'active' ? 'bi-person-x' : 'bi-person-check' }}"></i>
+                    {{ $member->status === 'active' ? 'Inactivate' : 'Activate' }}
+                </button>
+            </form>
+        </td>
+    </tr>
+@endforeach
                 </tbody>
             </table>
         </div>
