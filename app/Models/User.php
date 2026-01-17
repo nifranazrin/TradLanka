@@ -61,4 +61,9 @@ class User extends Authenticatable
     // If your User model is in App\Models\User
     return $this->belongsTo(\App\Models\User::class);
 }
+
+public function orders()
+{
+    return $this->hasMany(Order::class, 'user_id');
+}
 }

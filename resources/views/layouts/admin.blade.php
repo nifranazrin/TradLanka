@@ -9,6 +9,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <style>
         body {
             margin: 0;
@@ -346,6 +351,11 @@
         <span><i class="bi bi-person-badge"></i> Staff Management</span>
     </a>
 
+      {{-- 6. Customer Management --}}
+<a href="{{ route('admin.customers.index') }}" class="{{ request()->is('admin/customers*') ? 'active' : '' }}">
+    <span><i class="bi bi-person-vcard"></i> Customer Management</span>
+</a>
+
     {{-- 4. Review Products --}}
     <a href="{{ route('admin.products.index') }}" class="{{ request()->is('admin/products*') ? 'active' : '' }}">
         <span><i class="bi bi-bag-check"></i> Review Products</span>
@@ -372,7 +382,10 @@
 
     {{-- 7. Reviews --}}
    <a href="{{ route('admin.reviews') }}">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-star me-2"></i>
     <span>Reviews</span>
+    </div>
     @if(isset($newReviews) && $newReviews > 0)
         <span class="badge-count">{{ $newReviews }}</span>
     @endif

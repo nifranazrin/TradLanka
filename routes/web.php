@@ -37,6 +37,7 @@ use App\Http\Controllers\Admin\StaffManagementController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SellerAnalyticsController;
 use App\Http\Controllers\Admin\AdminReviewController;
+use App\Http\Controllers\Admin\CustomerManagementController;
 
 // SELLER CONTROLLERS
 use App\Http\Controllers\StaffRegistrationController;
@@ -201,10 +202,9 @@ Route::get('/set-currency/{currency}', function ($currency) {
 // =============================================================
 //               ADMIN DASHBOARD (Protected)
 // =============================================================
-Route::prefix('admin')->name('admin.')->middleware(['auth', AdminMiddleware::class])->group(function () {
-
+Route::prefix('admin')->name('admin.')->middleware(['auth:admin', AdminMiddleware::class])->group(function () {
+    
     Route::get('/dashboard', [AdminDashController::class, 'dashboard'])->name('dashboard');
-
     // --- Resources ---
     Route::resource('categories', CategoryController::class);
 
@@ -225,6 +225,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', AdminMiddleware::cla
     // --- Staff Management ---
     Route::get('/staff-management', [StaffManagementController::class, 'index'])->name('staff.index');
     Route::put('/staff-management/{id}/toggle', [StaffManagementController::class, 'toggleStatus'])->name('staff.toggle');
+
+    Route::get('/customers', [CustomerManagementController::class, 'index'])->name('customers.index');
+    Route::get('/customers/{id}', [CustomerManagementController::class, 'show'])->name('customers.show');
+    Route::get('customers-download', [CustomerManagementController::class, 'downloadPDF'])->name('customers.download');
 
     // --- Order Management ---
     Route::get('review-orders', [OrderController::class, 'reviewOrders'])->name('orders.review');
