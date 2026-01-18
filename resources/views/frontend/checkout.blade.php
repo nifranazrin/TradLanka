@@ -259,13 +259,14 @@
 
 <script>
 $(document).ready(function () {
-
+    // 1. Core Data Initialization
     const baseProductTotal = {{ $productTotal }};
     const rate = 0.0032;
-    const currency = "{{ session('currency', 'LKR') }}";
-    let currentDelivery = (currency === 'USD') ? 5000 : 500;
+    // Use currentCurrency consistently throughout the script
+    const currentCurrency = "{{ session('currency', 'LKR') }}";
+    let currentDelivery = (currentCurrency === 'USD') ? 5000 : 500;
 
-    //  GLOBAL country map (FIXED)
+    // 2. Global Country Map for Phone Input
     const countryMap = { 
         "Sri Lanka": "lk",
         "United Arab Emirates": "ae",
@@ -290,16 +291,16 @@ $(document).ready(function () {
         "Maldives": "mv"
     };
 
-    //  Phone input
+    // 3. Initialize Phone Input
     const phoneInput = window.intlTelInput(
         document.querySelector("#phoneInput"), {
-            initialCountry: (currency === 'USD') ? "gb" : "lk",
+            initialCountry: (currentCurrency === 'USD') ? "gb" : "lk",
             separateDialCode: true,
             utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/js/utils.js",
         }
     );
 
-    //  Select2 flag rendering
+    // 4. Select2 Initialization
     function formatState(state) {
         if (!state.id) return state.text;
         const flag = $(state.element).data('flag');
@@ -312,15 +313,34 @@ $(document).ready(function () {
         width: '100%'
     });
 
-    //  Country change handler
-    $('#countrySelect').on('change', function () {
+    // 5. AJAX Helper: Update Session Currency
+    function updateSessionCurrency(newCurrency) {
+        $.ajax({
+            url: '/update-checkout-currency',
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: {
+                _token: '{{ csrf_token() }}',
+                currency: newCurrency
+            },
+            success: function() {
+                // Hard reload to refresh PHP-side totals and order summary
+                window.location.reload(true); 
+            }
+        });
+    }
 
+    // 6. Country Change Handler
+    $('#countrySelect').on('change', function () {
         const country = $(this).val();
 
+        // Update Delivery Fee calculation
         currentDelivery = (country === "Sri Lanka") ? 500 : 5000;
         const newGrandTotalLKR = baseProductTotal + currentDelivery;
 
-        if (currency === 'USD') {
+        if (currentCurrency === 'USD') {
             $('#delivery-fee-text').text('$' + (currentDelivery * rate).toFixed(2));
             $('#grand-total-text').text('$' + (newGrandTotalLKR * rate).toFixed(2));
         } else {
@@ -328,24 +348,44 @@ $(document).ready(function () {
             $('#grand-total-text').text('Rs ' + newGrandTotalLKR.toLocaleString());
         }
 
-        //  Auto switch phone flag
+        // Auto switch phone flag
         if (countryMap[country]) {
             phoneInput.setCountry(countryMap[country]);
         }
     });
 
-    //  Confirm & Place Order button
+    // 7. Safe Confirm & Place Order Handler
     $('#placeOrderBtn').on('click', function () {
-
         const form = document.getElementById('checkoutForm');
+        const country = $('#countrySelect').val();
 
+        // A. Basic HTML5 validation
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
         }
 
+        // B. SAFETY CHECK: Block international orders if currency is still LKR
+        if (country !== "Sri Lanka" && country !== "" && currentCurrency === "LKR") {
+            Swal.fire({
+                title: 'Currency Update Required',
+                text: "International orders must be processed in USD. Switch now to continue.",
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#800000',
+                confirmButtonText: 'Switch to USD',
+                cancelButtonText: 'Wait'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                   window.location.href = '/set-currency/USD';
+                }
+            });
+            return; // Stops submission
+        }
+
+        // C. Standard Confirmation logic
         const totalLKR = baseProductTotal + currentDelivery;
-        const displayTotal = (currency === 'USD')
+        const displayTotal = (currentCurrency === 'USD')
             ? '$' + (totalLKR * rate).toFixed(2)
             : 'Rs ' + totalLKR.toLocaleString();
 
@@ -358,12 +398,12 @@ $(document).ready(function () {
             confirmButtonText: 'Confirm'
         }).then((result) => {
             if (result.isConfirmed) {
+                // Sync the full international number into the hidden field
                 $('#fullPhone').val(phoneInput.getNumber());
                 form.submit();
             }
         });
     });
-
 });
 </script>
 
