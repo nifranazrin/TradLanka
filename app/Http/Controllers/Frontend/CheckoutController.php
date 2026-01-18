@@ -219,6 +219,8 @@ class CheckoutController extends Controller
                     'price'      => $finalItemPrice,
                 ]);
 
+                $item->product->decrement('stock', $item->product_qty);
+
                 if ($item->product->seller_id) { 
                     $sellersToNotify[] = $item->product->seller_id; 
                 }
