@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
+use Illuminate\Http\Request;
 
 class ForgotPasswordController extends Controller
 {
@@ -19,4 +20,24 @@ class ForgotPasswordController extends Controller
     */
 
     use SendsPasswordResetEmails;
+
+    /**
+     * Display the form to request a password reset link for Customers.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function showLinkRequestForm()
+    {
+        // This ensures the customer sees the Orange/Gold theme 
+        // located in your frontend folder instead of the Staff maroon theme.
+        return view('frontend.auth.passwords.email');
+    }
+
+    /**
+     * Constant path to redirect users after they have requested a reset link.
+     */
+    protected function redirectTo()
+    {
+        return route('home');
+    }
 }

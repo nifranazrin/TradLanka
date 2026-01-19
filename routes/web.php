@@ -65,6 +65,27 @@ use App\Http\Controllers\ImageSearchController;
 
 use App\Http\Controllers\MailTestController;
 
+
+// ==========================================
+//      CUSTOMER PASSWORD RESET ROUTES
+// ==========================================
+
+// 1. Show the Email Request Form (The "Forgot Password" page)
+Route::get('password/reset', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showLinkRequestForm'])
+    ->name('password.request');
+
+// 2. Handle sending the reset link email to the user
+Route::post('password/email', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLinkEmail'])
+    ->name('password.email');
+
+// 3. Show the Reset Password Form (The page landed on from the email link)
+Route::get('password/reset/{token}', [App\Http\Controllers\Auth\ResetPasswordController::class, 'showResetForm'])
+    ->name('password.reset');
+
+// 4. Handle the actual logic of updating the password in the database
+Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])
+    ->name('password.update');
+
 // =============================================================
 //                    FRONTEND ROUTES (Public)
 // =============================================================
@@ -80,7 +101,6 @@ Route::get('/track-order', [App\Http\Controllers\FrontendController::class, 'tra
 Route::post('/login/google', [GoogleController::class, 'handleGoogleLogin'])->name('login.google');
 Route::get('/test-order-email', [MailTestController::class, 'sendTestEmail']);
 // Example fix in web.php
-
 
 
 // Route to store the product review
@@ -185,6 +205,8 @@ Route::prefix('user')->name('user.')->middleware('auth')->group(function () {
     Route::get('/orders', [ProfileController::class, 'orders'])->name('orders.index');
     Route::get('/orders/{id}', [ProfileController::class, 'viewOrder'])->name('orders.show');
     Route::put('/orders/cancel/{id}', [ProfileController::class, 'cancelOrder'])->name('orders.cancel');
+
+
 
 
 });

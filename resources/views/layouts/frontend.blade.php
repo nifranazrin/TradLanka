@@ -119,9 +119,11 @@
                                     </span>
                                 </div>
 
-                                <div class="flex justify-end text-xs">
-                                    <a href="#" class="text-gray-500 hover:text-[#5b2c2c]">Forgot password?</a>
-                                </div>
+                                 <div class="flex justify-end text-xs">
+                        <a href="{{ route('password.request') }}" class="text-gray-500 hover:text-[#5b2c2c]">
+                            Forgot password?
+                        </a>
+                    </div>
 
                                 <button type="submit" class="w-full bg-[#5b2c2c] hover:bg-[#4a2424] text-white py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-lg transition transform active:scale-95 uppercase tracking-wide">
       
