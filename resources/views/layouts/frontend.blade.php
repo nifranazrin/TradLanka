@@ -242,12 +242,11 @@
 
     <script>
 
-      function handleCredentialResponse(response) {
-    // 1. Show a loading spinner with Brand Maroon color
+     function handleCredentialResponse(response) {
+    // 1. Show a loading spinner
     Swal.fire({
         title: 'Verifying Google Account...',
-        color: '#5b2c2c', // Maroon Text
-        loaderHtml: '<div class="spinner-border text-maroon" role="status"></div>',
+        color: '#5b2c2c',
         didOpen: () => { Swal.showLoading() },
         allowOutsideClick: false
     });
@@ -257,33 +256,31 @@
         url: "{{ route('login.google') }}", 
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        data: { 
-            token: response.credential 
-        },
+        data: { token: response.credential },
         success: function(data) {
             closeModal();
             
-            // ✅ CHANGED: Removed checkPendingCartItem to stop the "Add to Cart" alert
+            // ✅ Welcome Message with Maroon Branding
             Swal.fire({
                 icon: 'success',
                 title: 'Welcome Back!',
                 text: 'Google login successful.',
                 timer: 1500,
                 showConfirmButton: false,
-                // ✅ Added Maroon branding to match your other alerts
                 iconColor: '#5b2c2c',
-                confirmButtonColor: '#5b2c2c'
+                // This makes it Butter/Maroon instead of white
+                customClass: { popup: 'cart-alert-popup' } 
             }).then(() => {
-                // Simply reload to show the logged-in state in the header
-                location.reload(); 
+                // ✅ Trigger the bridge to add the item to the cart
+                checkPendingCartItem(); 
             });
         },
         error: function(xhr) {
             Swal.fire({ 
                 icon: 'error', 
                 title: 'Authentication Failed', 
-                text: 'We could not log you in with Google. Please try again.',
                 confirmButtonColor: '#5b2c2c'
+                
             });
         }
     });
@@ -369,43 +366,53 @@
             }
         }
 
-          // 4. CHECK PENDING ITEM (UPDATED LOGIC)
-        function checkPendingCartItem() {
-            const pendingItemStr = localStorage.getItem('pendingCartItem');
-            
-            if (pendingItemStr) {
-                // If there IS a pending item, add it to cart via AJAX
-                const item = JSON.parse(pendingItemStr);
-                
-                const Toast = Swal.mixin({
-                    toast: true, position: 'bottom-end', showConfirmButton: false, timer: 3000
-                });
-                Toast.fire({ icon: 'info', title: 'Adding your item to cart...' });
+         function checkPendingCartItem() {
+    const pendingItemStr = localStorage.getItem('pendingCartItem');
+    
+    if (pendingItemStr) {
+        const item = JSON.parse(pendingItemStr);
+        
+        // Removed the Toast.fire here to stop the white bottom corner alert
 
-                $.ajax({
-                    url: "{{ route('cart.add') }}",
-                    type: 'POST',
-                    headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-                    contentType: 'application/json',
-                    data: JSON.stringify({ product_id: item.id, product_qty: item.qty }),
-                    success: function(data) {
-                        localStorage.removeItem('pendingCartItem');
-                        if (data.status === 'success' || data.status === 'exists') {
-                            Toast.fire({ icon: 'success', title: data.message });
-                            // Reload to update header
-                            setTimeout(() => location.reload(), 1000); 
+        $.ajax({
+            url: "{{ route('cart.add') }}",
+            type: 'POST',
+            headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+            contentType: 'application/json',
+            data: JSON.stringify({ 
+                product_id: item.id, 
+                product_qty: item.qty || 1 
+            }),
+            success: function(data) {
+                localStorage.removeItem('pendingCartItem');
+                
+                if (data.status === 'success' || data.status === 'exists') {
+                    // Only show the main centered popup with your brand colors
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Item Added!',
+                        text: data.message,
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#5b2c2c',
+                        customClass: {
+                            popup: 'cart-alert-popup' 
                         }
-                    },
-                    error: function() {
-                        // Even if adding fails, reload to show logged-in state
-                        location.reload();
-                    }
-                });
-            } else {
-                // If NO pending item, just reload to update header (Name, Auth state)
-                setTimeout(() => location.reload(), 500);
+                    }).then(() => {
+                        location.reload(); 
+                    });
+                } else {
+                    location.reload();
+                }
+            },
+            error: function() {
+                localStorage.removeItem('pendingCartItem');
+                location.reload();
             }
-        }
+        });
+    } else {
+        location.reload();
+    }
+}
 
         // 5. JQUERY DOCUMENT READY
         $(document).ready(function() {
@@ -430,25 +437,25 @@
             success: function(response) {
                 closeModal();
 
-                // ✅ Check if login was triggered by "Add to Cart"
+                //  Check if login was triggered by "Add to Cart"
                 if (response.is_cart_login) {
-                    // Show Maroon-themed alert for Cart Logins
+                  
                     Swal.fire({
                         icon: 'success',
                         title: 'Welcome Back!',
-                        text: response.message, // "Login successful & Item added to cart!"
+                        text: response.message,
                         timer: 2500,
                         showConfirmButton: false,
-                        // ✅ Trigger the Maroon & Gold CSS you defined
+                      
                         customClass: { 
                             popup: 'cart-alert-popup' 
                         }
                     }).then(() => {
-                        // ✅ CRITICAL: Sync the guest's clicked item to the database
+                       
                         checkPendingCartItem(); 
                     });
                 } else {
-                    // ✅ NORMAL LOGIN: Simple "Welcome Back" alert
+                    //  NORMAL LOGIN: Simple "Welcome Back" alert
                     Swal.fire({
                         icon: 'success',
                         title: 'Welcome Back!',
@@ -456,7 +463,7 @@
                         timer: 1500,
                         showConfirmButton: false
                     }).then(() => {
-                        location.reload(); // Refresh to show user name in header
+                        location.reload(); 
                     });
                 }
             },
@@ -481,7 +488,7 @@
             success: function(response) {
                 closeModal();
                 
-                // ✅ Decision logic for registration intent
+                //  Decision logic for registration intent
                 if (response.is_cart_login) {
                     Swal.fire({
                         icon: 'success',
@@ -489,12 +496,13 @@
                         text: response.message, 
                         timer: 2500,
                         showConfirmButton: false,
-                        // ✅ Trigger the Maroon & Gold CSS
+                        
+                        //  Trigger the Maroon & Gold CSS
                         customClass: { 
                             popup: 'cart-alert-popup' 
                         }
                     }).then(() => {
-                        // ✅ Sync the guest's clicked item to the database
+                        //  Sync the guest's clicked item to the database
                         checkPendingCartItem();
                     });
                 } else {

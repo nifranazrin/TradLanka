@@ -9,6 +9,9 @@ use App\Models\Cart; // ✅ Added this to access your carts table
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeUserMail;
+use Illuminate\Support\Facades\Log;
 
 class AuthPopupController extends Controller
 {
@@ -71,6 +74,14 @@ class AuthPopupController extends Controller
             'password' => Hash::make($request->password),
             'user_role' => 0, 
         ]);
+
+        try {
+            Mail::to($user->email)->send(new WelcomeUserMail($user));
+        } catch (\Exception $e) {
+            // We catch the error so the registration still finishes 
+            // even if there is a mail server issue.
+            Log::error("Welcome Email Error: " . $e->getMessage());
+        }
 
         Auth::login($user);
 
