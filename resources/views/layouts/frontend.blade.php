@@ -242,17 +242,19 @@
 
     <script>
 
-        function handleCredentialResponse(response) {
-    // Show a loading spinner using SweetAlert2
+      function handleCredentialResponse(response) {
+    // 1. Show a loading spinner with Brand Maroon color
     Swal.fire({
         title: 'Verifying Google Account...',
+        color: '#5b2c2c', // Maroon Text
+        loaderHtml: '<div class="spinner-border text-maroon" role="status"></div>',
         didOpen: () => { Swal.showLoading() },
         allowOutsideClick: false
     });
 
-    // Send the token to your Laravel Backend
+    // 2. Send the token to your Laravel Backend
     $.ajax({
-        url: "{{ route('login.google') }}", // Ensure you create this route in web.php
+        url: "{{ route('login.google') }}", 
         type: 'POST',
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
         data: { 
@@ -260,21 +262,28 @@
         },
         success: function(data) {
             closeModal();
+            
+            // ✅ CHANGED: Removed checkPendingCartItem to stop the "Add to Cart" alert
             Swal.fire({
                 icon: 'success',
-                title: 'Welcome!',
+                title: 'Welcome Back!',
                 text: 'Google login successful.',
                 timer: 1500,
-                showConfirmButton: false
+                showConfirmButton: false,
+                // ✅ Added Maroon branding to match your other alerts
+                iconColor: '#5b2c2c',
+                confirmButtonColor: '#5b2c2c'
             }).then(() => {
-                checkPendingCartItem(); // Re-use your existing logic
+                // Simply reload to show the logged-in state in the header
+                location.reload(); 
             });
         },
         error: function(xhr) {
             Swal.fire({ 
                 icon: 'error', 
                 title: 'Authentication Failed', 
-                text: 'We could not log you in with Google. Please try again.' 
+                text: 'We could not log you in with Google. Please try again.',
+                confirmButtonColor: '#5b2c2c'
             });
         }
     });
