@@ -10,16 +10,13 @@ use Illuminate\Support\Facades\Log;
 
 class ChatbotController extends Controller
 {
-    /**
-     * Handle Dialogflow webhook requests
-     */
+    
     public function handle(Request $request)
     {
         $intent = $request->input('queryResult.intent.displayName');
         $params = $request->input('queryResult.parameters', []);
 
-        // Optional debug logs (safe to remove later)
-        Log::info('Dialogflow Intent:', [$intent]);
+        
         Log::info('Dialogflow Params:', $params);
 
         switch ($intent) {
@@ -38,12 +35,10 @@ class ChatbotController extends Controller
         }
     }
 
-    /**
-     * 🚚 ORDER TRACKING
-     */
+   
     private function trackOrder(array $params)
     {
-        // ✅ Robust parameter handling for Dialogflow
+       
         $trackingNo =
             $params['tracking_no']
             ?? $params['trackingNumber']
@@ -84,7 +79,7 @@ class ChatbotController extends Controller
 
         $statusText = $statusMap[$order->status] ?? 'Unknown Status';
 
-        // ✅ Currency handling (FIXED)
+       
         $currencySymbol = match ($order->currency) {
             'USD' => '$',
             'LKR' => 'Rs.',
@@ -100,9 +95,7 @@ class ChatbotController extends Controller
         ]);
     }
 
-    /**
-     * 🛍 PRODUCT DETAILS
-     */
+  
     private function productDetails(array $params)
     {
         $productName = $params['product_name'] ?? null;
@@ -127,15 +120,19 @@ class ChatbotController extends Controller
             ]);
         }
 
-        // Optional: if you later add multi-currency for products, this is ready
+        
         $currencySymbol = 'Rs.';
 
-        return response()->json([
-            "fulfillmentText" =>
-                "🛍 Product: {$product->name}\n" .
-                "💰 Price: {$currencySymbol}" . number_format($product->price, 2) . "\n" .
-                "📦 Stock: {$product->stock}\n" .
-                "🏷 Category: {$product->category->name}"
-        ]);
+
+return response()->json([
+    "fulfillmentText" =>
+        "🛍 Product: {$product->name}\n" .
+        "📝 Description: {$product->description}\n" .
+        "💰 Price: {$currencySymbol}" . number_format($product->price, 2) . "\n" .
+        "📦 Stock: {$product->stock}\n" .
+        "🏷 Category: {$product->category->name}\n\n" 
+        
+]);
+
     }
 }

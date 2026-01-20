@@ -7,6 +7,7 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\SellerMiddleware;
 use App\Http\Middleware\CustomerMiddleware;
 use App\Http\Middleware\DeliveryPersonMiddleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,7 +23,17 @@ return Application::configure(basePath: dirname(__DIR__))
              'customer' => App\Http\Middleware\CustomerMiddleware::class,
              'delivery' => App\Http\Middleware\DeliveryPersonMiddleware::class,
         ]);
-    })
+
+        $middleware->redirectGuestsTo(function (Request $request) {
+            // Check if the URL is for staff, admin, seller, or delivery routes
+            if ($request->is('admin/*') || $request->is('seller/*') || $request->is('delivery/*')) {
+                return route('staff.login'); // Redirect operational staff here
+            }
+
+            // Default for customers (using your popup login route)
+            return route('login.popup');
+        });
+   })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })
