@@ -196,7 +196,8 @@
     </div>
 
     <div class="flex flex-1 gap-4 w-full h-14">
-        {{-- ADD TO CART WITH SHOPPING CART ICON --}}
+    @if($product->stock > 0)
+        {{-- IN STOCK: Show Normal Buttons --}}
         <button id="addToCartBtn" data-id="{{ $product->id }}" 
                 class="flex-1 h-full bg-white border-2 border-[#5b2c2c] text-[#5b2c2c] font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-[#5b2c2c] hover:text-white transition-all duration-300 shadow-md transform active:scale-95">
             <i class="fas fa-shopping-cart"></i> Add to Cart
@@ -205,7 +206,19 @@
                 class="flex-1 h-full bg-[#d97706] text-white font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-[#b86504] transition-all duration-300 shadow-md transform active:scale-95">
             <i class="fas fa-bolt"></i> Buy Now
         </button>
-    </div>
+    @else
+        {{-- OUT OF STOCK: Show Wishlist Button --}}
+       <button type="button" id="addToWishlistBtn" data-id="{{ $product->id }}"
+        class="flex-1 h-full bg-gray-400 text-white font-bold rounded-xl flex items-center justify-center gap-3 shadow-md transform active:scale-95">
+    <i class="fas fa-heart"></i> Add to Wishlist
+</button>
+        
+        {{-- Faded Buy Now --}}
+        <button disabled class="flex-1 h-full bg-gray-200 text-gray-400 font-bold rounded-xl flex items-center justify-center gap-3 cursor-not-allowed shadow-none">
+            <i class="fas fa-bolt"></i> Buy Now
+        </button>
+    @endif
+</div>
 </div>
         </div>
     </div>
@@ -374,6 +387,7 @@
 
     // 2. MAIN PRODUCT LOGIC
     document.addEventListener('DOMContentLoaded', function () {
+        // Core Variables
         const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
         const hasVariants = {{ $hasVariants ? 'true' : 'false' }};
         const currencySymbol = "{{ session('currency') == 'USD' ? '$' : 'Rs.' }}"; 
@@ -383,10 +397,13 @@
         const priceDisplay = document.getElementById('displayPrice');
         const hiddenVariantInput = document.getElementById('selectedVariantId');
         const qtyInput = document.getElementById('productQty');
+        
+        // Target Buttons
         const addToCartBtn = document.getElementById('addToCartBtn');
         const buyNowBtn = document.getElementById('buyNowBtn');
+        const addToWishlistBtn = document.getElementById('addToWishlistBtn'); // Target the heart button
         
-        // Default product stock as fallback
+        // Initial Stock (Fallback to product base stock)
         let currentStock = {{ $product->stock }}; 
 
         const tradLankaTheme = {
@@ -402,7 +419,7 @@
             }
         };
 
-        // ✅ FIXED: Initialize Stock if a variant (like "Default") is pre-selected
+        // Initialize Stock if a variant is pre-selected
         if (hiddenVariantInput && hiddenVariantInput.value) {
             const preSelectedBtn = document.querySelector(`.variantOption[data-id="${hiddenVariantInput.value}"]`);
             if (preSelectedBtn) {
@@ -410,13 +427,12 @@
             }
         }
 
-        // ✅ HELPER: Update Header Cart Icon (Sync with Homepage ID)
+        // Helper: Update Header Cart Icon
         function updateCartIcon(count) {
             const badge = document.getElementById('cart-badge'); 
             if(badge) {
                 badge.innerText = count;
                 badge.classList.remove('hidden'); 
-                
                 badge.style.transition = "transform 0.3s ease";
                 badge.style.transform = "scale(1.5)";
                 setTimeout(() => { badge.style.transform = "scale(1)"; }, 300);
@@ -432,7 +448,7 @@
             });
         });
 
-        // Variant Selection
+        // Variant Selection Logic
         variantBtns.forEach(btn => {
             btn.addEventListener('click', function () {
                 variantBtns.forEach(b => b.classList.remove('active-variant', 'ring-2', 'ring-[#5b2c2c]'));
@@ -456,12 +472,15 @@
             });
         });
 
-        // Quantity Controls
+        // Quantity Control Logic
         document.getElementById('increaseQty').onclick = () => {
             let val = parseInt(qtyInput.value);
-            if(val < currentStock) qtyInput.value = val + 1;
-            else {
+            // Allow incrementing even if stock is 0 for Wishlist adding, 
+            // but normally we cap at stock for in-stock items.
+            if(currentStock > 0 && val >= currentStock) {
                 Swal.fire({ ...tradLankaTheme, title: 'Stock Limit', icon: 'warning' });
+            } else {
+                qtyInput.value = val + 1;
             }
         };
 
@@ -470,18 +489,22 @@
             if(val > 1) qtyInput.value = val - 1;
         };
 
-        // THE ACTION FUNCTION
+        // THE UNIFIED ACTION FUNCTION (Handles Cart & Wishlist)
         function handleAddToCart(btn, isBuyNow) {
-            // ✅ IMPROVED CHECK: If hiddenVariantInput has a value (Default), this will NOT trigger
+            // 1. Variant Check
             if(hasVariants && !hiddenVariantInput.value) {
                 Swal.fire({ ...tradLankaTheme, title: 'Pick a Size!', icon: 'info' });
                 return;
             }
 
+            // 2. Auth Check
             if(!isLoggedIn) {
                 window.location.href = "/login";
                 return;
             }
+
+            // 3. Determine if adding as standard item or Wishlist item
+            const isOutOfStock = currentStock <= 0;
 
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -510,9 +533,26 @@
                         updateCartIcon(data.cart_count); 
                     }
 
-                    if (isBuyNow) { 
+                    // Success Feedback: Out of Stock (Wishlist) Case
+                    if (isOutOfStock) {
+                        Swal.fire({
+                            ...tradLankaTheme,
+                            title: 'Saved to Wishlist!',
+                            text: 'This item is out of stock but has been saved in your cart. You can proceed with other items, and we will notify you when this is back!',
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-shopping-cart"></i> View Cart',
+                            cancelButtonText: 'Continue Shopping'
+                        }).then((result) => {
+                            if (result.isConfirmed) window.location.href = "{{ route('cart.show') }}";
+                        });
+                    } 
+                    // Success Feedback: Normal Buy Now Case
+                    else if (isBuyNow) { 
                         window.location.href = "{{ route('cart.show') }}"; 
-                    } else {
+                    } 
+                    // Success Feedback: Normal Add to Cart Case
+                    else {
                         Swal.fire({
                             ...tradLankaTheme,
                             title: 'Added to Cart',
@@ -536,10 +576,13 @@
             });
         }
 
+        // Assign Event Listeners
         if(addToCartBtn) addToCartBtn.onclick = () => handleAddToCart(addToCartBtn, false);
         if(buyNowBtn) buyNowBtn.onclick = () => handleAddToCart(buyNowBtn, true);
+        if(addToWishlistBtn) addToWishlistBtn.onclick = () => handleAddToCart(addToWishlistBtn, false);
     });
 
+    // Share Product Logic
     function shareProduct() {
         const productTitle = "{{ $product->name }}";
         const productUrl = window.location.href;
@@ -572,64 +615,4 @@
         }
     }
 </script>
-
-
-<style>
-    /* 1. Base Variant Button Style */
-    .variantOption {
-        position: relative;
-        transition: all 0.2s ease-in-out;
-        outline: none !important;
-        cursor: pointer;
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-width: 80px; /* Standard professional width */
-        border: 1px solid #e5e7eb; /* Subtle gray border */
-    }
-
-    /* 2. Professional Active State (Daraz Style) */
-    .variantOption.active-variant {
-        border-color: #5b2c2c !important; /* Your brand color */
-        border-width: 2px;
-        background-color: #fff9f9 !important; /* Very light tint */
-        color: #5b2c2c !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(91, 44, 44, 0.05); /* Softer shadow for cleaner look */
-    }
-
-    /* 3. Hover Effect for Available Items */
-    .variantOption:not(:disabled):hover {
-        border-color: #5b2c2c;
-        background-color: #fafafa;
-    }
-
-    /* 4. Sold Out / Disabled State */
-    .variantOption:disabled {
-        background-color: #f9fafb !important;
-        border-color: #f3f4f6 !important;
-        color: #9ca3af !important;
-        cursor: not-allowed;
-        opacity: 0.7;
-    }
-
-    /* 5. Add to Cart Animation */
-    #addToCartBtn:hover i { 
-        animation: trolley-shake 0.5s ease infinite; 
-    }
-
-    @keyframes trolley-shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-2px); }
-        50% { transform: translateX(2px); }
-    }
-
-    /* 6. Quantity Input Polish */
-    #productQty {
-        background-color: transparent;
-        border: none;
-        user-select: none;
-    }
-</style>
 @endsection

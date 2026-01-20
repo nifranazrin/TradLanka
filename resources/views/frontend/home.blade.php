@@ -243,11 +243,10 @@
         </a>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
+   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
     @foreach ($bestSellers as $item)
         @if($item)
         <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100 full-card-height flex flex-col">
-            {{-- Image Wrapper with Gold Badge --}}
             <div class="relative unified-image-wrapper">
                 <div class="absolute top-2 left-2 z-10 pointer-events-none">
                     <span class="bg-[#d97706] text-white text-[9px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
@@ -276,33 +275,45 @@
                                 @for ($i = 1; $i <= 5; $i++)
                                     <i class="{{ $i <= round($avgRating) ? 'fas' : 'far' }} fa-star"></i>
                                 @endfor
-                                <span class="text-gray-400 ml-1">({{ $item->reviews->count() }})</span>
                             </div>
                         @else
                             <div class="h-5"></div>
                         @endif
                     </div>
 
-                         <p class="text-[#5b2c2c] font-bold text-lg mb-2">
-                                {{ $currencySymbol }} {{ number_format($item->price, 2) }}
-                            </p>
+                    <p class="text-[#5b2c2c] font-bold text-lg mb-2">
+                        {{ $currencySymbol }} {{ number_format($item->price, 2) }}
+                    </p>
                 </div>
                 
-                {{-- Change this line in your Best Sellers loop --}}
-            <button type="button"
-                    class="addToCartBtn custom-cart-btn active:scale-95"
-                    data-id="{{ $item->id }}" 
-                    data-name="{{ $item->name }}" 
-                    {{--  FIX: Use raw price --}}
-                    data-price="{{ $item->price }}" 
-                    data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
-                Add to Cart
-            </button>
-             </div>
+                {{-- DYNAMIC BUTTON: Switches based on stock --}}
+                @if($item->stock > 0)
+                    <button type="button"
+                            class="addToCartBtn custom-cart-btn active:scale-95"
+                            data-id="{{ $item->id }}" 
+                            data-name="{{ $item->name }}" 
+                            data-price="{{ $item->price }}" 
+                            data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
+                        Add to Cart
+                    </button>
+                @else
+                    {{-- Daraz-Style Wishlist Button --}}
+                <button type="button"
+                        class="addToCartBtn custom-cart-btn bg-gray-400 opacity-60 active:scale-95"
+                        style="background-color: #6c757d !important;"
+                        data-id="{{ $item->id }}" 
+                        data-name="{{ $item->name }}" 
+                        data-price="{{ $item->price }}" 
+                        data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}"
+                        data-is-wishlist="true"> {{-- Flag to trigger "Saved to Wishlist" alert --}}
+                    <i class="fas fa-heart mr-1"></i> Add to Wishlist
+                </button>
+            @endif {{-- Closes the stock check: if($item->stock > 0) --}}
         </div>
-        @endif
-    @endforeach
     </div>
+    @endif {{-- Closes the existence check: if($item) --}}
+@endforeach {{-- Closes the product loop --}}
+</div>
 </section>
 
 {{-- SECTION: NEW ARRIVALS --}}
@@ -332,44 +343,59 @@
                 </a>
             </div>
             
-            <div class="p-4 text-center flex-grow flex flex-col">
-                <div>
-                    <h3 class="font-semibold text-gray-800 unified-title-height">
-                        {{ $item->name }}
-                    </h3>
+           <div class="p-4 text-center flex-grow flex flex-col justify-between">
+    <div>
+        <h3 class="font-semibold text-gray-800 unified-title-height">
+            {{ $item->name }}
+        </h3>
 
-                    <div class="flex justify-center items-center h-5 mb-1">
-                        @php $avgRating = $item->reviews->avg('rating'); @endphp
-                        @if($avgRating > 0)
-                            <div class="flex text-yellow-400 text-[10px]">
-                                @for ($i = 1; $i <= 5; $i++)
-                                    <i class="{{ $i <= round($avgRating) ? 'fas' : 'far' }} fa-star"></i>
-                                @endfor
-                                <span class="text-gray-400 ml-1">({{ $item->reviews->count() }})</span>
-                            </div>
-                        @else
-                            <div class="h-5"></div>
-                        @endif
-                    </div>
-
-                       <p class="text-[#5b2c2c] font-bold text-lg mb-2">
-                                {{ $currencySymbol }} {{ number_format($item->price, 2) }}
-                            </p>
+        <div class="flex justify-center items-center h-5 mb-1">
+            @php $avgRating = $item->reviews->avg('rating'); @endphp
+            @if($avgRating > 0)
+                <div class="flex text-yellow-400 text-[10px]">
+                    @for ($i = 1; $i <= 5; $i++)
+                        <i class="{{ $i <= round($avgRating) ? 'fas' : 'far' }} fa-star"></i>
+                    @endfor
+                    <span class="text-gray-400 ml-1">({{ $item->reviews->count() }})</span>
                 </div>
-                
-                {{-- Change this line in your New Arrivals loop --}}
-<button type="button"
-        class="addToCartBtn custom-cart-btn active:scale-95"
-        data-id="{{ $item->id }}" 
-        data-name="{{ $item->name }}" 
-        {{--  FIX: Use raw price --}}
-        data-price="{{ $item->price }}" 
-        data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
-    Add to Cart
-</button>
-            </div>
+            @else
+                <div class="h-5"></div>
+            @endif
         </div>
-    @endforeach
+
+        <p class="text-[#5b2c2c] font-bold text-lg mb-2">
+            {{ $currencySymbol }} {{ number_format($item->price, 2) }}
+        </p>
+    </div>
+
+    {{-- DYNAMIC BUTTON: Switches based on stock level --}}
+    @if($item->stock > 0)
+        {{-- Standard Add to Cart button --}}
+        <button type="button"
+                class="addToCartBtn custom-cart-btn active:scale-95"
+                data-id="{{ $item->id }}" 
+                data-name="{{ $item->name }}" 
+                data-price="{{ $item->price }}" 
+                data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}">
+            Add to Cart
+        </button>
+    @else
+        {{-- Daraz-Style Wishlist Button --}}
+        {{-- Daraz-Style Wishlist Button: Added addToCartBtn class and data attributes --}}
+    <button type="button"
+            class="addToCartBtn custom-cart-btn bg-gray-400 opacity-60 active:scale-95"
+            style="background-color: #6c757d !important;"
+            data-id="{{ $item->id }}" 
+            data-name="{{ $item->name }}" 
+            data-price="{{ $item->price }}" 
+            data-image="{{ $item->image ? asset('storage/' . $item->image) : asset('images/placeholder.jpg') }}"
+            data-is-wishlist="true"> {{-- Added flag for JS to show "Wishlist" alert --}}
+        <i class="fas fa-heart mr-1"></i> Add to Wishlist
+    </button>
+@endif {{-- Closes if($item->stock > 0) --}}
+        </div>
+    </div>
+@endforeach
     </div>
 </section>
 
@@ -504,143 +530,153 @@
     const isLoggedIn = {{ auth()->check() ? 'true' : 'false' }};
 
     document.addEventListener('DOMContentLoaded', function() {
-        // 1. Initialize Animations
-        AOS.init({ once: true, offset: 100 });
+        // 2. Initialize Animations (AOS)
+        if (typeof AOS !== 'undefined') {
+            AOS.init({ once: true, offset: 100 });
+        }
 
-        // 2. Helper: Update Header Cart Icon
-        function updateCartIcon(count) {
+    function updateCartIcon(count) {
             const badge = document.getElementById('cart-badge'); 
             if(badge) {
                 badge.innerText = count;
                 badge.classList.remove('hidden');
+                
+                // Optional: Add a small "pop" animation
+                badge.style.transform = "scale(1.3)";
+                setTimeout(() => { badge.style.transform = "scale(1)"; }, 200);
             }
         }
 
         // --- SUCCESS ORDER ALERT ---
+
         @if(session('order_success'))
             Swal.fire({
                 title: 'Thank You! ⭐',
                 text: 'Your order has been placed successfully. We will notify you once it is out for delivery.',
                 icon: 'success',
                 confirmButtonText: '<i class="fas fa-shopping-bag"></i> Continue Shopping',
-                customClass: {
-                    popup: 'cart-alert-popup' // This uses your existing maroon styles
-                }
+                customClass: { popup: 'cart-alert-popup' }
             }).then((result) => {
-                // Optional: Ensure they stay on the shop page or refresh to clear the cart visually
-                if (result.isConfirmed) {
-                    window.location.href = "{{ route('home') }}";
-                }
+                if (result.isConfirmed) window.location.href = "{{ route('home') }}";
             });
         @endif
 
 
         // ============================================
-// 4. UNIVERSAL ADD TO CART LOGIC (CORRECTED)
-// ============================================
-const buttons = document.querySelectorAll('.addToCartBtn');
+        // 4. UNIVERSAL ADD TO CART & WISHLIST LOGIC
+        // ============================================
+    const buttons = document.querySelectorAll('.addToCartBtn');
 
-buttons.forEach(btn => {
-    btn.addEventListener('click', function(event) {
-        event.preventDefault(); 
-        
-        const productId   = this.getAttribute('data-id'); 
-        const productName = this.getAttribute('data-name'); 
-        const rawPrice    = this.getAttribute('data-price'); 
-        const productImage = this.getAttribute('data-image'); 
-        const productQty   = 1; 
+        buttons.forEach(btn => {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault(); 
+                
+                const productId    = this.getAttribute('data-id'); 
+                const productName  = this.getAttribute('data-name'); 
+                const rawPrice     = this.getAttribute('data-price'); 
+                const productImage = this.getAttribute('data-image'); 
+                // CHECK IF THIS IS A WISHLIST ACTION
+                const isWishlist   = this.getAttribute('data-is-wishlist') === 'true';
+                const productQty   = 1; 
 
-        // --- GUEST LOGIC ---
-        if (!isLoggedIn) {
-            // 1. Backup to LocalStorage
-            localStorage.setItem('pendingCartItem', JSON.stringify({ id: productId, qty: productQty }));
-
-            // 2.  SAVE INTENT TO SESSION (This makes AuthPopupController work)
-            // We send a quick background request to store this item in the session
-            fetch("{{ route('cart.save-intent') }}", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({ product_id: productId, product_qty: productQty })
-            }).then(() => {
-                // 3. Open Login Modal ONLY after session is saved
-                const authModal = document.getElementById('authModal');
-                if(authModal) {
-                    authModal.classList.remove('hidden');
-                } else {
-                    window.location.href = "/login";
+                // --- GUEST LOGIC ---
+                if (!isLoggedIn) {
+                    // Save intent to session via background request
+                    fetch("{{ route('cart.save-intent') }}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify({ product_id: productId, product_qty: productQty })
+                    }).then(() => {
+                        const authModal = document.getElementById('authModal');
+                        if(authModal) {
+                            authModal.classList.remove('hidden');
+                        } else {
+                            window.location.href = "/login";
+                        }
+                    });
+                    return; 
                 }
+
+                // --- LOGGED IN LOGIC ---
+                const originalHTML = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                this.disabled = true;
+
+                fetch("{{ route('cart.add') }}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({ 
+                        product_id: productId,
+                        product_qty: productQty,
+                        product_variant_id: null 
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Server returned ' + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    this.innerHTML = originalHTML;
+                    this.disabled = false;
+
+                    if(data.status === 'success') {
+                        if(data.cart_count !== undefined) updateCartIcon(data.cart_count);
+
+                        const formattedPrice = parseFloat(rawPrice).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                        const currencySymbol = "{{ session('currency') === 'USD' ? '$' : 'Rs.' }}";
+
+                        // --- DARAZ LOGIC: CUSTOMIZE ALERT BASED ON STOCK ---
+                        const alertTitle = isWishlist ? 'Saved to Wishlist' : 'Added to Cart';
+                        const alertIcon  = isWishlist ? 'info' : 'success';
+                        const alertText  = isWishlist 
+                            ? 'This item is out of stock but has been saved in your cart. We will notify you when it returns!' 
+                            : 'Product has been successfully added to your shopping cart.';
+
+                        Swal.fire({
+                            title: alertTitle,
+                            html: `
+                                <p style="font-size:14px; color:#5b2c2c; margin-bottom:15px; text-align:center;">${alertText}</p>
+                                <div style="display:flex; align-items:center; gap:16px; margin-top:10px; background:rgba(255,255,255,0.5); padding:12px; border-radius:12px; border:1px solid rgba(91,44,44,0.1);">
+                                    <img src="${productImage}" style="width:65px; height:65px; object-fit:cover; border-radius:10px; border:1px solid #ddd;">
+                                    <div style="text-align:left;">
+                                        <div style="font-weight:600; color:#5b2c2c; font-size:14px; line-height:1.3;">${productName}</div>
+                                        <div style="color:#e95b2c; font-weight:700; font-size:16px; margin-top:4px;">${currencySymbol} ${formattedPrice}</div>
+                                    </div>
+                                </div>`,
+                            icon: alertIcon,
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-shopping-cart"></i> View Cart',
+                            cancelButtonText: 'Continue Shopping',
+                            customClass: { popup: 'cart-alert-popup' }
+                        }).then((result) => {
+                            if (result.isConfirmed) window.location.href = "{{ route('cart.show') }}";
+                        });
+                    }
+                })
+                .catch(error => {
+                    this.innerHTML = originalHTML;
+                    this.disabled = false;
+                    Swal.fire({ 
+                        icon: 'error', 
+                        title: 'Connection Issue', 
+                        text: 'Could not reach the server. Please check your connection.',
+                        customClass: { popup: 'cart-alert-popup' }
+                    });
+                });
             });
-            return; 
-        }
-
-        // --- LOGGED IN LOGIC ---
-        const originalHTML = this.innerHTML;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        this.disabled = true;
-
-        fetch("{{ route('cart.add') }}", {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({ 
-                product_id: productId,
-                product_qty: productQty,
-                product_variant_id: null 
-            })
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Server returned ' + response.status);
-            return response.json();
-        })
-        .then(data => {
-            this.innerHTML = originalHTML;
-            this.disabled = false;
-
-            if(data.status === 'success') {
-                if(data.cart_count !== undefined) updateCartIcon(data.cart_count);
-
-                const formattedPrice = parseFloat(rawPrice).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-                const currencySymbol = "{{ session('currency') === 'USD' ? '$' : 'Rs.' }}";
-
-                //  Maroon Themed Success Alert
-                Swal.fire({
-                    title: 'Added to Cart',
-                    html: `
-                          <div style="display:flex; align-items:center; gap:16px; margin-top:10px;">
-                            <img src="${productImage}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:1px solid #ddd;">
-                            <div style="text-align:left;">
-                                <div style="font-weight:600; color:#5b2c2c; font-size:15px; line-height:1.3;">${productName}</div>
-                                <div style="color:#450b07; font-weight:700; font-size:15px; margin-top:4px;">${currencySymbol} ${formattedPrice}</div>
-                            </div>
-                        </div>`,
-                    icon: 'success',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="fas fa-shopping-cart"></i> View Cart',
-                    cancelButtonText: 'Continue Shopping',
-                    customClass: { popup: 'cart-alert-popup' } // Applies Maroon Style
-                }).then((result) => {
-                    if (result.isConfirmed) window.location.href = "{{ route('cart.show') }}";
-                });
-            }
-        })
-        .catch(error => {
-            this.innerHTML = originalHTML;
-            this.disabled = false;
-            Swal.fire({ icon: 'error', title: 'Server Error', text: 'Could not connect to the cart.' });
         });
     });
-});
-    }); 
 </script>
 
 

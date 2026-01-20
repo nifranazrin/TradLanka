@@ -37,100 +37,141 @@
             </div>
         @else
 
-        <div class="space-y-4" id="cartContainer">
-      
-            @foreach ($cartItems as $item)
-                @if($item->product)
-                    @php
-                        
-                        $currentPrice = $item->variant ? $item->variant->price : $item->product->price;
-                        $currentName  = $item->product->name;
-                        
-                        if($item->variant) {
-                            $currentName .= ' (' . $item->variant->unit_label . ')';
-                        }
-                        
-                        // Calculate row total for display
-                        $rowTotal = $currentPrice * $item->product_qty;
-                    @endphp
+     <div class="space-y-4" id="cartContainer">
+    {{-- Initialize a global flag to check if any selected item is out of stock --}}
+    @php $hasOutOfStockGlobal = false; @endphp
 
-                    <div class="cart-item-row bg-white p-4 rounded-lg shadow-sm flex flex-col md:flex-row items-center gap-4"
-                         id="cart-row-{{ $item->id }}">
+    @foreach ($cartItems as $item)
+        @if($item->product)
+            @php
+                // 1. Determine current price
+                $currentPrice = $item->variant ? $item->variant->price : $item->product->price;
+                
+                // 2. CHECK STOCK STATUS (Variant stock first, then product stock)
+                $currentStock = $item->variant ? $item->variant->stock : $item->product->stock;
+                $isOutOfStock = $currentStock <= 0;
 
-                        {{-- CHECKBOX --}}
-                        <input type="checkbox"
-                               class="cart-checkbox w-5 h-5 cursor-pointer accent-[#5b2c2c]"
-                               data-id="{{ $item->id }}"
-                               data-price="{{ $currentPrice }}"
-                               checked>
+                if($isOutOfStock) {
+                    $hasOutOfStockGlobal = true;
+                }
 
-                        {{-- IMAGE --}}
-                        <div class="w-24 h-24 flex-shrink-0">
-                            @if($item->product->image)
-                                <img src="{{ asset('storage/'.$item->product->image) }}" class="w-full h-full object-cover rounded border">
-                            @else
-                                <div class="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs">No Img</div>
-                            @endif
+                // 3. Determine Name
+                $currentName  = $item->product->name;
+                if($item->variant) {
+                    $currentName .= ' (' . $item->variant->unit_label . ')';
+                }
+                
+                // Calculate row total for display
+                $rowTotal = $currentPrice * $item->product_qty;
+            @endphp
+
+            {{-- 4. APPLY DARAZ-STYLE FADING: Add grayscale and opacity classes if out of stock --}}
+            <div class="cart-item-row bg-white p-4 rounded-lg shadow-sm flex flex-col md:flex-row items-center gap-4 relative {{ $isOutOfStock ? 'opacity-60 grayscale' : '' }}"
+     id="cart-row-{{ $item->id }}">
+
+                {{-- CHECKBOX: Disabled for interaction if out of stock --}}
+                <input type="checkbox"
+           class="cart-checkbox w-5 h-5 cursor-pointer accent-[#5b2c2c]"
+           data-id="{{ $item->id }}"
+           data-price="{{ $currentPrice }}"
+           {{ $isOutOfStock ? '' : 'checked' }}>
+
+                {{-- IMAGE --}}
+                <div class="w-24 h-24 flex-shrink-0 relative">
+                    @if($item->product->image)
+                        <img src="{{ asset('storage/'.$item->product->image) }}" class="w-full h-full object-cover rounded border">
+                    @else
+                        <div class="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs">No Img</div>
+                    @endif
+
+                    {{-- SOLD OUT OVERLAY --}}
+                    @if($isOutOfStock)
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center rounded">
+                            <span class="text-[10px] text-white font-bold bg-red-600 px-1 py-0.5 rounded">SOLD OUT</span>
                         </div>
+                    @endif
+                </div>
 
-                        {{-- DETAILS --}}
-                        <div class="flex-1 text-center md:text-left">
-                            <p class="font-semibold text-lg text-[#5b2c2c]">{{ $currentName }}</p>
-                            <p class="text-sm text-gray-500">
-                                Unit Price: Rs {{ number_format($currentPrice, 2) }}
-                            </p>
-                            @if($item->variant && $item->variant->stock < 5)
-                                <p class="text-xs text-red-500 font-bold mt-1">Only {{ $item->variant->stock }} left!</p>
-                            @endif
-                        </div>
+                {{-- DETAILS --}}
+                <div class="flex-1 text-center md:text-left">
+                    <p class="font-semibold text-lg text-[#5b2c2c]">{{ $currentName }}</p>
+                    <p class="text-sm text-gray-500">
+                        Unit Price: Rs {{ number_format($currentPrice, 2) }}
+                    </p>
+                    
+                    @if($isOutOfStock)
+                        <p class="text-xs text-red-600 font-bold mt-1 uppercase italic">Currently Unavailable</p>
+                    @elseif($item->variant && $item->variant->stock < 5)
+                        <p class="text-xs text-red-500 font-bold mt-1">Only {{ $item->variant->stock }} left!</p>
+                    @endif
+                </div>
 
-                        {{-- QUANTITY & TOTAL --}}
-                        <div class="flex flex-col items-center md:items-end gap-2">
-                            <div class="flex items-center border rounded overflow-hidden">
-                                <button class="decrement-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 transition"
-                                        data-id="{{ $item->id }}">-</button>
+                {{-- QUANTITY & TOTAL: Disabled if out of stock --}}
+                <div class="flex flex-col items-center md:items-end gap-2 {{ $isOutOfStock ? 'pointer-events-none' : '' }}">
+                    <div class="flex items-center border rounded overflow-hidden">
+                        <button class="decrement-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 transition"
+                                data-id="{{ $item->id }}" {{ $isOutOfStock ? 'disabled' : '' }}>-</button>
 
-                                <input type="text"
-                                       id="qty-{{ $item->id }}"
-                                       value="{{ $item->product_qty }}"
-                                       readonly
-                                       class="w-12 text-center border-x font-semibold">
+                        <input type="text"
+                               id="qty-{{ $item->id }}"
+                               value="{{ $item->product_qty }}"
+                               readonly
+                               class="w-12 text-center border-x font-semibold">
 
-                                <button class="increment-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 transition"
-                                        data-id="{{ $item->id }}">+</button>
-                            </div>
-
-                            <p class="font-bold text-[#5b2c2c] text-lg">
-                                   <span id="currency-symbol-{{ $item->id }}">{{ session('currency') == 'USD' ? '$' : 'Rs' }}</span>
-                            <span id="row-total-{{ $item->id }}">
-                                {{ session('currency') == 'USD' ? number_format($rowTotal * 0.0032, 2) : number_format($rowTotal, 2) }}
-                            </span>
-                        </p>
-                        </div>
+                        <button class="increment-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 transition"
+                                data-id="{{ $item->id }}" {{ $isOutOfStock ? 'disabled' : '' }}>+</button>
                     </div>
-                @endif
-            @endforeach
-        </div>
 
-        @endif
-    </div>
-
-    {{-- BOTTOM BAR --}}
-    <div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <div>
-                <p class="text-sm text-gray-500">Total (<span id="selectedCount">0</span> items)</p>
-                <p class="text-2xl font-bold text-[#e95b2c]">
-                    <span id="grandTotalSymbol">{{ session('currency') == 'USD' ? '$' : 'Rs' }}</span>
-<span id="grandTotal">0.00</span>
-                </p>
+                    <p class="font-bold text-[#5b2c2c] text-lg">
+                        <span id="currency-symbol-{{ $item->id }}">{{ session('currency') == 'USD' ? '$' : 'Rs' }}</span>
+                        <span id="row-total-{{ $item->id }}">
+                            {{ session('currency') == 'USD' ? number_format($rowTotal * 0.0032, 2) : number_format($rowTotal, 2) }}
+                        </span>
+                    </p>
+                </div>
             </div>
-            <button id="checkoutBtn"
-                    class="bg-[#5b2c2c] text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-[#3e1e1e] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled>
-                CHECKOUT
-            </button>
+        @endif
+    @endforeach
+</div>
+
+  {{-- BOTTOM BAR --}}
+<div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div>
+            <p class="text-sm text-gray-500">Total (<span id="selectedCount">0</span> items)</p>
+            <p class="text-2xl font-bold text-[#e95b2c]">
+                {{-- Maintain your currency logic --}}
+                <span id="grandTotalSymbol">{{ session('currency') == 'USD' ? '$' : 'Rs' }}</span>
+                <span id="grandTotal">0.00</span>
+            </p>
         </div>
+
+       {{-- BOTTOM BAR --}}
+<div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div>
+            <p class="text-sm text-gray-500">Total (<span id="selectedCount">0</span> items)</p>
+            <p class="text-2xl font-bold text-[#e95b2c]">
+                <span id="grandTotalSymbol">{{ session('currency') == 'USD' ? '$' : 'Rs' }}</span>
+                <span id="grandTotal">0.00</span>
+            </p>
+        </div>
+
+        {{-- 
+            CHECKOUT BUTTON LOGIC:
+            - Initial state is set by PHP ($hasOutOfStockGlobal).
+            - Real-time state is updated by the JavaScript calculateTotals() function.
+        --}}
+        <button id="checkoutBtn"
+                class="bg-[#5b2c2c] text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-[#3e1e1e] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                {{ $hasOutOfStockGlobal ? 'disabled' : '' }}>
+            
+            @if($hasOutOfStockGlobal)
+                <i class="fas fa-exclamation-circle mr-2"></i> REMOVE UNAVAILABLE ITEMS
+            @else
+                CHECKOUT
+            @endif
+        </button>
     </div>
 </div>
 
@@ -149,20 +190,29 @@ document.addEventListener('DOMContentLoaded', () => {
 function calculateTotals() {
     let total = 0;
     let count = 0;
+    let selectedUnavailableItem = false; // Flag to track out-of-stock selection
 
     // Get currency and rate from PHP Session
     const currency = "{{ session('currency', 'LKR') }}";
-    const rate = 0.0032; // Matches your Product Model and Controller
+    const rate = 0.0032; 
 
     document.querySelectorAll('.cart-checkbox').forEach(box => {
+        // 1. Identify if the row is out of stock (using the grayscale class we added)
+        const isUnavailable = box.closest('.cart-item-row').classList.contains('grayscale');
+
         if (box.checked) {
+            // 2. If user checks an unavailable item, they cannot checkout
+            if (isUnavailable) {
+                selectedUnavailableItem = true; 
+            }
+
             const id = box.dataset.id;
             const price = parseFloat(box.dataset.price);
             const qtyInput = document.getElementById('qty-' + id);
             
             if(qtyInput) {
                 const qty = parseInt(qtyInput.value);
-                const baseRowTotal = price * qty; // Raw LKR amount
+                const baseRowTotal = price * qty; 
                 
                 // Calculate converted display price if USD
                 const displayRowTotal = (currency === 'USD') ? (baseRowTotal * rate) : baseRowTotal;
@@ -176,7 +226,10 @@ function calculateTotals() {
                     });
                 }
 
-                total += baseRowTotal; // Keep tracking the total in base LKR
+                // 3. Only add to the money total if the item is actually available
+                if (!isUnavailable) {
+                    total += baseRowTotal;
+                }
                 count++;
             }
         }
@@ -186,7 +239,6 @@ function calculateTotals() {
     const displayGrandTotal = (currency === 'USD') ? (total * rate) : total;
     const symbol = (currency === 'USD') ? '$' : 'Rs';
 
-    // Update the symbol span and the value
     const symbolEl = document.getElementById('grandTotalSymbol');
     if(symbolEl) symbolEl.innerText = symbol;
 
@@ -196,7 +248,21 @@ function calculateTotals() {
     });
 
     selectedCountEl.innerText = count;
-    checkoutBtn.disabled = count === 0;
+
+    // --- 4. DARAZ-STYLE BUTTON LOGIC ---
+    // Disable button if nothing is selected OR if an out-of-stock item is selected
+    if (count === 0 || selectedUnavailableItem) {
+        checkoutBtn.disabled = true;
+        if (selectedUnavailableItem) {
+            // Change text to guide the user to remove the item
+            checkoutBtn.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> REMOVE UNAVAILABLE ITEMS';
+        } else {
+            checkoutBtn.innerText = 'CHECKOUT';
+        }
+    } else {
+        checkoutBtn.disabled = false;
+        checkoutBtn.innerText = 'CHECKOUT';
+    }
 
     if(deleteBtn) {
         deleteBtn.style.display = count > 0 ? 'block' : 'none';
@@ -323,4 +389,5 @@ document.querySelectorAll('.cart-checkbox').forEach(checkbox => {
 });
 });
 </script>
+@endif
 @endsection
