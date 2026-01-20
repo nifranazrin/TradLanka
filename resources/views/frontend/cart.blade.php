@@ -77,24 +77,26 @@
            {{ $isOutOfStock ? '' : 'checked' }}>
 
                 {{-- IMAGE --}}
-                <div class="w-24 h-24 flex-shrink-0 relative">
-                    @if($item->product->image)
-                        <img src="{{ asset('storage/'.$item->product->image) }}" class="w-full h-full object-cover rounded border">
-                    @else
-                        <div class="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs">No Img</div>
-                    @endif
+             
+                    <a href="{{ route('product.show', $item->product->slug) }}" class="w-24 h-24 flex-shrink-0 relative block hover:opacity-80 transition">
+                        @if($item->product->image)
+                            <img src="{{ asset('storage/'.$item->product->image) }}" class="w-full h-full object-cover rounded border">
+                        @else
+                            <div class="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs">No Img</div>
+                        @endif
 
-                    {{-- SOLD OUT OVERLAY --}}
-                    @if($isOutOfStock)
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center rounded">
-                            <span class="text-[10px] text-white font-bold bg-red-600 px-1 py-0.5 rounded">SOLD OUT</span>
-                        </div>
-                    @endif
-                </div>
+                        @if($isOutOfStock)
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center rounded">
+                                <span class="text-[10px] text-white font-bold bg-red-600 px-1 py-0.5 rounded">SOLD OUT</span>
+                            </div>
+                        @endif
+                    </a>
 
                 {{-- DETAILS --}}
                 <div class="flex-1 text-center md:text-left">
+                    <a href="{{ route('product.show', $item->product->slug) }}" class="hover:underline decoration-[#5b2c2c]">
                     <p class="font-semibold text-lg text-[#5b2c2c]">{{ $currentName }}</p>
+                </a>
                     <p class="text-sm text-gray-500">
                         Unit Price: Rs {{ number_format($currentPrice, 2) }}
                     </p>
@@ -146,21 +148,9 @@
             </p>
         </div>
 
-       {{-- BOTTOM BAR --}}
-<div class="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
-    <div class="max-w-5xl mx-auto flex justify-between items-center">
-        <div>
-            <p class="text-sm text-gray-500">Total (<span id="selectedCount">0</span> items)</p>
-            <p class="text-2xl font-bold text-[#e95b2c]">
-                <span id="grandTotalSymbol">{{ session('currency') == 'USD' ? '$' : 'Rs' }}</span>
-                <span id="grandTotal">0.00</span>
-            </p>
-        </div>
 
         {{-- 
             CHECKOUT BUTTON LOGIC:
-            - Initial state is set by PHP ($hasOutOfStockGlobal).
-            - Real-time state is updated by the JavaScript calculateTotals() function.
         --}}
         <button id="checkoutBtn"
                 class="bg-[#5b2c2c] text-white px-8 py-3 rounded-lg font-bold shadow-lg hover:bg-[#3e1e1e] transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -175,6 +165,8 @@
     </div>
 </div>
 
+
+
 <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 
 <script>
@@ -186,88 +178,87 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkoutBtn = document.getElementById('checkoutBtn');
     const deleteBtn = document.getElementById('deleteSelectedBtn');
 
-  // --- 1. CALCULATE TOTALS (UPDATED FOR CURRENCY) ---
-function calculateTotals() {
-    let total = 0;
-    let count = 0;
-    let selectedUnavailableItem = false; // Flag to track out-of-stock selection
+    // --- 1. CALCULATE TOTALS (DARAZ-STYLE LOGIC) ---
+    function calculateTotals() {
+        let total = 0;
+        let count = 0;
+        let selectedUnavailableItem = false; 
 
-    // Get currency and rate from PHP Session
-    const currency = "{{ session('currency', 'LKR') }}";
-    const rate = 0.0032; 
+        const currency = "{{ session('currency', 'LKR') }}";
+        const rate = 0.0032; 
 
-    document.querySelectorAll('.cart-checkbox').forEach(box => {
-        // 1. Identify if the row is out of stock (using the grayscale class we added)
-        const isUnavailable = box.closest('.cart-item-row').classList.contains('grayscale');
+        document.querySelectorAll('.cart-checkbox').forEach(box => {
+            const row = box.closest('.cart-item-row');
+            // Check for grayscale class which indicates out-of-stock
+            const isUnavailable = row.classList.contains('grayscale');
 
-        if (box.checked) {
-            // 2. If user checks an unavailable item, they cannot checkout
-            if (isUnavailable) {
-                selectedUnavailableItem = true; 
-            }
-
-            const id = box.dataset.id;
-            const price = parseFloat(box.dataset.price);
-            const qtyInput = document.getElementById('qty-' + id);
-            
-            if(qtyInput) {
-                const qty = parseInt(qtyInput.value);
-                const baseRowTotal = price * qty; 
+            if (box.checked) {
+                const id = box.dataset.id;
+                const price = parseFloat(box.dataset.price);
+                const qtyInput = document.getElementById('qty-' + id);
                 
-                // Calculate converted display price if USD
-                const displayRowTotal = (currency === 'USD') ? (baseRowTotal * rate) : baseRowTotal;
-                
-                // Update Row Total Text
-                const rowTotalEl = document.getElementById('row-total-' + id);
-                if(rowTotalEl) {
-                    rowTotalEl.innerText = displayRowTotal.toLocaleString('en-US', { 
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2 
-                    });
-                }
+                if (qtyInput) {
+                    const qty = parseInt(qtyInput.value);
+                    const baseRowTotal = price * qty; 
+                    
+                    // DARAZ LOGIC: Sum money ONLY if the item is in stock
+                    if (!isUnavailable) {
+                        total += baseRowTotal;
+                        // Count only buyable items for the "Total (X items)" display
+                        count++;
+                    } else {
+                        // Flag if an out-of-stock item is selected to block checkout
+                        selectedUnavailableItem = true; 
+                    }
 
-                // 3. Only add to the money total if the item is actually available
-                if (!isUnavailable) {
-                    total += baseRowTotal;
+                    // Update Row Total Text for each product
+                    const displayRowTotal = (currency === 'USD') ? (baseRowTotal * rate) : baseRowTotal;
+                    const rowTotalEl = document.getElementById('row-total-' + id);
+                    if (rowTotalEl) {
+                        rowTotalEl.innerText = displayRowTotal.toLocaleString('en-US', { 
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2 
+                        });
+                    }
                 }
-                count++;
             }
+        });
+
+        // Update Grand Total in the bottom bar
+        const displayGrandTotal = (currency === 'USD') ? (total * rate) : total;
+        const symbol = (currency === 'USD') ? '$' : 'Rs';
+
+        const symbolEl = document.getElementById('grandTotalSymbol');
+        if (symbolEl) symbolEl.innerText = symbol;
+
+        if (grandTotalEl) {
+            grandTotalEl.innerText = displayGrandTotal.toLocaleString('en-US', { 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2 
+            });
         }
-    });
 
-    // Update the Grand Total in the bottom bar
-    const displayGrandTotal = (currency === 'USD') ? (total * rate) : total;
-    const symbol = (currency === 'USD') ? '$' : 'Rs';
+        if (selectedCountEl) {
+            selectedCountEl.innerText = count;
+        }
 
-    const symbolEl = document.getElementById('grandTotalSymbol');
-    if(symbolEl) symbolEl.innerText = symbol;
-
-    grandTotalEl.innerText = displayGrandTotal.toLocaleString('en-US', { 
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2 
-    });
-
-    selectedCountEl.innerText = count;
-
-    // --- 4. DARAZ-STYLE BUTTON LOGIC ---
-    // Disable button if nothing is selected OR if an out-of-stock item is selected
-    if (count === 0 || selectedUnavailableItem) {
-        checkoutBtn.disabled = true;
-        if (selectedUnavailableItem) {
-            // Change text to guide the user to remove the item
-            checkoutBtn.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> REMOVE UNAVAILABLE ITEMS';
+        // UPDATE CHECKOUT BUTTON STATE
+        if (count === 0 || selectedUnavailableItem) {
+            checkoutBtn.disabled = true;
+            if (selectedUnavailableItem) {
+                checkoutBtn.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> REMOVE UNAVAILABLE ITEMS';
+            } else {
+                checkoutBtn.innerText = 'CHECKOUT';
+            }
         } else {
+            checkoutBtn.disabled = false;
             checkoutBtn.innerText = 'CHECKOUT';
         }
-    } else {
-        checkoutBtn.disabled = false;
-        checkoutBtn.innerText = 'CHECKOUT';
-    }
 
-    if(deleteBtn) {
-        deleteBtn.style.display = count > 0 ? 'block' : 'none';
+        if (deleteBtn) {
+            deleteBtn.style.display = (count > 0 || selectedUnavailableItem) ? 'block' : 'none';
+        }
     }
-}
 
     // --- 2. UPDATE SERVER QUANTITY (AJAX) ---
     function updateServerQuantity(cartId, qty) {
@@ -294,10 +285,9 @@ function calculateTotals() {
             const id = this.dataset.id;
             const input = document.getElementById('qty-' + id);
             let newQty = parseInt(input.value) + 1;
-            
             input.value = newQty;
             calculateTotals();
-            updateServerQuantity(id, newQty); // Update DB
+            updateServerQuantity(id, newQty);
         });
     });
 
@@ -309,43 +299,39 @@ function calculateTotals() {
                 let newQty = parseInt(input.value) - 1;
                 input.value = newQty;
                 calculateTotals();
-                updateServerQuantity(id, newQty); // Update DB
+                updateServerQuantity(id, newQty);
             }
         });
     });
-// --- 4. CHECKOUT CLICK ---
-checkoutBtn.addEventListener('click', () => {
-    let ids = [];
-    document.querySelectorAll('.cart-checkbox').forEach(box => {
-        if (box.checked) ids.push(box.dataset.id);
-    });
 
-    // ✅ CORRECTED ROUTE
-    fetch("{{ route('cart.checkout.store') }}", { 
-        method: "POST",
-        headers: {
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ ids: ids })
-    }).then(res => {
-        if(res.ok) {
-            window.location.href = "{{ route('checkout.index') }}";
-        } else {
-            console.error("Server Error:", res); // Use console to debug
-            alert("Something went wrong initializing checkout. Check console for details.");
-        }
+    // --- 4. CHECKOUT CLICK ---
+    checkoutBtn.addEventListener('click', () => {
+        let ids = [];
+        document.querySelectorAll('.cart-checkbox:checked').forEach(box => {
+            ids.push(box.dataset.id);
+        });
+
+        fetch("{{ route('cart.checkout.store') }}", { 
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ ids: ids })
+        }).then(res => {
+            if(res.ok) {
+                window.location.href = "{{ route('checkout.index') }}";
+            }
+        });
     });
-});
 
     // --- 5. DELETE SELECTED ---
     if(deleteBtn) {
         deleteBtn.addEventListener('click', function() {
             let ids = [];
-            document.querySelectorAll('.cart-checkbox').forEach(box => {
-                if (box.checked) ids.push(box.dataset.id);
+            document.querySelectorAll('.cart-checkbox:checked').forEach(box => {
+                ids.push(box.dataset.id);
             });
-
             if(ids.length === 0) return;
 
             swal({
@@ -367,26 +353,20 @@ checkoutBtn.addEventListener('click', () => {
                     })
                     .then(res => res.json())
                     .then(data => {
-                        if(data.status === 'success') {
-                            location.reload(); // Reload to remove rows
-                        } else {
-                            swal("Error", "Failed to delete items", "error");
-                        }
+                        if(data.status === 'success') location.reload();
                     });
                 }
             });
         });
     }
 
-    // Initial Calculation on Load
-    calculateTotals();
-
-    // Add listeners to each checkbox to recalculate total on click
-document.querySelectorAll('.cart-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', () => {
-        calculateTotals();
+    // --- INITIALIZATION (THIS FIXES THE RS 0.00 ON LOAD) ---
+    document.querySelectorAll('.cart-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', calculateTotals);
     });
-});
+
+    // Run the calculation immediately when the page finishes loading
+    calculateTotals(); 
 });
 </script>
 @endif

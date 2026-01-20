@@ -269,12 +269,14 @@
                     </h3>
 
                     <div class="flex justify-center items-center h-5 mb-1">
+                    
                         @php $avgRating = $item->reviews->avg('rating'); @endphp
                         @if($avgRating > 0)
                             <div class="flex text-yellow-400 text-[10px]">
                                 @for ($i = 1; $i <= 5; $i++)
                                     <i class="{{ $i <= round($avgRating) ? 'fas' : 'far' }} fa-star"></i>
                                 @endfor
+                                <span class="text-gray-400 ml-1">({{ $item->reviews->count() }})</span>
                             </div>
                         @else
                             <div class="h-5"></div>
