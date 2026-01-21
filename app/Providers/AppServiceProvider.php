@@ -176,7 +176,7 @@ View::composer('layouts.delivery', function ($view) {
                                                 ->latest()->take(3)->get();
     
     // Eager load 'user' to pull the reviewer's name instead of blank
-    $latestReviewsNotify = \App\Models\Review::with('user')->where('status', 1)
+    $latestReviewsNotify = \App\Models\Review::with('user')->where('status', 0)
                                               ->latest()->take(3)->get();
                                               
     $latestSellerRequestsNotify = \App\Models\UserRequest::where('status', 'pending')
@@ -195,7 +195,7 @@ View::composer('layouts.delivery', function ($view) {
     // --- 2. COUNTS FOR BADGES ---
     $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
     $pendingProducts     = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
-    $newReviews          = \App\Models\Review::where('status', 1)->count();
+    $newReviews          = \App\Models\Review::where('status', 0)->count();
     $pendingOrders       = \App\Models\Order::where('status', 0)->count();
     $pendingReports      = \Illuminate\Support\Facades\DB::table('submitted_reports')
                                 ->where('status', 'pending')->count();
@@ -221,7 +221,7 @@ View::composer('layouts.delivery', function ($view) {
     ]);
 });
 
-// 5. USER PENDING REVIEWS COUNT (Global for Sidebar)
+
 // 5. USER PENDING REVIEWS COUNT (Global for Sidebar)
 \Illuminate\Support\Facades\View::composer(['layouts.frontend', 'user.profile.*'], function ($view) {
     if (Auth::check()) {

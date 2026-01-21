@@ -210,19 +210,23 @@
 <section class="mt-10 mb-16">
     <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6">Recommended for You</h2>
 
-    <div class="flex space-x-6 overflow-x-auto pb-4 custom-scroll">
+    {{-- Added ID and kept your Tailwind spacing/colors --}}
+    <div id="recommended-slider" class="flex space-x-6 pb-4">
         @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
             @foreach ($recommendedProducts as $product)
-                <div class="min-w-[220px] bg-white rounded-lg shadow-md">
-                    <a href="{{ route('product.show', $product->slug) }}">
-                        <img src="{{ asset('storage/' . $product->image) }}" class="w-full h-36 object-cover">
-                        <div class="p-4 text-center">
-                            <h3 class="font-semibold text-gray-800 truncate">{{ $product->name }}</h3>
-                                 <p class="text-[#5b2c2c] font-bold">
+                {{-- Kept your exact card logic and Tailwind classes --}}
+                <div class="px-2"> {{-- Added padding for slide gap --}}
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                        <a href="{{ route('product.show', $product->slug) }}">
+                            <img src="{{ asset('storage/' . $product->image) }}" class="w-full h-36 object-cover">
+                            <div class="p-4 text-center">
+                                <h3 class="font-semibold text-gray-800 truncate">{{ $product->name }}</h3>
+                                <p class="text-[#5b2c2c] font-bold">
                                     {{ $currencySymbol }} {{ number_format($product->price, 2) }}
                                 </p>
-                        </div>
-                    </a>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             @endforeach
         @else
@@ -230,7 +234,6 @@
         @endif
     </div>
 </section>
-
 
 
     {{-- SECTION: BEST SELLERS --}}
@@ -523,6 +526,10 @@
 {{-- ================================================= --}}
 {{-- 4. SCRIPTS                                        --}}
 {{-- ================================================= --}}
+
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -679,6 +686,32 @@
             });
         });
     });
+
+$(document).ready(function(){
+    $('#recommended-slider').slick({
+        slidesToShow: 5,
+        slidesToScroll: 1,
+        autoplay: true,
+        autoplaySpeed: 1200,     // ⚡ Increased: Waits only 1.2 seconds (was 2.0)
+        speed: 500,              // ⚡ Smoother: Slide transition takes 0.5 seconds
+        arrows: true,
+        dots: false,
+        infinite: true,
+        pauseOnHover: true,      // Still stops if user wants to click a mask
+        cssEase: 'linear',       // Makes the movement feel constant and fast
+        responsive: [
+            {
+                breakpoint: 1024,
+                settings: { slidesToShow: 3 }
+            },
+            {
+                breakpoint: 600,
+                settings: { slidesToShow: 1 }
+            }
+        ]
+    });
+});
+
 </script>
 
 

@@ -381,11 +381,12 @@
     @endif
 </a>
 
-    {{-- 7. Reviews --}}
-   <a href="{{ route('admin.reviews') }}">
+
+{{-- 7. Reviews --}}
+<a href="{{ route('admin.reviews') }}" class="{{ request()->is('admin/reviews*') ? 'active' : '' }} d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center">
         <i class="bi bi-star me-2"></i>
-    <span>Reviews</span>
+        <span>Reviews</span>
     </div>
     @if(isset($newReviews) && $newReviews > 0)
         <span class="badge-count">{{ $newReviews }}</span>
