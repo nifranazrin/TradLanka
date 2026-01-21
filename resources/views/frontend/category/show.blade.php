@@ -89,34 +89,65 @@
                 @endif
             </div>
 
-            <div class="bg-gray-50 rounded-lg shadow-sm border border-gray-200 p-5">
-                <h3 class="text-[#5b2c2c] font-bold uppercase text-sm mb-4 border-b border-gray-200 pb-2">
-                    Price Filter
-                </h3>
+    
                 
-                <form action="{{ url()->current() }}" method="GET">
-                    <div class="space-y-3">
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="radio" name="sort" value="newest" onchange="this.form.submit()"
-                                   class="w-4 h-4 text-[#5b2c2c] focus:ring-[#5b2c2c] accent-[#5b2c2c]"
-                                   {{ request('sort') == 'newest' || !request('sort') ? 'checked' : '' }}>
-                            <span class="text-sm text-gray-700 group-hover:text-[#5b2c2c]">Best Sellers / Newest</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="radio" name="sort" value="price_asc" onchange="this.form.submit()"
-                                   class="w-4 h-4 text-[#5b2c2c] focus:ring-[#5b2c2c] accent-[#5b2c2c]"
-                                   {{ request('sort') == 'price_asc' ? 'checked' : '' }}>
-                            <span class="text-sm text-gray-700 group-hover:text-[#5b2c2c]">Low to High</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="radio" name="sort" value="price_desc" onchange="this.form.submit()"
-                                   class="w-4 h-4 text-[#5b2c2c] focus:ring-[#5b2c2c] accent-[#5b2c2c]"
-                                   {{ request('sort') == 'price_desc' ? 'checked' : '' }}>
-                            <span class="text-sm text-gray-700 group-hover:text-[#5b2c2c]">High to Low</span>
-                        </label>
+                <div class="bg-gray-50 rounded-lg shadow-sm border border-gray-200 p-5">
+    <form action="{{ url()->current() }}" method="GET">
+        
+        {{-- Preserve the Rating if the user changes the Price Sort --}}
+        @if(request('rating'))
+            <input type="hidden" name="rating" value="{{ request('rating') }}">
+        @endif
+
+        <h3 class="text-[#5b2c2c] font-bold uppercase text-sm mb-4 border-b border-gray-200 pb-2">Price Filter</h3>
+        <div class="space-y-3 mb-6">
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="radio" name="sort" value="newest" onchange="this.form.submit()"
+                       class="w-4 h-4 text-[#5b2c2c] accent-[#5b2c2c]"
+                       {{ request('sort') == 'newest' || !request('sort') ? 'checked' : '' }}>
+                <span class="text-sm text-gray-700">Best Sellers / Newest</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="radio" name="sort" value="price_asc" onchange="this.form.submit()"
+                       class="w-4 h-4 text-[#5b2c2c] accent-[#5b2c2c]"
+                       {{ request('sort') == 'price_asc' ? 'checked' : '' }}>
+                <span class="text-sm text-gray-700">Low to High</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="radio" name="sort" value="price_desc" onchange="this.form.submit()"
+                       class="w-4 h-4 text-[#5b2c2c] accent-[#5b2c2c]"
+                       {{ request('sort') == 'price_desc' ? 'checked' : '' }}>
+                <span class="text-sm text-gray-700">High to Low</span>
+            </label>
+        </div>
+
+        {{-- Preserve the Sort if the user changes the Rating --}}
+        @if(request('sort'))
+            <input type="hidden" name="sort" value="{{ request('sort') }}">
+        @endif
+
+        <h3 class="text-[#5b2c2c] font-bold uppercase text-sm mb-4 border-b border-gray-200 pb-2">Rating Filter</h3>
+        <div class="space-y-3">
+            @for($i = 5; $i >= 1; $i--)
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="radio" name="rating" value="{{ $i }}" onchange="this.form.submit()"
+                           class="w-4 h-4 text-[#5b2c2c] accent-[#5b2c2c]"
+                           {{ request('rating') == $i ? 'checked' : '' }}>
+                    <div class="flex text-yellow-400 text-xs">
+                        @for($s = 1; $s <= 5; $s++)
+                            <i class="fas fa-star {{ $s <= $i ? '' : 'text-gray-300' }}"></i>
+                        @endfor
+                        <span class="ml-2 text-gray-700">{{ $i }} Stars</span>
                     </div>
-                </form>
-            </div>
+                </label>
+            @endfor
+        </div>
+        
+        @if(request('rating') || request('sort'))
+            <a href="{{ url()->current() }}" class="block text-center text-xs text-red-600 mt-4">Clear All Filters</a>
+        @endif
+    </form>
+</div>
 
         </aside>
 

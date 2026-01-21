@@ -91,13 +91,33 @@ class FrontendController extends Controller
             $sidebarTitle = $category->name . ' Items';
         }
 
-        $query = Product::whereIn('category_id', $categoryIds)->whereIn('status', ['approved', 'reapproved'])->where('is_active', 1);
+       // 1. Base Query with Average Rating Calculation
+$query = Product::whereIn('category_id', $categoryIds)
+    ->whereIn('status', ['approved', 'reapproved'])
+    ->where('is_active', 1)
+    ->withAvg('reviews as avg_rating', 'rating');
 
-        if ($request->sort === 'price_asc') { $query->orderBy('price', 'asc'); } 
-        elseif ($request->sort === 'price_desc') { $query->orderBy('price', 'desc'); } 
-        else { $query->orderBy('created_at', 'desc'); }
+// 2. Exact Rating Range Logic
+if ($request->has('rating')) {
+    $rating = (int)$request->rating;
+    
+    // Limits the results to the specific star level selected
+    // e.g., '1 Star' only shows products with 1.0 to 1.9 average
+    $query->having('avg_rating', '>=', $rating)
+          ->having('avg_rating', '<', $rating + 1);
+}
 
-        $products = $query->paginate(12);
+// 3. Price Sorting Logic
+if ($request->sort === 'price_asc') { 
+    $query->orderBy('price', 'asc'); 
+} elseif ($request->sort === 'price_desc') { 
+    $query->orderBy('price', 'desc'); 
+} else { 
+    $query->orderBy('created_at', 'desc'); 
+}
+
+
+$products = $query->paginate(12);
 
         // ✅ Apply Correct Currency Conversion
         if ($currency === 'USD') {

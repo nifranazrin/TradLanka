@@ -133,8 +133,8 @@
 
                 <div id="stockDisplay" class="mb-6">
                     @if($product->stock > 0)
-                        <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">In Stock</span>
-                        <span class="text-xs text-gray-500 ml-2">({{ $product->stock }} available)</span>
+                    <span id="stockBadge" class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">In Stock</span>
+                    <span class="text-xs text-gray-500 ml-2">(<span id="variantStockCount">{{ $product->stock }}</span> available)</span>
                     @else
                         <span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded">Out of Stock</span>
                     @endif
@@ -449,28 +449,52 @@
         });
 
         // Variant Selection Logic
-        variantBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                variantBtns.forEach(b => b.classList.remove('active-variant', 'ring-2', 'ring-[#5b2c2c]'));
-                this.classList.add('active-variant', 'ring-2', 'ring-[#5b2c2c]');
-                
-                let price = parseFloat(this.dataset.price);
-                const stock = parseInt(this.dataset.stock);
-                
-                if (currencySymbol === '$') {
-                    price = price * 0.0032; 
-                }
+       variantBtns.forEach(btn => {
+    btn.addEventListener('click', function () {
+        // 1. UI: Handle active button styling
+        variantBtns.forEach(b => b.classList.remove('active-variant', 'ring-2', 'ring-[#5b2c2c]'));
+        this.classList.add('active-variant', 'ring-2', 'ring-[#5b2c2c]');
+        
+        // 2. Data: Get values from the clicked variant button
+        let price = parseFloat(this.dataset.price);
+        const stock = parseInt(this.dataset.stock);
+        
+        // 3. Currency: Handle USD conversion if needed
+        if (currencySymbol === '$') {
+            price = price * 0.0032; 
+        }
 
-                priceDisplay.innerText = currencySymbol + ' ' + price.toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-                
-                hiddenVariantInput.value = this.dataset.id;
-                currentStock = stock;
-                qtyInput.value = 1;
-            });
+        // 4. Update Price Display
+        priceDisplay.innerText = currencySymbol + ' ' + price.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
+        
+        // 5. Update Stock Count Display (The Fix for 150g vs 250g)
+        const stockCountDisplay = document.getElementById('variantStockCount');
+        const stockBadge = document.getElementById('stockBadge');
+
+        if (stockCountDisplay) {
+            stockCountDisplay.innerText = stock; // Updates the (X available) text
+        }
+
+        // 6. Update Availability Badge Status
+        if (stockBadge) {
+            if (stock > 0) {
+                stockBadge.innerText = "In Stock";
+                stockBadge.className = "bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded";
+            } else {
+                stockBadge.innerText = "Out of Stock";
+                stockBadge.className = "bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded";
+            }
+        }
+        
+        // 7. Update Hidden inputs and internal state
+        hiddenVariantInput.value = this.dataset.id;
+        currentStock = stock; 
+        qtyInput.value = 1;
+    });
+});
 
         // Quantity Control Logic
         document.getElementById('increaseQty').onclick = () => {
