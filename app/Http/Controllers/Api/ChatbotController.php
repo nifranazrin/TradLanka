@@ -121,17 +121,30 @@ class ChatbotController extends Controller
         }
 
         
-        $currencySymbol = 'Rs.';
+        $localPrice = $product->price;
+        $usdPrice   = $product->price / 312.50; 
 
 
 return response()->json([
     "fulfillmentText" =>
-        "🛍 Product: {$product->name}\n" .
-        "📝 Description: {$product->description}\n" .
-        "💰 Price: {$currencySymbol}" . number_format($product->price, 2) . "\n" .
+        "🛍 Product: {$product->name}\n\n" .
+
+        "📝 Description:\n" .
+        "{$product->description}\n\n" .
+
+        "⭐ Benefits:\n" .
+        "• Provides deep moisture to dry hair\n" .
+        "• Adds a healthy, natural shine\n" .
+        "• Protects and cleans the scalp\n" .
+        "• Strengthens hair to reduce breakage\n" .
+        "• Controls frizz for better management\n\n" .
+
+        "💰 Pricing:\n" .
+        "• 🇱🇰 Local Price (LKR): Rs. " . number_format($localPrice, 2) . "\n" .
+        "• 🌍 International Price (USD): $" . number_format($usdPrice, 2) . "\n\n" .
+
         "📦 Stock: {$product->stock}\n" .
-        "🏷 Category: {$product->category->name}\n\n" 
-        
+        "🏷 Category: {$product->category->name}"
 ]);
 
     }
