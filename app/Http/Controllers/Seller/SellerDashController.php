@@ -285,8 +285,8 @@ public function reviews(Request $request)
         try {
             // Your Email logic remains the same
             Mail::to($inquiry->email)->send(
-                new InquiryReplyMail($request->reply_message, $inquiry->first_name)
-            );
+        new InquiryReplyMail($request->reply_message, $inquiry->first_name ?? 'Customer')
+    );
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Email could not be sent. Please try again.');
         }

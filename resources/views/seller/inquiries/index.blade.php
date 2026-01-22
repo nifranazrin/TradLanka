@@ -199,7 +199,7 @@
                         {{-- Reply Logic --}}
                         @if($inq->status=='pending')
                             <button class="btn-reply"
-                                onclick="openReplyModal(event,'{{ $inq->id }}','{{ $inq->email }}')">Reply</button>
+                                onclick="openReplyModal(event, '{{ route('seller.inquiries.sendReply', $inq->id) }}', '{{ $inq->email }}')">Reply</button>
                         @else
                             <button class="btn-view"
                                 onclick="openViewHistory('{{ $inq->first_name }}',{{ json_encode($inq->message) }},{{ json_encode($inq->reply_message) }})">
@@ -267,14 +267,17 @@
 /**
  * Opens the reply modal and sets the form action to match the send-reply route
  */
-function openReplyModal(e, id, email) {
+/**
+ * Opens the reply modal and sets the form action accurately
+ */
+function openReplyModal(e, actionUrl, email) {
     e.preventDefault();
     const replyForm = document.getElementById('replyForm');
     const modalCustomerEmail = document.getElementById('modalCustomerEmail');
     const replyModal = document.getElementById('replyModal');
     
-    // MATCHED: This now matches your Route::post('/inquiries/{id}/send-reply')
-    replyForm.action = "/seller/inquiries/" + id + "/send-reply"; 
+    // ✅ The fix: Use the complete URL from Laravel's route helper
+    replyForm.action = actionUrl; 
     
     modalCustomerEmail.innerText = email;
     replyModal.style.display = "flex";
