@@ -10,10 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
-    /**
-     * Private helper to fetch and calculate report data.
-     * Updated to handle dynamic filtering for Currency, Status, and Month.
-     */
+    
  private function getReportData(Request $request)
 {
     $pendingStatuses = [0, 1, 2, 3, 4, 10]; 
@@ -27,12 +24,11 @@ class ReportController extends Controller
         $query->whereDate('created_at', $request->filter_date);
     }
 
-    // 2. ✅ FIXED: Month-wise Filter (Auto-detect Year)
-    // We check if data exists in 2025 or 2026 based on the month
+
     if ($request->filled('filter_month')) {
         $query->whereMonth('created_at', $request->filter_month);
         
-        // If filtering December, explicitly look for 2025 since that's where your data is
+       
         if ($request->filter_month == 12) {
             $query->whereYear('created_at', 2025);
         } else {
@@ -55,7 +51,7 @@ class ReportController extends Controller
         }
     }
 
-    // ✅ IMPORTANT: Fetch filtered data for cards AND table
+    
     $allOrders = $query->latest()->get();
 
     // If a status filter is active, tableOrders is the same as allOrders
@@ -67,7 +63,7 @@ class ReportController extends Controller
     }
 
     return [
-        // ✅ Summary Card Data (Calculated from FILTERED orders)
+        
         'successLKR' => $allOrders->where('status', $successStatus)->where('currency', 'LKR')->sum('total_price'),
         'successLKRCount' => $allOrders->where('status', $successStatus)->where('currency', 'LKR')->count(),
         
@@ -107,7 +103,7 @@ class ReportController extends Controller
      */
     public function downloadPDF(Request $request)
 {
-    // ✅ This passes the Month, Currency, and Status to the data fetcher
+    
     $data = $this->getReportData($request);
     
     // Generate PDF

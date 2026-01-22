@@ -7,17 +7,15 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Staff; 
 use App\Notifications\SellerDashboardNotification;
-use Illuminate\Support\Facades\Log; // Required to fix the Log error
-use Illuminate\Support\Facades\Auth; // Required for Auth guard usage
+use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Auth; 
 
 class AdminProductController extends Controller
 {
     // Display all products with their sellers.
     public function index()
     {
-        // 1. Priority to 'pending' and 'reapproval_pending'
-        // 2. Everything else is secondary
-        // 3. Sort by updated_at desc
+       
         $products = Product::with(['seller', 'images'])
             ->orderByRaw("CASE 
                 WHEN status IN ('pending', 'reapproval_pending') THEN 1 
@@ -55,15 +53,15 @@ class AdminProductController extends Controller
         $product->approved_at = now();
         $product->save();
 
-        // --- SAFE NOTIFICATION TRIGGER ---
+        // ---  NOTIFICATION TRIGGER ---
         try {
             $seller = Staff::find($product->seller_id);
             if ($seller) {
-                // This triggers the red circle on the Seller's Product sidebar
+               
                 $seller->notify(new SellerDashboardNotification('product', $notifText, $product->id));
             }
         } catch (\Exception $e) {
-            // This ensures if notifications fail, the main approval still works
+           
             Log::error('Notification Error: ' . $e->getMessage());
         }
 

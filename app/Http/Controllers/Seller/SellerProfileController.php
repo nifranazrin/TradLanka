@@ -11,7 +11,7 @@ use App\Models\Staff;
 
 class SellerProfileController extends Controller
 {
-    // 🔹 Helper: Get logged-in seller ID
+    
     protected function getSellerId()
     {
         $id = Auth::guard('seller')->id();
@@ -21,7 +21,7 @@ class SellerProfileController extends Controller
         return $id;
     }
 
-    // 🔹 Show profile
+    //  Show profile
     public function index()
     {
         $sellerId = $this->getSellerId();
@@ -34,7 +34,7 @@ class SellerProfileController extends Controller
         return view('seller.profile.index', compact('seller'));
     }
 
-    // 🔹 Update profile info (and optionally password)
+    //  Update profile info (and optionally password)
     public function update(Request $request)
     {
         $sellerId = $this->getSellerId();
@@ -44,7 +44,7 @@ class SellerProfileController extends Controller
             return redirect()->route('staff.login')->with('error', 'Please login first.');
         }
 
-        // ✅ Validation rules
+        //  Validation rules
         $rules = [
             'name'    => 'required|string|max:255',
             'email'   => 'required|email|unique:staff,email,' . $seller->id,
@@ -61,23 +61,23 @@ class SellerProfileController extends Controller
 
         $request->validate($rules);
 
-        // ✅ Update basic info
+        //  Update basic info
         $seller->name = $request->name;
         $seller->email = $request->email;
         $seller->phone = $request->phone;
         $seller->address = $request->address;
 
-        // ✅ Update password correctly
+        //  Update password correctly
         if ($request->filled('new_password')) {
             if (!Hash::check($request->current_password, $seller->password)) {
                 return back()->with('error', 'Current password is incorrect.');
             }
 
-            // ✅ Always hash before saving
+            //  Always hash before saving
             $seller->password = Hash::make($request->new_password);
         }
 
-        // ✅ Handle image upload
+        //  Handle image upload
         if ($request->hasFile('image')) {
             if ($seller->profile_photo) {
                 Storage::disk('public')->delete($seller->profile_photo);

@@ -30,7 +30,7 @@ class AuthPopupController extends Controller
             $isCartIntent = session()->has('add_to_cart_pid');
             $user = Auth::user();
 
-            // ✅ CRITICAL: Actually save the item to the DB if intent exists
+            
             if ($isCartIntent) {
                 $this->syncCartItem($user->id);
             }
@@ -78,8 +78,7 @@ class AuthPopupController extends Controller
         try {
             Mail::to($user->email)->send(new WelcomeUserMail($user));
         } catch (\Exception $e) {
-            // We catch the error so the registration still finishes 
-            // even if there is a mail server issue.
+            
             Log::error("Welcome Email Error: " . $e->getMessage());
         }
 
@@ -88,7 +87,7 @@ class AuthPopupController extends Controller
         // Check for intent
         $isCartIntent = session()->has('add_to_cart_pid');
 
-        // ✅ Actually save the item for the new user
+        //  Actually save the item for the new user
         if ($isCartIntent) {
             $this->syncCartItem($user->id);
         }
@@ -103,7 +102,7 @@ class AuthPopupController extends Controller
     }
 
     /**
-     * ✅ PRIVATE HELPER: Sync Session Item to Database
+     * 
      * This ensures the database is updated immediately upon login/register
      */
     private function syncCartItem($userId)

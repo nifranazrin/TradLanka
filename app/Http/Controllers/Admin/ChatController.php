@@ -13,9 +13,7 @@ use App\Notifications\SellerDashboardNotification;
 
 class ChatController extends Controller
 {
-    /**
-     * 1. Show Admin Chat Dashboard
-     */
+    
     public function index()
     {
         $adminId = Auth::guard('admin')->id();
@@ -62,14 +60,12 @@ class ChatController extends Controller
         return view('admin.chat.index', compact('activeContacts', 'allOtherStaff'));
     }
 
-    /**
-     * 2. Fetch Messages (AJAX)
-     */
+    
     public function fetchMessages($receiverId, $type)
 {
     $adminId = Auth::guard('admin')->id(); //
     
-    return Message::where('deleted_by_admin', false) // ✅ Only fetch active messages for admin
+    return Message::where('deleted_by_admin', false) 
         ->where(function($q) use ($adminId, $receiverId, $type) {
             $q->where(function($sq) use ($adminId, $receiverId, $type) {
                 $sq->where('sender_id', $adminId)->where('sender_type', 'admin')
@@ -83,9 +79,7 @@ class ChatController extends Controller
         ->get(); //
 }
 
-    /**
-     * 3. Send Message
-     */
+    
     public function sendMessage(Request $request)
     {
         $adminId = Auth::guard('admin')->id();
@@ -108,10 +102,7 @@ class ChatController extends Controller
         return response()->json(['status' => 'success']);
     }
 
-    /**
-     * ✅ ALL DELETE LOGIC (Clear Chat)
-     * Matches your Delivery Controller logic exactly.
-     */
+   
    public function clearChat($receiverId, $type)
 {
     $adminId = Auth::guard('admin')->id();

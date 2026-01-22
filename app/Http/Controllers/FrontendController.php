@@ -101,8 +101,7 @@ $query = Product::whereIn('category_id', $categoryIds)
 if ($request->has('rating')) {
     $rating = (int)$request->rating;
     
-    // Limits the results to the specific star level selected
-    // e.g., '1 Star' only shows products with 1.0 to 1.9 average
+    
     $query->having('avg_rating', '>=', $rating)
           ->having('avg_rating', '<', $rating + 1);
 }
@@ -119,10 +118,10 @@ if ($request->sort === 'price_asc') {
 
 $products = $query->paginate(12);
 
-        // ✅ Apply Correct Currency Conversion
+       
         if ($currency === 'USD') {
             $products->getCollection()->transform(function ($product) {
-                // Use explicit float casting to match home() logic
+                
                 $product->price = (float)$product->price * $this->exchangeRate;
                 return $product;
             });
@@ -171,7 +170,7 @@ $products = $query->paginate(12);
                 ->paginate(12);
         }
 
-        //  NEW: Add Currency Conversion to Search Results
+       
         if ($currency === 'USD') {
             if ($products instanceof \Illuminate\Pagination\LengthAwarePaginator) {
                 $products->getCollection()->transform(function ($p) {
@@ -179,7 +178,7 @@ $products = $query->paginate(12);
                     return $p;
                 });
             } else {
-                // Standard collection for 'new arrivals' search
+                
                 $products->each(function($p) {
                     $p->price = (float)$p->price * $this->exchangeRate;
                 });
@@ -204,19 +203,19 @@ $products = $query->paginate(12);
                     $q->orWhere('session_id', $sessionId);
                 })
                 ->latest()
-                ->limit(10) // Look at last 10 items viewed
+                ->limit(10) 
                 ->pluck('product_id')
                 ->toArray();
 
             if (!empty($historyIds)) {
                 // 2. Call Python Text API
-                // Note: We use /recommend-text because we are sending IDs for TF-IDF matching
+                
                 $response = Http::timeout(2)->post('http://127.0.0.1:5000/recommend-text', [
                     'history_ids' => $historyIds
                 ]);
 
                 if ($response->successful()) {
-                    $recIds = $response->json(); // Returns array of recommended IDs
+                    $recIds = $response->json();
 
                     if (!empty($recIds)) {
                         // 3. Fetch Products from DB

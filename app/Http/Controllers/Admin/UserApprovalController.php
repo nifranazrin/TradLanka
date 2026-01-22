@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use App\Models\UserRequest; // Updated to your new model name
+use App\Models\UserRequest; 
 use App\Models\Product;
 use App\Models\Staff;
 
@@ -22,7 +22,7 @@ class UserApprovalController extends Controller
 
         if ($notification) {
             $notification->markAsRead();
-            // Redirect to the link stored in notification data (e.g., the user-requests page)
+           
             return redirect($notification->data['link'] ?? route('admin.seller.requests'));
         }
 
@@ -74,7 +74,7 @@ class UserApprovalController extends Controller
     // Get last 3 digits of NIC
     $nicDigits = substr((string) ($request->nic_number ?? ''), -3);
     
-    // Combine for new password (e.g., amaya789)
+    
     $plainPassword = $cleanName . $nicDigits;
     
     $companyEmail = "{$prefix}{$cleanName}.tradlanka@gmail.com";

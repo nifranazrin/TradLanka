@@ -14,15 +14,14 @@ class DeliveryPersonMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. MUST check the 'delivery' guard because that is what your 
-        // StaffLoginController uses to log in the rider.
+        
         if (!Auth::guard('delivery')->check()) {
-            // ✅ MANUALLY redirect to staff login to stop the customer login redirect.
+          
             return redirect()->route('staff.login')
                 ->with('error', 'Please login as delivery staff.');
         }
 
-        // 2. Double-check the role for extra security
+        
         if (strtolower(Auth::guard('delivery')->user()->role) !== 'delivery') {
             return redirect()->route('staff.login')
                 ->with('error', 'Unauthorized access.');

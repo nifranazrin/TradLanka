@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Session;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Order;
-use App\Models\ProductView; // Required for Recommendation System
+use App\Models\ProductView; 
 
 class ProductController extends Controller
 {
@@ -38,7 +38,7 @@ class ProductController extends Controller
         ]);
 
         // 2. RECOMMENDATION SYSTEM TRACKING
-        // We track the view in the database so the AI knows what the user likes.
+        
         $userId = Auth::guard('web')->id(); 
         $sessionId = Session::getId();
 

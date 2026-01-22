@@ -61,11 +61,11 @@ class AppServiceProvider extends ServiceProvider
             ->where('is_read', 0)->latest()->take(3)->get();
 
         // FIXED: Fetch real Reviews instead of empty collect()
-         $latestReviewsNotify = \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {
-                $q->where('seller_id', $sellerId);
+          $latestReviewsNotify = \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {
+        $q->where('seller_id', $sellerId);
             })
             ->where('status', 1)
-            ->whereDate('created_at', \Carbon\Carbon::today()) // ✅ Simple: Only count today's reviews
+            ->where('is_read', 0) 
             ->latest()->take(3)->get();
 
 

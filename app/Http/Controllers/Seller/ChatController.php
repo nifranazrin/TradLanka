@@ -33,8 +33,6 @@ class ChatController extends Controller
                 ->count();
         }
 
-        // 2. Active Chats (Mirroring Delivery logic: Sellers or Riders you've talked to)
-        // We rename this to $activeSellers to match your Blade's current variable naming
         $activeSellers = Staff::whereIn('role', ['seller', 'delivery'])
             ->whereNotIn('id', $excludeIds)
             ->where(function($q) use ($sellerId) {

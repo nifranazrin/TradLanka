@@ -29,18 +29,18 @@ class SellerReportController extends Controller
         $sellerId = Auth::guard('seller')->id();
         $reportType = $request->input('report_type');
 
-        // ✅ ONLY approved, reapproved, or active products
+        //  ONLY approved, reapproved, or active products
         $query = Product::where('seller_id', $sellerId)
                         ->whereIn('status', ['approved', 'reapproved', 'active']);
 
         if ($reportType == 'low_stock') {
-            // ✅ Updated: Shows products with stock 5 or less
+            //  Updated: Shows products with stock 5 or less
             $products = $query->where('stock', '<=', 5)
                               ->orderBy('stock', 'asc')
                               ->get();
         } 
         elseif ($reportType == 'top_selling') {
-            // ✅ Updated: Only products with more than 10 sales
+            //  Updated: Only products with more than 10 sales
             $products = $query->withSum('items as total_sold', 'qty') 
                               ->having('total_sold', '>', 10)
                               ->orderBy('total_sold', 'desc')
@@ -65,15 +65,15 @@ class SellerReportController extends Controller
         $seller = Auth::guard('seller')->user();
         $reportType = $request->query('report_type');
         
-        // ✅ Applying same status safety filter for PDF
+        //  Applying same status safety filter for PDF
         $query = Product::where('seller_id', $seller->id)
                         ->whereIn('status', ['approved', 'reapproved', 'active']);
 
         if ($reportType == 'low_stock') {
-            // ✅ Sync with web view: 5 or less
+            //  Sync with web view: 5 or less
             $products = $query->where('stock', '<=', 5)->orderBy('stock', 'asc')->get();
         } elseif ($reportType == 'top_selling') {
-            // ✅ Sync with web view: above 10 sales
+            //  Sync with web view: above 10 sales
             $products = $query->withSum('items as total_sold', 'qty')
                               ->having('total_sold', '>', 10)
                               ->orderBy('total_sold', 'desc')->get();

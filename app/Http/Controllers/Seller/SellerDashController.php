@@ -199,24 +199,31 @@ public function reviews(Request $request)
     $sellerId = Auth::guard('seller')->id();
     $starFilter = $request->input('rating');
 
-    // Filter reviews belonging to this seller
+    // 1. MARK AS READ FIRST
+    // This updates the database so the sidebar badge disappears immediately.
+    \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {
+            $q->where('seller_id', $sellerId);
+        })
+        ->where('is_read', 0)
+        ->update(['is_read' => 1]);
+
+    // 2. FETCH THE REVIEWS SEPARATELY
+    // We create a fresh query to get the actual data for the table.
     $query = \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {
             $q->where('seller_id', $sellerId);
         })
-        ->with(['product', 'user']) // Eager load for product slug and name
+        ->with(['product', 'user']) // Eager load to prevent 500 errors in Blade
         ->latest();
 
-    // Apply Star Rating Filter
+    // 3. Apply Star Rating Filter
     if ($starFilter) {
         $query->where('rating', $starFilter);
     }
 
-    // Fetch ALL results as requested
     $reviews = $query->get();
 
     return view('seller.reviews.index', compact('reviews'));
 }
-   
 
 /**
      * ======================================

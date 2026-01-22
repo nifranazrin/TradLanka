@@ -21,10 +21,10 @@ use App\Models\Staff;
 
 class ProductController extends Controller
 {
-    public function index(Request $request) // Added Request $request here
+    public function index(Request $request) 
     {
         $seller = Auth::guard('seller')->user();
-        $search = $request->input('search'); // Capture the search term from the URL
+        $search = $request->input('search'); 
 
         // Clear product notifications when visiting the page
         if ($seller) {
@@ -138,7 +138,7 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::with(['images', 'variants']) // ✅ Load variants
+        $product = Product::with(['images', 'variants']) 
             ->where('seller_id', Auth::guard('seller')->id())
             ->where('id', $id)
             ->firstOrFail();
@@ -147,7 +147,7 @@ class ProductController extends Controller
 
     public function edit($id)
     {
-        $product = Product::with(['images', 'variants']) // ✅ Load variants for edit form
+        $product = Product::with(['images', 'variants']) 
             ->where('seller_id', Auth::guard('seller')->id())
             ->where('id', $id)
             ->firstOrFail();

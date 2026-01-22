@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Staff;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Added for better IDE recognition
+use Illuminate\Support\Facades\Auth; 
 
 class StaffManagementController extends Controller
 {

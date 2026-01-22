@@ -47,7 +47,7 @@ class GoogleController extends Controller
 
                 // 4. Authenticate and SECURE the session
                 Auth::login($user, true);
-                $request->session()->regenerate(); // Important security step
+                $request->session()->regenerate(); 
 
                 return response()->json([
                     'status' => 'success',
