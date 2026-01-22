@@ -171,12 +171,22 @@
                         <span class="text-[9px] font-bold text-red-600 uppercase mt-1 block">
                             <i class="fas fa-times-circle text-[8px]"></i> Cancellation Finalized
                         </span>
+                      @endif   
+                      
+                      {{-- 3. NEW: Sub-text for Restock Alerts --}}
+                      @if($notifType == 'restock')
+                        <span class="text-[9px] font-bold text-blue-600 uppercase mt-1 block">
+                            <i class="fas fa-sync-alt text-[8px]"></i> Stock is Back!
+                        </span>
                       @endif
                       
-                      <div class="flex justify-between items-center mt-2">
-                          <span class="text-[10px] font-bold text-[#5b2c2c] bg-gray-200 px-1.5 py-0.5 rounded">
-                              {{ $notification->data['tracking_no'] ?? 'N/A' }}
-                          </span>
+                     <div class="flex justify-between items-center mt-2">
+   
+                        @if($notifType !== 'restock')
+                            <span class="text-[10px] font-bold text-[#5b2c2c] bg-gray-200 px-1.5 py-0.5 rounded">
+                                {{ $notification->data['tracking_no'] ?? 'N/A' }}
+                            </span>
+                        @endif
                           <span class="text-[10px] text-gray-400 italic">
                               {{ $notification->created_at->diffForHumans() }}
                           </span>

@@ -156,108 +156,116 @@ class ProductController extends Controller
     }
 
     // Update existing product
-    public function update(Request $request, $id)
-    {
-        $product = Product::with('images')
-            ->where('seller_id', Auth::guard('seller')->id())
-            ->where('id', $id)
-            ->firstOrFail();
+   public function update(Request $request, $id)
+{
+    $product = Product::with('images')
+        ->where('seller_id', Auth::guard('seller')->id())
+        ->where('id', $id)
+        ->firstOrFail();
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|integer',
-            'unit_type' => 'required|in:weight,liquid,default',
-            // Variants validation
-            'variations' => 'nullable|array',
-            'variations.*.unit_label' => 'required_with:variations|string',
-            'variations.*.price' => 'required_with:variations|numeric',
-            'variations.*.stock' => 'required_with:variations|integer',
-        ]);
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'category_id' => 'required|integer',
+        'unit_type' => 'required|in:weight,liquid,default',
+        'variations' => 'nullable|array',
+        'variations.*.unit_label' => 'required_with:variations|string',
+        'variations.*.price' => 'required_with:variations|numeric',
+        'variations.*.stock' => 'required_with:variations|integer',
+    ]);
 
-        DB::beginTransaction();
-        try {
-            // Calculate new totals if variants exist
-            $mainPrice = $request->price;
-            $mainStock = $request->stock;
+    DB::beginTransaction();
+    try {
+        // 1. Calculate new totals
+        $mainPrice = $request->price;
+        $mainStock = $request->stock;
 
-            if ($request->has('variations') && count($request->variations) > 0) {
-                $mainStock = 0;
-                $prices = [];
-                foreach ($request->variations as $v) {
-                    $mainStock += $v['stock'];
-                    $prices[] = $v['price'];
-                }
-                $mainPrice = min($prices);
+        if ($request->has('variations') && count($request->variations) > 0) {
+            $mainStock = 0;
+            $prices = [];
+            foreach ($request->variations as $v) {
+                $mainStock += $v['stock'];
+                $prices[] = $v['price'];
             }
-
-            $product->name = trim($request->name);
-            $product->category_id = $request->category_id;
-            $product->unit_type = $request->unit_type;
-            $product->price = $mainPrice;
-            $product->stock = $mainStock;
-            $product->description = $request->description;
-
-            if ($request->hasFile('image')) {
-                if ($product->image && Storage::disk('public')->exists($product->image)) {
-                    Storage::disk('public')->delete($product->image);
-                }
-                $product->image = $request->file('image')->store('products/front', 'public');
-            }
-
-            // Status Logic
-            $currentStatus = strtolower($product->status);
-            if (in_array($currentStatus, ['approved', 'reapproved', 'active'])) {
-                $product->status = 'reapproval_pending';
-            } elseif ($currentStatus === 'rejected') {
-                $product->status = 'pending';
-            }
-
-            $product->save();
-
-            // ✅ UPDATE VARIANTS Logic
-            // 1. Delete old variants (easiest way to handle updates/removals)
-            ProductVariant::where('product_id', $product->id)->delete();
-
-            // 2. Create new ones from the form
-            if ($request->has('variations')) {
-                foreach ($request->variations as $variant) {
-                    if(!empty($variant['unit_label'])) {
-                        ProductVariant::create([
-                            'product_id' => $product->id,
-                            'unit_label' => $variant['unit_label'],
-                            'price'      => $variant['price'],
-                            'stock'      => $variant['stock']
-                        ]);
-                    }
-                }
-            }
-
-            // Handle Gallery Images
-            $this->handleGalleryImages($request, $product);
-
-            DB::commit();
-
-            // Notify Admin
-            try {
-                if ($product->status == 'reapproval_pending') {
-                    $admins = Staff::where('role', 'admin')->get();
-                    foreach ($admins as $admin) {
-                        $admin->notify(new AdminProductNotification($product, 'update'));
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::error('Notification failed: ' . $e->getMessage());
-            }
-
-            return redirect()->route('seller.products.index')
-                ->with('success', '✅ Product updated! Status is now: ' . ucfirst(str_replace('_', ' ', $product->status)));
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('[Seller\ProductController@update] Error: ' . $e->getMessage());
-            return back()->withInput()->with('error', "Update failed: " . $e->getMessage());
+            $mainPrice = min($prices);
         }
+
+        // 2. Capture the current stock from DB before updating the object
+        $wasOutOfStock = ($product->stock == 0);
+
+        $product->name = trim($request->name);
+        $product->category_id = $request->category_id;
+        $product->unit_type = $request->unit_type;
+        $product->price = $mainPrice;
+        $product->stock = $mainStock;
+        $product->description = $request->description;
+
+        if ($request->hasFile('image')) {
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $product->image = $request->file('image')->store('products/front', 'public');
+        }
+
+        // 3. Status Logic
+        $currentStatus = strtolower($product->status);
+        if (in_array($currentStatus, ['approved', 'reapproved', 'active'])) {
+            $product->status = 'reapproval_pending';
+        } elseif ($currentStatus === 'rejected') {
+            $product->status = 'pending';
+        }
+
+        $product->save();
+
+        // 4. TRIGGER: Send In-App Notifications if restocked
+        if ($wasOutOfStock && $product->stock > 0) {
+            $users = \App\Models\User::whereHas('carts', function($q) use ($product) {
+                $q->where('product_id', $product->id);
+            })->get();
+
+            foreach ($users as $user) {
+                $user->notify(new \App\Notifications\CustomerRestockNotification($product));
+            }
+        }
+
+        // 5. UPDATE VARIANTS Logic
+        ProductVariant::where('product_id', $product->id)->delete();
+        if ($request->has('variations')) {
+            foreach ($request->variations as $variant) {
+                if(!empty($variant['unit_label'])) {
+                    ProductVariant::create([
+                        'product_id' => $product->id,
+                        'unit_label' => $variant['unit_label'],
+                        'price'      => $variant['price'],
+                        'stock'      => $variant['stock']
+                    ]);
+                }
+            }
+        }
+
+        $this->handleGalleryImages($request, $product);
+        DB::commit();
+
+        // 6. Notify Admin of the update
+        try {
+            if ($product->status == 'reapproval_pending') {
+                $admins = Staff::where('role', 'admin')->get();
+                foreach ($admins as $admin) {
+                    $admin->notify(new AdminProductNotification($product, 'update'));
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('Admin Notification failed: ' . $e->getMessage());
+        }
+
+        return redirect()->route('seller.products.index')
+            ->with('success', '✅ Product updated! Status: ' . ucfirst(str_replace('_', ' ', $product->status)));
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        Log::error('[Seller\ProductController@update] Error: ' . $e->getMessage());
+        return back()->withInput()->with('error', "Update failed: " . $e->getMessage());
     }
+}
 
     // Helper to handle gallery upload to keep code clean
     private function handleGalleryImages($request, $product)
@@ -302,5 +310,6 @@ class ProductController extends Controller
         $img->delete();
         return back()->with('success', 'Image removed.');
     }
+    
     
 }
