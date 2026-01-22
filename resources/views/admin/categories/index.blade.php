@@ -68,7 +68,7 @@
                         <th class="text-center">ID</th>
                         <th>Image</th>
                         <th>Name</th>
-                        <th>Category Type</th> {{-- Renamed from Parent --}}
+                        <th>Category Type</th> 
                         <th>Description</th>
                         <th>Slug</th>
                         <th class="text-center">Status</th>
@@ -242,7 +242,38 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Real-time Search Logic
+        
+        // --- 1. NEW: HANDLE DUPLICATE/ERROR ALERTS FROM CONTROLLER ---
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Duplicate Entry',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#800000', // Matches your Maroon theme
+            });
+        @endif
+
+        // --- 2. NEW: HANDLE SUCCESS ALERTS ---
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: "{{ session('success') }}",
+                confirmButtonColor: '#800000',
+                timer: 3000
+            });
+        @endif
+
+        const addModal = document.getElementById('addCategoryModal');
+    if (addModal) {
+        addModal.addEventListener('show.bs.modal', function () {
+            document.getElementById('addCategoryForm').reset();
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('bannerPreview').style.display = 'none';
+        });
+    }
+
+        // --- 3. EXISTING: Real-time Search Logic (Untouched) ---
         const searchInput = document.getElementById('categorySearch');
         if (searchInput) {
             searchInput.addEventListener('keyup', function() {
@@ -281,28 +312,46 @@
         });
     });
 
-    function validateCategory() {
+   // Updated function in index.blade.php
+function validateCategory() {
     const nameInput = document.getElementById('categoryName');
-    const nameValue = nameInput.value.trim();
+    const descInput = document.querySelector('textarea[name="description"]');
+    const imageInput = document.querySelector('input[name="image"]');
     const form = document.getElementById('addCategoryForm');
 
-    // 
-
-    // Check if the first character is uppercase (A-Z)
-    if (nameValue.length > 0 && !/^[A-Z]/.test(nameValue)) {
-        
-        // Trigger SweetAlert for the error
+    // 1. Validate Name & Capitalization
+    if (nameInput.value.trim() === "" || !/^[A-Z]/.test(nameInput.value.trim())) {
         Swal.fire({
             icon: 'error',
-            title: 'Validation Error',
-            text: 'Category name must start with a Capital Letter (e.g., "Tea" instead of "tea").',
-            confirmButtonColor: '#800000', // Matches your Maroon theme
+            title: 'Missing Information',
+            text: 'Category name is required and must start with a Capital Letter.',
+            confirmButtonColor: '#800000',
         });
-        
-        return false; // Stop the function
+        return false;
     }
 
-    // If valid, submit the form manually
+    // 2. Validate Compulsory Description
+    if (descInput.value.trim() === "") {
+        Swal.fire({
+            icon: 'error',
+            title: 'Missing Information',
+            text: 'Please provide a category description.',
+            confirmButtonColor: '#800000',
+        });
+        return false;
+    }
+
+    // 3. Validate Compulsory Main Image
+    if (imageInput.files.length === 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Missing Information',
+            text: 'Main Image (Thumbnail) is required.',
+            confirmButtonColor: '#800000',
+        });
+        return false;
+    }
+
     form.submit();
 }
 </script>

@@ -33,15 +33,16 @@ class CategoryController extends Controller
     {
         // 1. Validation
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'regex:/^[A-Z]/'], 
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',       // Thumbnail
-            'banner_image' => 'nullable|image|max:5120', // Banner (5MB)
-            'parent_id' => 'nullable|exists:categories,id',
-          ], [
-            // Custom error message for the capital letter requirement
-            'name.regex' => 'The category name must start with a capital letter.'
-        ]);
+        'name' => ['required', 'string', 'max:255', 'regex:/^[A-Z]/'], 
+        'description' => 'required|string',         // Changed from nullable to required
+        'image' => 'required|image|max:2048',       // Changed from nullable to required
+        'banner_image' => 'nullable|image|max:5120', 
+        'parent_id' => 'nullable|exists:categories,id',
+    ], [
+        'name.regex' => 'The category name must start with a capital letter.',
+        'description.required' => 'A category description is mandatory.', // Custom error message
+        'image.required' => 'A main thumbnail image is required.'          // Custom error message
+    ]);
 
         $name = trim($request->name);
 
@@ -106,7 +107,7 @@ public function edit($id)
         // 1. Validation
         $request->validate([
             'name' => 'required|string|max:255', // Removed unique check here as you do it manually below
-            'description' => 'nullable|string',
+            'description' => 'required|string',
             'image' => 'nullable|image|max:2048',
             'banner_image' => 'nullable|image|max:5120',
             'parent_id' => 'nullable|exists:categories,id',

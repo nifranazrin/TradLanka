@@ -17,9 +17,11 @@
         <div style="height: 5px; background-color: #800000;"></div>
         
         <div class="card-body p-4">
-            <form action="{{ route('admin.categories.update', $category->id) }}" 
-                  method="POST" 
-                  enctype="multipart/form-data">
+            {{-- Added id="editCategoryForm" below --}}
+            <form id="editCategoryForm" 
+                action="{{ route('admin.categories.update', $category->id) }}" 
+                method="POST" 
+                enctype="multipart/form-data">
 
                 @csrf
                 @method('PUT')
