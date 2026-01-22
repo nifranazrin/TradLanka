@@ -148,9 +148,9 @@
     
     $pendingProducts = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
 
-    $newReviewsCount = \App\Models\Review::where('status', 1)->count();
+    $newReviewsCount = \App\Models\Review::where('is_read', 0)->count();
 
-    $pendingOrdersCount = \App\Models\Order::where('status', 0)->count();
+    $pendingOrdersCount = \App\Models\Order::where('status', 3)->count();
 
    $unreadMessages = 0;
     if ($admin) {
@@ -368,30 +368,36 @@
         <span><i class="bi bi-tags"></i> Categories</span>
     </a>
 
-    {{-- 6. Orders --}}
+    
   
+{{-- 6. Orders --}}
 <a href="{{ route('admin.orders.review') }}" 
-   class="nav-link {{ request()->is('admin/orders*') || request()->is('admin/review-orders*') ? 'active' : '' }} d-flex align-items-center justify-content-between">
+   class="nav-link {{ request()->is('admin/orders*') ? 'active' : '' }} d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center">
         <i class="bi bi-truck me-2"></i>
         <span>Orders</span>
     </div>
+    {{-- This will now only show if status is 3 --}}
     @if(isset($pendingOrdersCount) && $pendingOrdersCount > 0)
         <span class="badge-count">{{ $pendingOrdersCount }}</span>
     @endif
 </a>
 
 
-{{-- 7. Reviews --}}
+
+
+{{-- 7. Reviews Sidebar Link --}}
 <a href="{{ route('admin.reviews') }}" class="{{ request()->is('admin/reviews*') ? 'active' : '' }} d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center">
         <i class="bi bi-star me-2"></i>
         <span>Reviews</span>
     </div>
-    @if(isset($newReviews) && $newReviews > 0)
-        <span class="badge-count">{{ $newReviews }}</span>
+    {{-- Use the variable we just fixed above --}}
+    @if(isset($newReviewsCount) && $newReviewsCount > 0)
+        <span class="badge-count">{{ $newReviewsCount }}</span>
     @endif
 </a>
+
     {{-- 8. Reports & Analysis Dropdown --}}
 <div class="nav-item">
     <a href="#reportSubmenu" data-bs-toggle="collapse" 

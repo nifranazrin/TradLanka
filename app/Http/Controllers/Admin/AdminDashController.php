@@ -190,4 +190,5 @@ class AdminDashController extends Controller
             'topLocalCity', 'topInternationalCity'
         ));
     }
+
 }

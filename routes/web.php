@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\SellerAnalyticsController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\CustomerManagementController;
 
+
 // SELLER CONTROLLERS
 use App\Http\Controllers\StaffRegistrationController;
 use App\Http\Controllers\Seller\SellerDashController;
@@ -243,6 +244,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin', AdminMiddlewar
     Route::get('/notifications/{id}/read', [UserApprovalController::class, 'readNotification'])->name('notifications.read');
     Route::get('/notifications/mark-all', [UserApprovalController::class, 'markAllRead'])->name('notifications.markAllRead');
 
+  
+    
+
     // --- Staff Management ---
     Route::get('/staff-management', [StaffManagementController::class, 'index'])->name('staff.index');
     Route::put('/staff-management/{id}/toggle', [StaffManagementController::class, 'toggleStatus'])->name('staff.toggle');
@@ -270,6 +274,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin', AdminMiddlewar
     Route::get('/profile', [AdminProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile/update', [AdminProfileController::class, 'update'])->name('profile.update');
     Route::post('/check-password', [AdminProfileController::class, 'checkPassword'])->name('check-password');
+    
 
     // --- Chat System ---
     Route::prefix('chat')->name('chat.')->group(function () {

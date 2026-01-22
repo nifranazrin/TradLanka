@@ -175,13 +175,13 @@ View::composer('layouts.delivery', function ($view) {
              ?? \App\Models\Staff::find(session('staff_id'));
     
     // --- 1. DETAILED DATA FOR DROPDOWN (With Eager Loading) ---
-    $latestOrdersNotify = \App\Models\Order::where('status', 0)->latest()->take(3)->get();
+    $latestOrdersNotify = \App\Models\Order::where('status', 3)->latest()->take(3)->get();
     
     $latestProductsNotify = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])
                                                 ->latest()->take(3)->get();
     
     // Eager load 'user' to pull the reviewer's name instead of blank
-    $latestReviewsNotify = \App\Models\Review::with('user')->where('status', 0)
+    $latestReviewsNotify = \App\Models\Review::with('user')->where('is_read', 0)
                                               ->latest()->take(3)->get();
                                               
     $latestSellerRequestsNotify = \App\Models\UserRequest::where('status', 'pending')
@@ -200,8 +200,8 @@ View::composer('layouts.delivery', function ($view) {
     // --- 2. COUNTS FOR BADGES ---
     $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
     $pendingProducts     = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
-    $newReviews          = \App\Models\Review::where('status', 0)->count();
-    $pendingOrders       = \App\Models\Order::where('status', 0)->count();
+    $newReviews = \App\Models\Review::where('is_read', 0)->count();
+    $pendingOrders       = \App\Models\Order::where('status', 3)->count();
     $pendingReports      = \Illuminate\Support\Facades\DB::table('submitted_reports')
                                 ->where('status', 'pending')->count();
 
