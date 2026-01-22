@@ -32,13 +32,14 @@ class AppServiceProvider extends ServiceProvider
         });
 
       
-// AppServiceProvider.php
 
 // 2. SELLER NOTIFICATION COUNTS & DETAILED BELL DATA
 \Illuminate\Support\Facades\View::composer('*', function ($view) {
     if (\Illuminate\Support\Facades\Auth::guard('seller')->check()) {
         $seller = \Illuminate\Support\Facades\Auth::guard('seller')->user();
         $sellerId = $seller->id;
+
+        
 
         // --- 1. DETAILED DATA FOR DROPDOWN (Recent First) ---
         $latestOrdersNotify = \App\Models\Order::whereHas('items.product', function ($q) use ($sellerId) {
@@ -60,9 +61,13 @@ class AppServiceProvider extends ServiceProvider
             ->where('is_read', 0)->latest()->take(3)->get();
 
         // FIXED: Fetch real Reviews instead of empty collect()
-        $latestReviewsNotify = \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {
+         $latestReviewsNotify = \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {
                 $q->where('seller_id', $sellerId);
-            })->where('status', 1)->latest()->take(3)->get();
+            })
+            ->where('status', 1)
+            ->whereDate('created_at', \Carbon\Carbon::today()) // ✅ Simple: Only count today's reviews
+            ->latest()->take(3)->get();
+
 
         // --- 2. COUNTS FOR SIDEBAR BADGES ---
         $productCount = \Illuminate\Support\Facades\DB::table('notifications')

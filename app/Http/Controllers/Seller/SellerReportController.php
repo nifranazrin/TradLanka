@@ -7,20 +7,15 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-// Import the PDF Facade for the download feature
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class SellerReportController extends Controller
 {
     public function __construct()
     {
-        // Ensures only logged-in sellers can access these reports
         $this->middleware('auth:seller');
     }
 
-    /**
-     * Display the main selection page for reports
-     */
     public function index()
     {
         return view('seller.reports.index');
@@ -34,23 +29,24 @@ class SellerReportController extends Controller
         $sellerId = Auth::guard('seller')->id();
         $reportType = $request->input('report_type');
 
-        $query = Product::where('seller_id', $sellerId);
+        // ✅ ONLY approved, reapproved, or active products
+        $query = Product::where('seller_id', $sellerId)
+                        ->whereIn('status', ['approved', 'reapproved', 'active']);
 
         if ($reportType == 'low_stock') {
-            // Shows all products with stock less than 5
-            $products = $query->where('stock', '<', 5)
+            // ✅ Updated: Shows products with stock 5 or less
+            $products = $query->where('stock', '<=', 5)
                               ->orderBy('stock', 'asc')
                               ->get();
         } 
         elseif ($reportType == 'top_selling') {
-            // FIXED: Using 'qty' instead of 'quantity' based on your database error
-            // Removed .take(10) to show all moving stock on the page
+            // ✅ Updated: Only products with more than 10 sales
             $products = $query->withSum('items as total_sold', 'qty') 
+                              ->having('total_sold', '>', 10)
                               ->orderBy('total_sold', 'desc')
                               ->get(); 
         }
         elseif ($reportType == 'slow_moving') {
-            // Shows all products with NO sales in the last 60 days
             $products = $query->whereDoesntHave('items', function($q) {
                 $q->where('created_at', '>=', now()->subDays(60));
             })->get();
@@ -69,13 +65,17 @@ class SellerReportController extends Controller
         $seller = Auth::guard('seller')->user();
         $reportType = $request->query('report_type');
         
-        $query = Product::where('seller_id', $seller->id);
+        // ✅ Applying same status safety filter for PDF
+        $query = Product::where('seller_id', $seller->id)
+                        ->whereIn('status', ['approved', 'reapproved', 'active']);
 
-        // Fetch same data as web view but for PDF generation
         if ($reportType == 'low_stock') {
-            $products = $query->where('stock', '<', 5)->orderBy('stock', 'asc')->get();
+            // ✅ Sync with web view: 5 or less
+            $products = $query->where('stock', '<=', 5)->orderBy('stock', 'asc')->get();
         } elseif ($reportType == 'top_selling') {
+            // ✅ Sync with web view: above 10 sales
             $products = $query->withSum('items as total_sold', 'qty')
+                              ->having('total_sold', '>', 10)
                               ->orderBy('total_sold', 'desc')->get();
         } else {
             $products = $query->whereDoesntHave('items', function($q) {
@@ -83,39 +83,29 @@ class SellerReportController extends Controller
             })->get();
         }
 
-        // Stats for the branded header
         $stats = [
             'date' => now()->format('d M Y, h:i A'),
             'seller_name' => $seller->name,
             'report_title' => ucwords(str_replace('_', ' ', $reportType))
         ];
 
-        // Generate PDF using the custom PDF blade view
         $pdf = Pdf::loadView('seller.reports.pdf', compact('products', 'reportType', 'stats'));
-        
-        // Setup A4 Paper size
         $pdf->setPaper('a4', 'portrait');
 
-        // Trigger download
         return $pdf->download('TradLanka_' . $reportType . '_Report_' . now()->format('Ymd') . '.pdf');
     }
 
-    /**
-     * Submit the report record to the admin
-     */
     public function submitToAdmin(Request $request)
     {
         $sellerId = Auth::guard('seller')->id();
         $reportType = $request->input('report_type');
         
-        // Define friendly names for reports
         $reportNames = [
             'top_selling' => 'Top Selling Products Report',
             'low_stock'   => 'Low Stock Alert Report',
             'slow_moving' => 'Slow Moving Stock Report'
         ];
 
-        // Insert into the submitted_reports table
         DB::table('submitted_reports')->insert([
             'seller_id'    => $sellerId,
             'report_type'  => $reportType,
@@ -126,7 +116,6 @@ class SellerReportController extends Controller
             'updated_at'   => now(),
         ]);
 
-        // Redirect back with success message
         return back()->with('success', 'Report successfully submitted to Admin!');
     }
 }

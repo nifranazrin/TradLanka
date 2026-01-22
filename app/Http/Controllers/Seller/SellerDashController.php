@@ -316,7 +316,7 @@ public function reviews(Request $request)
         $message->update([
             'seller_id'  => $sellerId,
             'status'     => 'replied',
-            'is_read'    => 1,           // Syncing count
+            'is_read'    => 1,           
             'replied_at' => now(),
         ]);
 
