@@ -318,7 +318,7 @@ Route::get('/dashboard/chart-data', [SellerDashController::class, 'getChartData'
         Auth::guard('seller')->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
-        return redirect('/seller/login');
+        return redirect('/staff/login');
     })->name('logout');
 
     // --- CHAT SYSTEM (Synchronized with Delivery Logic) ---
