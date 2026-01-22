@@ -97,55 +97,68 @@ class ChatbotController extends Controller
 
   
     private function productDetails(array $params)
-    {
-        $productName = $params['product_name'] ?? null;
+{
+    $productName = $params['product_name'] ?? null;
 
-        if (!$productName) {
-            return response()->json([
-                "fulfillmentText" =>
-                    "Please enter the product name you want details about."
-            ]);
-        }
-
-        $productName = trim($productName);
-
-        $product = Product::with('category')
-            ->where('name', 'LIKE', '%' . $productName . '%')
-            ->first();
-
-        if (!$product) {
-            return response()->json([
-                "fulfillmentText" =>
-                    "❌ Product not found. Please try another product name."
-            ]);
-        }
-
-        
-        $localPrice = $product->price;
-        $usdPrice   = $product->price / 312.50; 
-
-
-return response()->json([
-    "fulfillmentText" =>
-        "🛍 Product: {$product->name}\n\n" .
-
-        "📝 Description:\n" .
-        "{$product->description}\n\n" .
-
-        "⭐ Benefits:\n" .
-        "• Provides deep moisture to dry hair\n" .
-        "• Adds a healthy, natural shine\n" .
-        "• Protects and cleans the scalp\n" .
-        "• Strengthens hair to reduce breakage\n" .
-        "• Controls frizz for better management\n\n" .
-
-        "💰 Pricing:\n" .
-        "• 🇱🇰 Local Price (LKR): Rs. " . number_format($localPrice, 2) . "\n" .
-        "• 🌍 International Price (USD): $" . number_format($usdPrice, 2) . "\n\n" .
-
-        "📦 Stock: {$product->stock}\n" .
-        "🏷 Category: {$product->category->name}"
-]);
-
+    if (!$productName) {
+        return response()->json([
+            "fulfillmentText" => "Please enter the product name you want details about."
+        ]);
     }
+
+    $productName = trim($productName);
+
+    $product = Product::with('category')
+        ->where('name', 'LIKE', '%' . $productName . '%')
+        ->first();
+
+    if (!$product) {
+        return response()->json([
+            "fulfillmentText" => "❌ Product not found. Please try another product name."
+        ]);
+    }
+
+    // Formatting prices
+    $localPrice = number_format($product->price, 2);
+    $usdPrice   = number_format($product->price / 312.50, 2);
+
+    // Using Dialogflow Messenger Rich Content for a cleaner UI
+    return response()->json([
+        "fulfillmentMessages" => [
+            [
+                "payload" => [
+                    "richContent" => [[
+                        [
+                            "type" => "info",
+                            "title" => $product->name,
+                            "subtitle" => "🇱🇰 Rs. {$localPrice} | 🌍 \${$usdPrice}\nStock: {$product->stock} | Category: {$product->category->name}",
+                            "image" => [
+                                "src" => [
+                                    // Ensure your product model has an 'image' attribute
+                                    "rawUri" => asset('storage/' . $product->image) 
+                                ]
+                            ],
+                            "actionLink" => url('/product/' . $product->slug)
+                        ],
+                        [
+                            "type" => "description",
+                            "title" => "About this Product",
+                            "text" => [
+                                "📝 Description: {$product->description}",
+                            ]
+                        ],
+                        [
+                            "type" => "chips",
+                            "options" => [
+                                ["text" => "Track an Order"],
+                                ["text" => "Search another product"],
+                                ["text" => "Contact Support"]
+                            ]
+                        ]
+                    ]]
+                ]
+            ]
+        ]
+    ]);
+}
 }
