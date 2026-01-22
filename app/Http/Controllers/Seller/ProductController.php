@@ -224,8 +224,15 @@ class ProductController extends Controller
 
             foreach ($users as $user) {
                 $user->notify(new \App\Notifications\CustomerRestockNotification($product));
+
+                try {
+                        \Illuminate\Support\Facades\Mail::to($user->email)
+                            ->send(new \App\Mail\ProductRestocked($product));
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error('Email failed: ' . $e->getMessage());
+                    }
+                }
             }
-        }
 
         // 5. UPDATE VARIANTS Logic
         ProductVariant::where('product_id', $product->id)->delete();
@@ -266,6 +273,9 @@ class ProductController extends Controller
         return back()->withInput()->with('error', "Update failed: " . $e->getMessage());
     }
 }
+
+
+
 
     // Helper to handle gallery upload to keep code clean
     private function handleGalleryImages($request, $product)

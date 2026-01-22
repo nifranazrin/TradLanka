@@ -56,7 +56,7 @@
                     @elseif(in_array($order->status, ['7', '8', '9']))
                         <p class="text-warning fw-bold">Cancellation process is in progress.</p>
                     @else
-                        <p>You will get your order within 2–4 working days.</p>
+                        <p>You will get your order within 2–7 working days.</p>
                     @endif
                 </div>
 
