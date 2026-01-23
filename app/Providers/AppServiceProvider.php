@@ -191,16 +191,17 @@ View::composer('layouts.delivery', function ($view) {
     $latestSellerRequestsNotify = \App\Models\UserRequest::where('status', 'pending')
                                                          ->latest()->take(3)->get();
 
-    $latestChatsNotify = collect();
-    if ($admin) {
-        // Eager load 'sender' (Staff) specifically
-        $latestChatsNotify = \App\Models\Message::with('sender')
-            ->where('receiver_id', $admin->id)
-            ->where('receiver_type', 'admin')
-            ->where('is_read', 0)
-            ->latest()->take(3)->get();
-    }
+        
 
+                                                         $latestChatsNotify = collect();
+if ($admin) {
+    // We MUST use 'with(sender)' to get the name of the Seller/Staff member who sent the message
+    $latestChatsNotify = \App\Models\Message::with('sender')
+        ->where('receiver_id', $admin->id)
+        ->where('receiver_type', 'admin') // Messages sent TO you
+        ->where('is_read', 0)
+        ->latest()->take(3)->get();
+}
     // --- 2. COUNTS FOR BADGES ---
     $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
     $pendingProducts     = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();

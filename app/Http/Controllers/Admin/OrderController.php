@@ -18,9 +18,21 @@ class OrderController extends Controller
      */
     public function reviewOrders()
 {
-   
-    $orders = Order::whereIn('status', [ 3, 4, 5, 8,9, 6,10])
-        ->latest()
+    // PRIORITY: 
+    // 1. Status 3 (At Head Office - Needs Assignment)
+    // 2. Status 8/9 (Failed/Refund - Needs Finalization)
+    // 3. Status 4/10 (In Transit/Arrived - Tracking)
+    // 4. Everything else (Closed/Delivered)
+
+    $orders = Order::whereIn('status', [3, 4, 5, 8, 9, 6, 10])
+        ->orderByRaw("CASE 
+            WHEN status = 3 THEN 1 
+            WHEN status = 8 OR status = 9 THEN 2
+            WHEN status = 10 THEN 3
+            WHEN status = 4 THEN 4
+            ELSE 5 
+        END ASC")
+        ->orderBy('created_at', 'desc') // Second sort: Newest within each priority group
         ->paginate(15);
 
     $deliveryPartners = Staff::where('role', 'delivery')->get(); 

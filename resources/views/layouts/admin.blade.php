@@ -139,27 +139,45 @@
 </head>
 
 <body>
-  @php
+@php
     $admin = Auth::guard('admin')->user() ?? \App\Models\Staff::find(session('staff_id'));
     
-    // CHANGE: Count from UserRequest model where status is pending
-    // This now automatically includes both 'seller' and 'delivery' roles
+    // 1. SIDEBAR COUNTS (Already working)
     $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
-    
     $pendingProducts = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
-
     $newReviewsCount = \App\Models\Review::where('is_read', 0)->count();
-
     $pendingOrdersCount = \App\Models\Order::where('status', 3)->count();
+    $pendingReports = \Illuminate\Support\Facades\DB::table('submitted_reports')->where('status', 'pending')->count();
 
-   $unreadMessages = 0;
+    // 2. BELL DROPDOWN DATA (The missing part)
+    // Fetch actual records for the loops
+    $latestOrdersNotify = \App\Models\Order::where('status', 3)->latest()->take(3)->get();
+    
+    $latestProductsNotify = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])
+                                                ->latest()->take(3)->get();
+    
+    $latestReviewsNotify = \App\Models\Review::with('user')->where('is_read', 0)
+                                              ->latest()->take(3)->get();
+                                              
+    $latestSellerRequestsNotify = \App\Models\UserRequest::where('status', 'pending')
+                                                         ->latest()->take(3)->get();
+
+    $latestChatsNotify = collect();
+    $unreadMessages = 0;
     if ($admin) {
-        $unreadMessages = \App\Models\Message::where('receiver_id', $admin->id)
-            ->where('receiver_type', 'admin') // Ensure this matches your DB exactly
+        // Eager load 'sender' to show the Seller's name instead of 'Admin'
+        $latestChatsNotify = \App\Models\Message::with('sender')
+            ->where('receiver_id', $admin->id)
+            ->where('receiver_type', 'admin')
             ->where('is_read', 0)
-            ->where('deleted_by_receiver', 0) // From your Message model
-            ->count();
+            ->latest()->take(3)->get();
+            
+        $unreadMessages = $latestChatsNotify->count();
     }
+
+    // 3. CALCULATE TOTAL FOR THE BELL BADGE
+    $totalAlerts = $pendingApplications + $pendingProducts + $newReviewsCount + 
+                   $unreadMessages + $pendingOrdersCount + $pendingReports;
 @endphp
 <div class="admin-navbar">
     <div class="nav-left">
@@ -194,19 +212,19 @@
 
         {{-- 1. New Orders with specific Customer Name and Relative Time --}}
         @foreach($latestOrdersNotify as $order)
-            <li class="border-bottom-light">
-                <a class="dropdown-item py-2" href="{{ url('admin/orders/'.$order->id) }}">
-                    <div class="d-flex flex-column">
-                        <span class="small text-wrap">
-                            <i class="bi bi-truck me-2 text-primary"></i>
-                            New Order: <strong>#{{ $order->tracking_no }}</strong> from {{ $order->fname }}
-                        </span>
-                        <small class="text-muted mt-1" style="font-size: 0.7rem;">
-                            <i class="bi bi-clock me-1"></i>{{ $order->created_at->diffForHumans() }}
-                        </small>
-                    </div>
-                </a>
-            </li>
+    <li class="border-bottom-light">
+        <a class="dropdown-item py-2" href="{{ route('admin.orders.show', $order->id) }}">
+            <div class="d-flex flex-column">
+                <span class="small text-wrap">
+                    <i class="bi bi-building me-2 text-primary"></i>
+                    <strong>#{{ $order->tracking_no }}</strong> Arrived at Head Office
+                </span>
+                <small class="text-muted mt-1" style="font-size: 0.7rem;">
+                    <i class="bi bi-clock me-1"></i>{{ $order->created_at->diffForHumans() }}
+                </small>
+            </div>
+        </a>
+    </li>
         @endforeach
 
         {{-- 2. Pending Products --}}
@@ -261,23 +279,24 @@
         @endforeach
 
         {{-- 5. Staff Chat - Specific Staff Name & Message --}}
-        @foreach($latestChatsNotify as $chat)
-            <li class="border-bottom-light bg-light-message" style="background-color: #f8f9fa;">
-                <a class="dropdown-item py-2" href="{{ route('admin.chat.index') }}">
-                    <div class="d-flex flex-column">
-                        <span class="small text-wrap">
-                            <i class="bi bi-chat-dots me-2 text-success"></i>
-                            Staff Message from <strong>{{ $chat->sender->name ?? 'Staff Member' }}</strong>
-                        </span>
-                        <p class="small text-muted mb-0 text-truncate" style="max-width: 250px; font-size: 0.75rem;">
-                            {{ $chat->message }}
-                        </p>
-                        <small class="text-muted mt-1" style="font-size: 0.7rem;">
-                            <i class="bi bi-clock me-1"></i>{{ $chat->created_at->diffForHumans() }}
-                        </small>
-                    </div>
-                </a>
-            </li>
+          @foreach($latestChatsNotify as $chat)
+    <li class="border-bottom-light bg-light-message">
+        <a class="dropdown-item py-2" href="{{ route('admin.chat.index') }}">
+            <div class="d-flex flex-column">
+                <span class="small text-wrap">
+                    <i class="bi bi-chat-dots me-2 text-success"></i>
+                    {{-- Dynamically pull the sender's name --}}
+                    Staff Message from <strong>{{ $chat->sender->name ?? 'Staff' }}</strong>
+                </span>
+                <p class="small text-muted mb-0 text-truncate" style="font-size: 0.75rem;">
+                    {{ $chat->message }}
+                </p>
+                <small class="text-muted mt-1" style="font-size: 0.7rem;">
+                    <i class="bi bi-clock me-1"></i>{{ $chat->created_at->diffForHumans() }}
+                </small>
+            </div>
+        </a>
+    </li>
         @endforeach
 
         {{-- 6. Reports Summary --}}
