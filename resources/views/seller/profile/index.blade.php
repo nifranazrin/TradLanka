@@ -10,7 +10,7 @@
         </div>
 
         <div class="card-body">
-            {{-- ✅ Success / Error Alerts --}}
+            {{--  Success / Error Alerts --}}
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     {{ session('success') }}
@@ -25,7 +25,7 @@
                 </div>
             @endif
 
-            {{-- ✅ Profile Update Form --}}
+            {{--  Profile Update Form --}}
             <form id="sellerProfileForm" action="{{ route('seller.profile.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
@@ -123,7 +123,7 @@
     </div>
 </div>
 
-{{-- ✅ JavaScript --}}
+{{--  JavaScript --}}
 <script>
 document.getElementById('image').addEventListener('change', function (e) {
     const [file] = e.target.files;
@@ -136,16 +136,41 @@ const confirmPassInput = document.getElementById('confirmPassword');
 const passwordError = document.getElementById('passwordError');
 const passwordStatus = document.getElementById('passwordStatus');
 
-// ✅ AJAX Password Validation
+//  INITIAL STATE: Disable new password fields by default
+newPassInput.disabled = true;
+confirmPassInput.disabled = true;
+
+//  ALERT: Show warning if user tries to click locked fields
+[newPassInput, confirmPassInput].forEach(input => {
+    input.addEventListener('mousedown', function() {
+        if (this.disabled) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Verification Required',
+                text: 'Please enter your current password correctly before setting a new one.',
+                confirmButtonColor: '#800000'
+            });
+        }
+    });
+});
+
+//  AJAX Password Validation
 currentPassInput.addEventListener('input', function() {
     const enteredPassword = this.value.trim();
     passwordStatus.classList.add('d-none');
     passwordStatus.innerHTML = '';
 
-    if (enteredPassword.length < 3) {
+    // If current password field is cleared, re-lock the new fields
+    if (enteredPassword.length === 0) {
+        newPassInput.disabled = true;
+        confirmPassInput.disabled = true;
+        newPassInput.value = '';
+        confirmPassInput.value = '';
         passwordError.classList.add('d-none');
         return;
     }
+
+    if (enteredPassword.length < 3) return;
 
     fetch("{{ route('seller.check-password') }}", {
         method: "POST",
@@ -158,14 +183,24 @@ currentPassInput.addEventListener('input', function() {
     .then(res => res.json())
     .then(data => {
         if (data.valid) {
+            //  Success: Enable fields
             passwordError.classList.add('d-none');
             passwordStatus.classList.remove('d-none');
             passwordStatus.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+            
+            newPassInput.disabled = false;
+            confirmPassInput.disabled = false;
         } else {
+            // ❌ Fail: Keep fields disabled
             passwordError.classList.remove('d-none');
             passwordError.textContent = "Incorrect current password!";
             passwordStatus.classList.remove('d-none');
             passwordStatus.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>';
+            
+            newPassInput.disabled = true;
+            confirmPassInput.disabled = true;
+            newPassInput.value = ''; // Clear if they started typing while it was valid
+            confirmPassInput.value = '';
         }
     })
     .catch(() => {
@@ -174,14 +209,14 @@ currentPassInput.addEventListener('input', function() {
     });
 });
 
-// ✅ Ensure all password fields are enabled before submitting form
+
 document.getElementById('sellerProfileForm').addEventListener('submit', function() {
-    newPassInput.removeAttribute('disabled');
-    confirmPassInput.removeAttribute('disabled');
+    newPassInput.disabled = false;
+    confirmPassInput.disabled = false;
 });
 </script>
 
-{{-- ✅ Styles --}}
+{{-- Styles --}}
 <style>
 .text-maroon { color: #800000 !important; }
 .btn-maroon {
