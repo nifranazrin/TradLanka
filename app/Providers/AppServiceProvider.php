@@ -56,9 +56,13 @@ class AppServiceProvider extends ServiceProvider
             })->latest()->take(3)->get();
 
         // FIXED: Fetch real Chat messages instead of empty collect()
-        $latestChatsNotify = \App\Models\Message::where('receiver_id', $sellerId)
+         $latestChatsNotify = \App\Models\Message::with('sender') 
+            ->where('receiver_id', $sellerId)
             ->where('receiver_type', 'seller')
-            ->where('is_read', 0)->latest()->take(3)->get();
+            ->where('is_read', 0)
+            ->latest()
+            ->take(3)
+            ->get();
 
         // FIXED: Fetch real Reviews instead of empty collect()
           $latestReviewsNotify = \App\Models\Review::whereHas('product', function ($q) use ($sellerId) {

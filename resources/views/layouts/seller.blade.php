@@ -161,8 +161,9 @@
 
             // 1. Staff Chat Messages
             foreach($latestChatsNotify as $chat) {
-                $combinedFeed->push(['type' => 'chat', 'item' => $chat, 'time' => $chat->created_at]);
-            }
+        $combinedFeed->push(['type' => 'chat', 'item' => $chat, 'time' => $chat->created_at]);
+    }
+   
             // 2. Inquiries
             foreach($latestInquiriesNotify as $inquiry) {
                 $combinedFeed->push(['type' => 'inquiry', 'item' => $inquiry, 'time' => \Carbon\Carbon::parse($inquiry->created_at)]);
@@ -184,20 +185,22 @@
             $sortedFeed = $combinedFeed->sortByDesc('time');
         @endphp
 
-        @forelse($sortedFeed as $entry)
-            <li class="border-bottom-light">
-                @if($entry['type'] == 'chat')
-                    <a class="dropdown-item py-2" href="{{ route('seller.chat.index') }}">
-                        <div class="d-flex flex-column">
-                            <span class="small text-wrap">
-                                <i class="bi bi-chat-dots me-2 text-success"></i>
-                                <strong>Staff Message:</strong> {{ Str::limit($entry['item']->message, 35) }}
-                            </span>
-                            <small class="text-muted mt-1" style="font-size: 0.7rem;">
-                                <i class="bi bi-clock me-1"></i>{{ $entry['time']->diffForHumans() }}
-                            </small>
-                        </div>
-                    </a>
+           @forelse($sortedFeed as $entry)
+    <li class="border-bottom-light">
+        @if($entry['type'] == 'chat')
+            <a class="dropdown-item py-2" href="{{ route('seller.chat.index') }}">
+                <div class="d-flex flex-column">
+                    <span class="small text-wrap">
+                        <i class="bi bi-chat-dots me-2 text-success"></i>
+                        {{-- Corrected display for sender name --}}
+                        <strong>Staff Message from {{ $entry['item']->sender->name ?? 'Admin' }}:</strong> 
+                        {{ Str::limit($entry['item']->message, 35) }}
+                    </span>
+                    <small class="text-muted mt-1" style="font-size: 0.7rem;">
+                        <i class="bi bi-clock me-1"></i>{{ $entry['time']->diffForHumans() }}
+                    </small>
+                </div>
+            </a>
 
                 @elseif($entry['type'] == 'inquiry')
                     <a class="dropdown-item py-2" href="{{ route('seller.inquiries') }}">
