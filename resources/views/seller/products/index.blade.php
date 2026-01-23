@@ -249,14 +249,14 @@
                     </div>
                     {{-- END VARIATIONS --}}
 
-                    <div class="mb-3">
+                     <div class="mb-3">
                         <label class="fw-bold">Description</label>
-                        <textarea name="description" rows="3" class="form-control"></textarea>
+                        <textarea name="description" rows="3" class="form-control" required></textarea>
                     </div>
 
-                    <div class="mb-3">
+                     <div class="mb-3">
                         <label class="fw-bold">Front Image (Main)</label>
-                        <input type="file" name="image" class="form-control" accept="image/*">
+                        <input type="file" name="image" class="form-control" accept="image/*" required>
                     </div>
 
                     {{-- Gallery Images --}}
@@ -298,14 +298,15 @@ document.addEventListener('DOMContentLoaded', function () {
     @endif
 
     @if(session('error'))
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: "{{ session('error') }}",
-            background: '#fff0f0',
-            confirmButtonColor: '#800000'
-        });
-    @endif
+    Swal.fire({
+        icon: 'error',
+        title: 'Product Conflict', // More specific title
+        text: "{{ session('error') }}", // This will show "Already added by [Seller Name]"
+        background: '#fff0f0',
+        confirmButtonColor: '#410d0d', // Matches your .bg-maroon
+        confirmButtonText: 'Try Different Name'
+    });
+@endif
 
     // --- 2. SELECTORS & INITIALIZATION ---
     const unitTypeSelect = document.querySelector('select[name="unit_type"]');

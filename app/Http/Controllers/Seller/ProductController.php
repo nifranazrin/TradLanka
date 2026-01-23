@@ -60,8 +60,8 @@ class ProductController extends Controller
         'name' => 'required|string|max:255',
         'category_id' => 'required|integer|exists:categories,id',
         'unit_type' => 'required|in:weight,liquid,default',
-        'description' => 'nullable|string',
-        'image' => 'nullable|image|max:2048',
+        'description' => 'required|string',
+        'image' => 'required|image|max:2048',
         'images' => 'nullable|array|max:12',
         'images.*' => 'nullable|image|max:2048',
         
@@ -72,7 +72,23 @@ class ProductController extends Controller
         'variations.*.stock' => 'required|integer',
     ]);
 
-    // ... (Your authentication and duplicate check logic) ...
+    $name = trim($request->name);
+    $sellerId = Auth::guard('seller')->id();
+
+    // 2. DUPLICATE CHECK LOGIC
+    // Check if the name exists anywhere in the database
+    $existingProduct = Product::where('name', $name)->first();
+
+    if ($existingProduct) {
+        if ($existingProduct->seller_id == $sellerId) {
+            // Error if the SAME seller has this product
+            return back()->withInput()->with('error', "You have already added a product named '{$name}'. Please use a different name.");
+        } else {
+            // Error if a DIFFERENT seller has this product
+            $otherSellerName = $existingProduct->seller->name ?? 'another seller';
+            return back()->withInput()->with('error', "The product '{$name}' has already been added by {$otherSellerName}.");
+        }
+    }
 
     DB::beginTransaction();
     try {
@@ -172,6 +188,9 @@ class ProductController extends Controller
         'variations.*.price' => 'required_with:variations|numeric',
         'variations.*.stock' => 'required_with:variations|integer',
     ]);
+
+
+    
 
     DB::beginTransaction();
     try {

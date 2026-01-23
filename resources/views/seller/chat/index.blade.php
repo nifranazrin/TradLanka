@@ -237,15 +237,28 @@ function openOrderModal() {
         const orderList = document.getElementById('orderList');
         orderList.innerHTML = '';
         orders.forEach(o => {
-            orderList.innerHTML += `<div class="p-3 border-bottom cursor-pointer hover-bg-light" onclick="shareOrder('${o.tracking_no}', '${o.fname} ${o.lname}', '${o.address1 ? o.address1.replace(/'/g, "\\'") : ''}', '${o.phone}')"><b>Order #${o.tracking_no}</b><br><small class="text-muted">Customer: ${o.fname} ${o.lname}</small></div>`;
+            // CHANGE: Only pass o.fname instead of concatenating fname and lname
+            orderList.innerHTML += `<div class="p-3 border-bottom cursor-pointer hover-bg-light" 
+                onclick="shareOrder('${o.tracking_no}', '${o.fname}', '${o.address1 ? o.address1.replace(/'/g, "\\'") : ''}', '${o.phone}')">
+                <b>Order #${o.tracking_no}</b><br>
+                <small class="text-muted">Customer: ${o.fname}</small>
+            </div>`;
         });
         new bootstrap.Modal(document.getElementById('orderModal')).show();
     });
 }
-
 function shareOrder(tracking, name, address, phone) {
-    const orderHtml = `<div class="order-attachment"><b>📦 Shared Order Details</b><p><b>ID:</b> #${tracking}</p><p><b>Customer:</b> ${name}</p><p><b>Phone:</b> ${phone}</p><p><b>Address:</b> ${address}</p></div>`;
-    sendMessage(orderHtml); bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
+    // Removed the last name logic to prevent "null" from showing
+    const orderHtml = `<div class="order-attachment">
+        <b>📦 Shared Order Details</b>
+        <p><b>ID:</b> #${tracking}</p>
+        <p><b>Customer:</b> ${name}</p> 
+        <p><b>Phone:</b> ${phone}</p>
+        <p><b>Address:</b> ${address}</p>
+    </div>`;
+    
+    sendMessage(orderHtml); 
+    bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
 }
 
 function deleteMsg(msgId, deleteType) {
