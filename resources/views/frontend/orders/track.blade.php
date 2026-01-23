@@ -137,9 +137,14 @@
                         </div>
 
                         {{-- ✅ 5. International Milestone (Status 10) --}}
-                        @php
+                       @php
                             $payMode = strtoupper($order->payment_mode);
-                            $isInternational = (strtoupper($order->currency) === 'USD' || str_contains($payMode, 'STRIPE') || str_contains($payMode, 'USD'));
+                            $dbCurrency = strtoupper(trim($order->currency));
+
+                            /** * FIX: An order is ONLY international if the currency is USD.
+                             * We no longer check for 'STRIPE' generally, as Stripe is also used for LKR.
+                             */
+                            $isInternational = ($dbCurrency === 'USD' || str_contains($payMode, '(USD)'));
                         @endphp
 
                         @if($isInternational)
