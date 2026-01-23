@@ -157,7 +157,7 @@ let activeUser = {};
 let replyToId = null; 
 
 /**
- * ✅ Corrected: Filter contacts and reveal inactive staff during search
+ * Corrected: Filter contacts and reveal inactive staff during search
  */
 function filterContacts() {
     let input = document.getElementById('contactSearch').value.toLowerCase();
@@ -240,16 +240,40 @@ function openOrderModal() {
     fetch("{{ route('delivery.chat.orders') }}").then(r => r.json()).then(orders => {
         const orderList = document.getElementById('orderList');
         orderList.innerHTML = '';
+        
         orders.forEach(o => {
-            orderList.innerHTML += `<div class="p-3 border-bottom cursor-pointer hover-bg-light" onclick="shareOrder('${o.tracking_no}', '${o.fname} ${o.lname}', '${o.address1.replace(/'/g, "\\'")}', '${o.phone}')"><b>Order #${o.tracking_no}</b><br><small class="text-muted">Customer: ${o.fname} ${o.lname}</small></div>`;
+            // FIX: Use o.fname only to avoid "null" showing in the UI
+            const customerName = o.fname;
+            
+            // Fix: Ensure address exists before running .replace to avoid JS errors
+            const safeAddress = o.address1 ? o.address1.replace(/'/g, "\\'") : 'No Address Provided';
+
+            orderList.innerHTML += `
+                <div class="p-3 border-bottom cursor-pointer hover-bg-light" 
+                     onclick="shareOrder('${o.tracking_no}', '${customerName}', '${safeAddress}', '${o.phone}')">
+                    <b>Order #${o.tracking_no}</b><br>
+                    <small class="text-muted">Customer: ${customerName}</small>
+                </div>`;
         });
+        
         new bootstrap.Modal(document.getElementById('orderModal')).show();
     });
 }
 
+/**
+ * Formats the selected order into a chat attachment and sends the message.
+ */
 function shareOrder(tracking, name, address, phone) {
-    const orderHtml = `<div class="order-attachment"><b>📦 Shared Order Details</b><p><b>ID:</b> #${tracking}</p><p><b>Customer:</b> ${name}</p><p><b>Phone:</b> ${phone}</p><p><b>Address:</b> ${address}</p></div>`;
-    sendMessage(orderHtml); bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
+    const orderHtml = `<div class="order-attachment">
+        <b>📦 Shared Order Details</b>
+        <p><b>ID:</b> #${tracking}</p>
+        <p><b>Customer:</b> ${name}</p>
+        <p><b>Phone:</b> ${phone}</p>
+        <p><b>Address:</b> ${address}</p>
+    </div>`;
+    
+    sendMessage(orderHtml); 
+    bootstrap.Modal.getInstance(document.getElementById('orderModal')).hide();
 }
 
 function deleteMsg(msgId, deleteType) {

@@ -179,7 +179,8 @@ View::composer('layouts.delivery', function ($view) {
              ?? \App\Models\Staff::find(session('staff_id'));
     
     // --- 1. DETAILED DATA FOR DROPDOWN (With Eager Loading) ---
-    $latestOrdersNotify = \App\Models\Order::where('status', 3)->latest()->take(3)->get();
+    $latestOrdersNotify = \App\Models\Order::whereIn('status', [3, 8, 9])
+                                            ->latest()->take(3)->get();
     
     $latestProductsNotify = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])
                                                 ->latest()->take(3)->get();
@@ -206,7 +207,7 @@ if ($admin) {
     $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
     $pendingProducts     = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
     $newReviews = \App\Models\Review::where('is_read', 0)->count();
-    $pendingOrders       = \App\Models\Order::where('status', 3)->count();
+    $pendingOrders = \App\Models\Order::whereIn('status', [3, 8, 9])->count();
     $pendingReports      = \Illuminate\Support\Facades\DB::table('submitted_reports')
                                 ->where('status', 'pending')->count();
 

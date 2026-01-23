@@ -146,12 +146,12 @@
     $pendingApplications = \App\Models\UserRequest::where('status', 'pending')->count();
     $pendingProducts = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])->count();
     $newReviewsCount = \App\Models\Review::where('is_read', 0)->count();
-    $pendingOrdersCount = \App\Models\Order::where('status', 3)->count();
+    $pendingOrdersCount = \App\Models\Order::whereIn('status', [3, 8, 9])->count();
     $pendingReports = \Illuminate\Support\Facades\DB::table('submitted_reports')->where('status', 'pending')->count();
 
     // 2. BELL DROPDOWN DATA (The missing part)
     // Fetch actual records for the loops
-    $latestOrdersNotify = \App\Models\Order::where('status', 3)->latest()->take(3)->get();
+    $latestOrdersNotify = \App\Models\Order::whereIn('status', [3, 8, 9])->latest()->take(3)->get();
     
     $latestProductsNotify = \App\Models\Product::whereIn('status', ['pending', 'reapproval_pending'])
                                                 ->latest()->take(3)->get();
@@ -211,13 +211,18 @@
         <li><h6 class="dropdown-header border-bottom pb-2 mb-2">Detailed Notifications</h6></li>
 
         {{-- 1. New Orders with specific Customer Name and Relative Time --}}
-        @foreach($latestOrdersNotify as $order)
+       @foreach($latestOrdersNotify as $order)
     <li class="border-bottom-light">
         <a class="dropdown-item py-2" href="{{ route('admin.orders.show', $order->id) }}">
             <div class="d-flex flex-column">
                 <span class="small text-wrap">
-                    <i class="bi bi-building me-2 text-primary"></i>
-                    <strong>#{{ $order->tracking_no }}</strong> Arrived at Head Office
+                    @if($order->status == 3)
+                        <i class="bi bi-building me-2 text-primary"></i>
+                        <strong>#{{ $order->tracking_no }}</strong> Arrived at Head Office
+                    @else
+                        <i class="bi bi-exclamation-triangle me-2 text-danger"></i>
+                        <strong>#{{ $order->tracking_no }}</strong> Cancellation/Refund Request
+                    @endif
                 </span>
                 <small class="text-muted mt-1" style="font-size: 0.7rem;">
                     <i class="bi bi-clock me-1"></i>{{ $order->created_at->diffForHumans() }}
