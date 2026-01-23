@@ -43,6 +43,7 @@ class DeliveryOrderController extends Controller
     public function taskHistory(Request $request)
 {
     $riderId = Auth::guard('delivery')->id();
+    
     $query = Order::with(['items.product'])->where('delivery_boy_id', $riderId);
 
     // Filter by Status

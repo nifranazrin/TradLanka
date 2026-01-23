@@ -97,31 +97,74 @@ document.getElementById('image').addEventListener('change', function (e) {
     if (file) document.getElementById('preview').src = URL.createObjectURL(file);
 });
 
-// ✅ AJAX Password Validation (Adapted for Delivery)
-document.getElementById('currentPassword').addEventListener('input', function() {
-    const enteredPassword = this.value.trim();
-    const status = document.getElementById('passwordStatus');
-    const error = document.getElementById('passwordError');
+// --- STRICT PASSWORD VALIDATION LOGIC ---
+const currentPwd = document.getElementById('currentPassword');
+const newPwd = document.getElementById('newPassword');
+const confirmPwd = document.getElementById('confirmPassword');
+const statusIcon = document.getElementById('passwordStatus');
+const errorMsg = document.getElementById('passwordError');
 
-    if (enteredPassword.length < 3) return;
+// 1. Initial State: Lock new fields until current is verified
+newPwd.disabled = true;
+confirmPwd.disabled = true;
+
+// 2. Proactive Alert: Warn user if they try to click locked fields
+[newPwd, confirmPwd].forEach(input => {
+    input.addEventListener('click', function() {
+        if (this.disabled) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Verification Required',
+                text: 'Please enter and verify your Current Password first to unlock these fields.',
+                confirmButtonColor: '#800000'
+            });
+        }
+    });
+});
+
+// 3. Real-time AJAX Verification
+currentPwd.addEventListener('input', function() {
+    const entered = this.value.trim();
+
+    // If field is cleared, re-lock and clear everything
+    if (entered.length === 0) {
+        statusIcon.classList.add('d-none');
+        newPwd.disabled = true;
+        confirmPwd.disabled = true;
+        newPwd.value = '';
+        confirmPwd.value = '';
+        return;
+    }
 
     fetch("{{ route('delivery.check-password') }}", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
-        body: JSON.stringify({ password: enteredPassword })
+        headers: { 
+            "Content-Type": "application/json", 
+            "X-CSRF-TOKEN": "{{ csrf_token() }}" 
+        },
+        body: JSON.stringify({ password: entered })
     })
     .then(res => res.json())
     .then(data => {
-        status.classList.remove('d-none');
+        statusIcon.classList.remove('d-none');
         if (data.valid) {
-            error.classList.add('d-none');
-            status.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+            // UNLOCK: Password is correct
+            errorMsg.classList.add('d-none');
+            statusIcon.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+            newPwd.disabled = false;
+            confirmPwd.disabled = false;
         } else {
-            error.classList.remove('d-none');
-            error.textContent = "Incorrect current password!";
-            status.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>';
+            // LOCK: Password is incorrect
+            errorMsg.classList.remove('d-none');
+            errorMsg.textContent = "Incorrect current password!";
+            statusIcon.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>';
+            newPwd.disabled = true;
+            confirmPwd.disabled = true;
+            newPwd.value = '';
+            confirmPwd.value = '';
         }
-    });
+    })
+    .catch(err => console.error("Error verifying password:", err));
 });
 </script>
 
