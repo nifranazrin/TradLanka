@@ -34,14 +34,14 @@ class CategoryController extends Controller
         // 1. Validation
         $request->validate([
         'name' => ['required', 'string', 'max:255', 'regex:/^[A-Z]/'], 
-        'description' => 'required|string',         // Changed from nullable to required
-        'image' => 'required|image|max:2048',       // Changed from nullable to required
+        'description' => 'required|string',         
+        'image' => 'required|image|max:2048',       
         'banner_image' => 'nullable|image|max:5120', 
         'parent_id' => 'nullable|exists:categories,id',
     ], [
         'name.regex' => 'The category name must start with a capital letter.',
-        'description.required' => 'A category description is mandatory.', // Custom error message
-        'image.required' => 'A main thumbnail image is required.'          // Custom error message
+        'description.required' => 'A category description is mandatory.', 
+        'image.required' => 'A main thumbnail image is required.'          
     ]);
 
         $name = trim($request->name);
@@ -54,13 +54,13 @@ class CategoryController extends Controller
                 ->with('error', "Category '{$name}' already exists.");
         }
 
-        // 3. Status Handling (Ensure it saves as '1' or '0')
+       
         $status = $request->status == '1' ? '1' : '0';
 
         // 4. Handle Main Image Upload (Thumbnail)
         $imagePath = null;
         if ($request->hasFile('image')) {
-            // Using store() automatically generates a unique hash ID for the filename
+            
             $imagePath = $request->file('image')->store('categories', 'public');
         }
 
@@ -106,7 +106,7 @@ public function edit($id)
     {
         // 1. Validation
         $request->validate([
-            'name' => 'required|string|max:255', // Removed unique check here as you do it manually below
+            'name' => 'required|string|max:255', 
             'description' => 'required|string',
             'image' => 'nullable|image|max:2048',
             'banner_image' => 'nullable|image|max:5120',

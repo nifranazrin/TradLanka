@@ -122,7 +122,7 @@ class ChatbotController extends Controller
     $localPrice = number_format($product->price, 2);
     $usdPrice   = number_format($product->price / 312.50, 2);
 
-    // Using Dialogflow Messenger Rich Content for a cleaner UI
+    //  Dialogflow Messenger Rich Content 
     return response()->json([
         "fulfillmentMessages" => [
             [
@@ -134,7 +134,7 @@ class ChatbotController extends Controller
                             "subtitle" => "🇱🇰 Rs. {$localPrice} | 🌍 \${$usdPrice}\nStock: {$product->stock} | Category: {$product->category->name}",
                             "image" => [
                                 "src" => [
-                                    // Ensure your product model has an 'image' attribute
+                                    
                                     "rawUri" => asset('storage/' . $product->image) 
                                 ]
                             ],

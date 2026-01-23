@@ -9,6 +9,9 @@ use App\Models\Staff;
 use App\Notifications\SellerDashboardNotification;
 use Illuminate\Support\Facades\Log; 
 use Illuminate\Support\Facades\Auth; 
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 
 class AdminProductController extends Controller
 {
@@ -53,7 +56,6 @@ class AdminProductController extends Controller
         $product->approved_at = now();
         $product->save();
 
-        // ---  NOTIFICATION TRIGGER ---
         try {
             $seller = Staff::find($product->seller_id);
             if ($seller) {
@@ -63,6 +65,12 @@ class AdminProductController extends Controller
         } catch (\Exception $e) {
            
             Log::error('Notification Error: ' . $e->getMessage());
+        }
+
+        try {
+            $this->updateAISystem();
+        } catch (\Exception $e) {
+            Log::error("Admin AI Update Failed: " . $e->getMessage());
         }
 
         return back()->with('success', $message);
@@ -76,7 +84,6 @@ class AdminProductController extends Controller
         $product->is_active = 0;
         $product->save();
 
-        // --- SAFE NOTIFICATION TRIGGER ---
         try {
             $seller = Staff::find($product->seller_id);
             if ($seller) {
@@ -87,5 +94,49 @@ class AdminProductController extends Controller
         }
 
         return back()->with('error', '❌ Product rejected successfully.');
+    }
+
+  
+    private function updateAISystem()
+    {
+        // 1. REGENERATE products.json
+        $products = Product::whereIn('status', ['approved', 'reapproved'])
+            ->where('is_active', 1)
+            ->get()
+            ->map(function($p) {
+                $cat = $p->category->name ?? '';
+                $boostedCategory = str_repeat($cat . " ", 10); 
+                return [
+                    'id' => $p->id,
+                    'text' => $p->name . " " . $p->description . " " . $boostedCategory,
+                ];
+            });
+
+        $jsonPath = base_path('ai_service/products.json');
+        File::put($jsonPath, $products->toJson());
+        Log::info("Admin AI: products.json regenerated.");
+
+       try {
+            
+            $response = Http::timeout(2)->post('http://127.0.0.1:5000/retrain');
+            
+            if ($response->successful()) {
+                Log::info("AI Retrain Signal Sent: " . $response->json()['message']);
+            } else {
+                Log::error("AI Retrain Signal Failed: " . $response->status());
+            }
+        } catch (\Exception $e) {
+            Log::warning("Could not reach AI Server. Is 'python api_server.py' running?");
+        }
+
+        // 2. RELOAD SERVER
+        try {
+            $response = Http::post('http://127.0.0.1:5000/reload');
+            if ($response->successful()) {
+                Log::info("AI Server Reloaded.");
+            }
+        } catch (\Exception $e) {
+            Log::warning("Could not reload AI Server (Is it running?).");
+        }
     }
 }

@@ -12,6 +12,9 @@ from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.models import Sequential
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics.pairwise import linear_kernel, cosine_similarity
+import threading
+from create_text_index import generate_text_index
+from create_index import generate_visual_index
 
 # Database Imports (Optional - wrapped to prevent crash)
 try:
@@ -180,6 +183,41 @@ def recommend_text():
                 
         return jsonify(recommendations)
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+# --- ENDPOINT 4: RETRAIN & RELOAD ---
+@app.route('/retrain', methods=['POST'])
+def retrain_system():
+    def background_task():
+        print("\n[AI] --- RETRAINING STARTED ---")
+        try:
+            # 1. Run Text Training (Fast)
+            generate_text_index()
+            
+            # 2. Run Visual Training (Slow) - Optional, can comment out if too slow
+            generate_visual_index()
+            
+            # 3. Reload System Memory
+            load_system()
+            print("[AI] --- RETRAINING COMPLETE & RELOADED ---\n")
+        except Exception as e:
+            print(f"[AI] Retrain Error: {e}")
+
+    # Run in background thread so PHP doesn't wait/timeout
+    thread = threading.Thread(target=background_task)
+    thread.start()
+
+    return jsonify({"status": "success", "message": "Retraining started in background."})
+    
+# --- NEW ENDPOINT: HOT RELOAD ---
+@app.route('/reload', methods=['POST'])
+def reload_server():
+    try:
+        print("\n [AI] Reload signal received. Refreshing system...")
+        load_system() # This function re-reads the .pkl files from disk
+        return jsonify({"status": "success", "message": "AI System Reloaded Successfully"}), 200
+    except Exception as e:
+        print(f" [AI] Reload Failed: {e}")
         return jsonify({"error": str(e)}), 500
 
 

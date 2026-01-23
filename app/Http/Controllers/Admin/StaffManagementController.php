@@ -17,7 +17,7 @@ class StaffManagementController extends Controller
         // Get the current logged-in admin ID
         $adminId = Auth::id(); 
 
-        // Get everyone except the currently logged-in admin to prevent self-lockout
+        
         $staff = Staff::where('id', '!=', $adminId)
                       ->orderBy('id', 'desc')
                       ->get();

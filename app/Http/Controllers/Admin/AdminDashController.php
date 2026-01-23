@@ -42,14 +42,14 @@ class AdminDashController extends Controller
         $pendingStatuses = [0, 1, 2, 3, 4, 10]; 
         $successStatus = 5; 
 
-        // --- LKR CALCULATIONS ---
+        // LKR 
         $salesLkr = Order::where('status', $successStatus)->where('currency', 'LKR')->sum('total_price') ?? 0;
         $successLKRCount = Order::where('status', $successStatus)->where('currency', 'LKR')->count();
 
         $pendingLkr = Order::whereIn('status', $pendingStatuses)->where('currency', 'LKR')->sum('total_price') ?? 0;
         $pendingLKRCount = Order::whereIn('status', $pendingStatuses)->where('currency', 'LKR')->count();
 
-        // --- USD CALCULATIONS ---
+        // USD 
         $salesUsd = Order::where('status', $successStatus)->where('currency', 'USD')->sum('total_price') ?? 0;
         $successUSDCount = Order::where('status', $successStatus)->where('currency', 'USD')->count();
 
@@ -162,7 +162,7 @@ class AdminDashController extends Controller
         $topInternationalCity = $intlRevenue->first();
 
         // Map Pins: Active Deliveries (Blue Pins)
-        $activeDeliveries = Order::whereIn('status', [0, 1, 3, 4]) // From New to Shipping
+        $activeDeliveries = Order::whereIn('status', [0, 1, 3, 4]) 
     ->whereNotNull('latitude')
     ->whereNotNull('longitude')
     ->select('tracking_no', 'city', 'latitude', 'longitude', 'currency', 'status')

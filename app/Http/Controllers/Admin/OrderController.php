@@ -18,12 +18,6 @@ class OrderController extends Controller
      */
     public function reviewOrders()
 {
-    // PRIORITY: 
-    // 1. Status 3 (At Head Office - Needs Assignment)
-    // 2. Status 8/9 (Failed/Refund - Needs Finalization)
-    // 3. Status 4/10 (In Transit/Arrived - Tracking)
-    // 4. Everything else (Closed/Delivered)
-
     $orders = Order::whereIn('status', [3, 4, 5, 8, 9, 6, 10])
         ->orderByRaw("CASE 
             WHEN status = 3 THEN 1 
@@ -32,7 +26,7 @@ class OrderController extends Controller
             WHEN status = 4 THEN 4
             ELSE 5 
         END ASC")
-        ->orderBy('created_at', 'desc') // Second sort: Newest within each priority group
+        ->orderBy('created_at', 'desc') 
         ->paginate(15);
 
     $deliveryPartners = Staff::where('role', 'delivery')->get(); 
@@ -57,7 +51,7 @@ class OrderController extends Controller
         // Eager load items, products, and variants for the detail view
         $order = Order::with(['items.product', 'items.variant'])->findOrFail($id);
 
-        // Fetch delivery partners for the assignment dropdown on the show page
+       
         $deliveryPartners = Staff::where('role', 'delivery')->get();
 
         return view('admin.orders.show', compact('order', 'deliveryPartners'));

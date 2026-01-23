@@ -59,12 +59,14 @@
        
 
         {{-- WhatsApp Button (Updated with your number) --}}
-        <a href="https://wa.me/94757679793?text=Hello%20TradLanka%2C%20I%20am%20interested%20in%20your%20products." 
-           target="_blank" 
-           class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-300">
-            <i class="fab fa-whatsapp text-2xl"></i>
-        </a>
-    </div>
+    <a href="https://wa.me/94757679793" 
+       target="_blank" 
+       rel="noopener noreferrer"
+       class="bg-[#25D366] text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 pointer-events-auto">
+        <i class="fab fa-whatsapp text-3xl"></i>
+    </a>
+</div>
+
 
     {{-- ========================================== --}}
     {{--           AUTHENTICATION MODAL             --}}

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Barryvdh\DomPDF\Facade\Pdf; // Ensure you have dompdf installed
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CustomerManagementController extends Controller
 {
