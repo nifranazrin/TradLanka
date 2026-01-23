@@ -136,7 +136,7 @@
                             </div>
                         </div>
 
-                        {{-- ✅ 5. International Milestone (Status 10) --}}
+                        {{-- 5. International Milestone (Status 10) --}}
                        @php
                             $payMode = strtoupper($order->payment_mode);
                             $dbCurrency = strtoupper(trim($order->currency));

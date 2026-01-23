@@ -158,6 +158,11 @@ Route::middleware(['auth'])->group(function () {
 
 
 // POPUP AUTH (AJAX)
+// In routes/web.php
+Route::get('login-popup', function () {
+    return redirect('/')->with('openLogin', true);
+});
+
 Route::post('/login-popup', [AuthPopupController::class, 'login'])->name('login.popup');
 Route::post('/register-popup', [AuthPopupController::class, 'register'])->name('register.popup');
 

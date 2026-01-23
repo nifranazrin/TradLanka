@@ -207,15 +207,14 @@
 
 
 {{-- SECTION: RECOMMENDED FOR YOU (AI POWERED) --}}
+@auth('web') 
 <section class="mt-10 mb-16">
     <h2 class="text-2xl font-bold text-[#5b2c2c] mb-6">Recommended for You</h2>
 
-    {{-- Added ID and kept your Tailwind spacing/colors --}}
     <div id="recommended-slider" class="flex space-x-6 pb-4">
         @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
             @foreach ($recommendedProducts as $product)
-                {{-- Kept your exact card logic and Tailwind classes --}}
-                <div class="px-2"> {{-- Added padding for slide gap --}}
+                <div class="px-2">
                     <div class="bg-white rounded-lg shadow-md overflow-hidden">
                         <a href="{{ route('product.show', $product->slug) }}">
                             <img src="{{ asset('storage/' . $product->image) }}" class="w-full h-36 object-cover">
@@ -229,12 +228,10 @@
                     </div>
                 </div>
             @endforeach
-        @else
-            <p class="text-gray-500 w-full text-center">View items to see personalized suggestions!</p>
         @endif
     </div>
 </section>
-
+@endauth
 
     {{-- SECTION: BEST SELLERS --}}
 <section class="mt-12 mb-4">

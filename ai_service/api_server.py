@@ -64,7 +64,7 @@ def load_system():
             base_model.trainable = False
             model = Sequential([base_model, GlobalAveragePooling2D()])
             
-            # Init Neighbors
+            # Init Neighbors 
              # Change n_neighbors from 10 to 50 for better filtering options
             neighbors = NearestNeighbors(n_neighbors=50, algorithm='brute', metric='euclidean')
             neighbors.fit(feature_list)
