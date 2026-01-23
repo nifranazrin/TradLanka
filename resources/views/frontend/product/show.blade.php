@@ -522,8 +522,15 @@
             }
 
             // 2. Auth Check
-            if(!isLoggedIn) {
-                window.location.href = "/login";
+              if(!isLoggedIn) {
+                // Attempt to open the modal directly for a better user experience
+                const authModal = document.getElementById('authModal');
+                if(authModal) {
+                    authModal.classList.remove('hidden'); 
+                } else {
+                    // If the modal isn't on this page, use your new GET route
+                    window.location.href = "{{ url('login-popup') }}"; 
+                }
                 return;
             }
 

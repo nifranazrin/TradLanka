@@ -346,5 +346,23 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{{-- Notifications Logic: Matches the Admin brand colors you requested --}}
+@if (session('success'))
+<script>
+    Swal.fire({ 
+        icon: 'success', 
+        title: 'Welcome!', 
+        text: "{{ session('success') }}", 
+        timer: 2500, 
+        showConfirmButton: false,
+        background: '#f5efe1',    /* Cream background matches your seller sidebar */
+        color: '#6e2727',         /* Maroon text color */
+        iconColor: '#6e2727',     /* Maroon icon color */
+        backdrop: `rgba(110, 39, 39, 0.2)` /* Subtle maroon dimming */
+    });
+</script>
+@endif
 </body>
 </html>

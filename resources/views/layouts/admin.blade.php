@@ -497,7 +497,18 @@
 {{-- Notifications Logic --}}
 @if (session('success'))
 <script>
-    Swal.fire({ icon: 'success', title: 'Done!', text: "{{ session('success') }}", timer: 2000, showConfirmButton: false });
+    Swal.fire({ 
+        icon: 'success', 
+        title: 'Well Come!', 
+        text: "{{ session('success') }}", 
+        timer: 2500, 
+        showConfirmButton: false,
+        {{-- Custom Colors --}}
+        background: '#f5efe1',    /* Cream background to match your sidebar */
+        color: '#6e2727',         /* Maroon text color */
+        iconColor: '#6e2727',     /* Maroon icon color */
+        backdrop: `rgba(110, 39, 39, 0.2)` /* Subtle maroon dimming of the background */
+    });
 </script>
 @endif
 

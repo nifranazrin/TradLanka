@@ -206,5 +206,25 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if (session('success'))
+<script>
+    Swal.fire({ 
+        icon: 'success', 
+        title: 'Welcome!', 
+        text: "{{ session('success') }}", 
+        timer: 2500, 
+        timerProgressBar: true,    /* Smoothly shows time until close */
+        showConfirmButton: false,
+        
+        // --- Brand Colors (Maroon & Cream) ---
+        background: '#f5efe1',     /* Cream matches your sidebar */
+        color: '#6e2727',          /* Maroon text color */
+        iconColor: '#6e2727',      /* Maroon icon color */
+        backdrop: `rgba(110, 39, 39, 0.2)` /* Subtle maroon dimming */
+    });
+</script>
+@endif
 </body>
 </html>
