@@ -52,13 +52,8 @@
     {{-- ========================================== --}}
     {{--      FLOATING ACTION BUTTONS (Global)      --}}
     {{-- ========================================== --}}
-    <div class="fixed bottom-24 right-6 flex flex-col items-center space-y-3 z-40">
-
-        
-        {{-- Chatbot Button --}}
-       
-
-        {{-- WhatsApp Button (Updated with your number) --}}
+   {{-- Fixed Global Floating Buttons in frontend.blade.php --}}
+<div class="fixed bottom-24 right-6 flex flex-col items-center space-y-3 z-[9999] pointer-events-none">
     <a href="https://wa.me/94757679793" 
        target="_blank" 
        rel="noopener noreferrer"
@@ -66,8 +61,6 @@
         <i class="fab fa-whatsapp text-3xl"></i>
     </a>
 </div>
-
-
     {{-- ========================================== --}}
     {{--           AUTHENTICATION MODAL             --}}
     {{-- ========================================== --}}

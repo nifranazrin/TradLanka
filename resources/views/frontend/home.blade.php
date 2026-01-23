@@ -505,21 +505,6 @@
 
 
       
-{{-- ================================================= --}}
-{{-- FLOATING BUTTONS --}}
-{{-- ================================================= --}}
-
-<div class="fixed bottom-6 right-6 flex flex-col items-center space-y-3 z-50">
-
-    <!-- Chatbot Button -->
-    
-
-  <a href="https://wa.me/94757679793" target="_blank"
-   class="bg-[#25D366] text-white w-12 h-12 rounded-full shadow-lg
-          flex items-center justify-center hover:scale-110 transition"
-   style="z-index:10000;">
-    <i class="fab fa-whatsapp text-2xl"></i>
-</a>
 
 
 
