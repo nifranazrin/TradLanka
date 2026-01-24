@@ -113,15 +113,31 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
-            <div class="card stat-card p-4 bg-failed">
-                <i class="bi bi-shield-x card-icon"></i>
-                <small class="fw-bold opacity-75 text-uppercase">Total Failed/Cancelled</small>
-                <h2 class="fw-bold mb-1">{{ $failedCount }} Orders</h2>
-                <div class="mt-2 fw-bold">Loss: Rs. {{ number_format($totalRefundValueLKR, 2) }}</div>
-            </div>
+        {{-- sales.blade.php - Updated Failed/Cancelled Card --}}
+<div class="col-md-6 col-lg-3">
+    <div class="card stat-card p-4 bg-failed">
+        <i class="bi bi-shield-x card-icon"></i>
+        <small class="fw-bold opacity-75 text-uppercase">Total Failed/Cancelled</small>
+        <h2 class="fw-bold mb-1">{{ $failedCount }} Orders</h2>
+        
+        <div class="divider-white"></div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="fw-bold opacity-75">COD (LKR):</small>
+            <span class="fw-bold">{{ $failedCODLKR }}</span>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="fw-bold opacity-75">STRIPE (LKR):</small>
+            <span class="fw-bold">{{ $failedStripeLKR }}</span>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="fw-bold opacity-75">TOTAL USD:</small>
+            <span class="fw-bold">{{ $failedUSD }}</span>
         </div>
     </div>
+</div>
 
     <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
         <div class="card-header bg-white py-4 border-0">

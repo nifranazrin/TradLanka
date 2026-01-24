@@ -349,18 +349,39 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {{-- Notifications Logic: Matches the Admin brand colors you requested --}}
-@if (session('success'))
+{{-- Notifications Logic --}}
+
+{{-- 1. BRANDED WELCOME ALERT (Cream/Maroon) --}}
+@if (session('welcome'))
 <script>
     Swal.fire({ 
         icon: 'success', 
-        title: 'Welcome!', 
-        text: "{{ session('success') }}", 
+        title: 'Well Come!', 
+        text: "{{ session('welcome') }}", 
         timer: 2500, 
         showConfirmButton: false,
-        background: '#f5efe1',    /* Cream background matches your seller sidebar */
-        color: '#6e2727',         /* Maroon text color */
-        iconColor: '#6e2727',     /* Maroon icon color */
-        backdrop: `rgba(110, 39, 39, 0.2)` /* Subtle maroon dimming */
+        background: '#f5efe1',
+        color: '#6e2727',
+        iconColor: '#6e2727',
+        backdrop: `rgba(110, 39, 39, 0.2)`
+    });
+</script>
+@endif
+
+{{-- 2. OPERATIONAL UPDATES (Standard / Custom colors) --}}
+@if (session('success') && !session('welcome'))
+<script>
+    Swal.fire({ 
+        icon: 'success',
+        title: 'Action Successful',
+        text: "{{ session('success') }}",
+        position: 'center',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        background: '#6e2727',     /* Maroon Background */
+        color: '#facc15',          /* Yellow Text */
+        iconColor: '#facc15'
     });
 </script>
 @endif

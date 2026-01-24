@@ -68,14 +68,22 @@ class CheckoutController extends Controller
         $deliveryChargeLKR = ($request->country === 'Sri Lanka') ? 500 : 5000;
 
         // 3. FETCH CART
-        $cartItems = Cart::where('user_id', Auth::id())
-            ->whereIn('id', $selectedIds)
-            ->with(['product', 'variant'])
-            ->get();
+       // 3. FETCH CART
+$selectedIds = session('checkout_cart_ids');
 
-        if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.show')->with('error', 'Your cart is empty.');
-        }
+// --- THE SAFETY GATE ---
+if (!$selectedIds || !is_array($selectedIds)) {
+    return redirect()->route('cart.show')->with('error', 'Your session has expired. Please re-select your items.');
+}
+
+$cartItems = Cart::where('user_id', Auth::id())
+    ->whereIn('id', $selectedIds)
+    ->with(['product', 'variant'])
+    ->get();
+
+if ($cartItems->isEmpty()) {
+    return redirect()->route('cart.show')->with('error', 'Your cart is empty.');
+}
 
         $productTotalLKR = 0;
         $stripeLineItems = [];

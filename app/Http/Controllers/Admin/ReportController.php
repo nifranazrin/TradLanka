@@ -76,8 +76,22 @@ class ReportController extends Controller
         'pendingUSD' => $allOrders->whereIn('status', $pendingStatuses)->where('currency', 'USD')->sum('total_price'),
         'pendingUSDCount' => $allOrders->whereIn('status', $pendingStatuses)->where('currency', 'USD')->count(),
         
-        'failedCount' => $allOrders->where('status', $failedStatus)->count(),
-        'totalRefundValueLKR' => $allOrders->where('status', $failedStatus)->where('currency', 'LKR')->sum('total_price'),
+        // ReportController.php - Updated Failed Order Logic
+'failedCount' => $allOrders->where('status', $failedStatus)->count(),
+
+'failedCODLKR' => $allOrders->where('status', $failedStatus)
+    ->where('currency', 'LKR')
+    ->filter(fn($o) => stripos($o->payment_mode, 'COD') !== false)
+    ->count(),
+
+'failedStripeLKR' => $allOrders->where('status', $failedStatus)
+    ->where('currency', 'LKR')
+    ->filter(fn($o) => stripos($o->payment_mode, 'Stripe') !== false)
+    ->count(),
+
+'failedUSD' => $allOrders->where('status', $failedStatus)
+    ->where('currency', 'USD')
+    ->count(),
 
         'totalCOD' => $allOrders->whereIn('status', $pendingStatuses)->filter(fn($o) => stripos($o->payment_mode, 'COD') !== false)->count(),
         'totalStripe' => $allOrders->whereIn('status', $pendingStatuses)->filter(fn($o) => stripos($o->payment_mode, 'Stripe') !== false)->count(),

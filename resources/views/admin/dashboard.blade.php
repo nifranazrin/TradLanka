@@ -122,23 +122,20 @@
             </div>
         </div>
         
-      <div class="col-lg-4">
+     <div class="col-lg-4">
     <div class="card dashboard-card p-4 h-100 position-relative" style="background: #fff; color: #000 !important;">
-        <h5 class="fw-bold text-dark mb-4">Top Categories</h5>
+        <h5 class="fw-bold text-dark mb-4">Category Market Share</h5>
         
-        {{-- Chart Container --}}
         <div style="height: 250px; position: relative; overflow: hidden;">
             <canvas id="categoryRoundChart"></canvas>
             <div class="chart-center-text">
-                <span class="text-muted small d-block">Total Sales</span>
-                <h5 class="fw-bold text-dark mb-0">Rs. {{ number_format($topCategories->sum('total_revenue'), 0) }}</h5>
+                <span class="text-muted small d-block">Platform Total</span>
+                <h5 class="fw-bold text-dark mb-0">100%</h5>
             </div>
         </div>
 
-        {{-- NEW: Legend Labels for 5 Categories --}}
         <div class="mt-4">
             @php 
-                // Color sequence matching your previous premium design
                 $legendColors = ['#f5a2a4', '#ebb1f2', '#aeb5f2', '#a7f2b4', '#fde68a']; 
             @endphp
             @foreach($topCategories as $index => $cat)
@@ -147,12 +144,14 @@
                     <i class="bi bi-circle-fill me-2" style="color: {{ $legendColors[$index % 5] }}"></i>
                     {{ $cat->name }}
                 </span>
-                <strong class="text-dark">Rs. {{ number_format($cat->total_revenue, 0) }}</strong>
+                {{-- Changed to Percentage --}}
+                <strong class="text-primary">{{ number_format($cat->share_percentage, 1) }}%</strong>
             </div>
             @endforeach
         </div>
     </div>
 </div>
+       
 
     {{-- NEW: Live Map & City Revenue Row --}}
     <div class="row g-4 mb-4 text-start">
@@ -387,31 +386,28 @@ window.updateDashboardView = function(type, event) {
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { weight: 'bold' } } } } }
     });
 
-    // 4. Original Category Donut
-   new Chart(document.getElementById('categoryRoundChart'), {
+   // 4. Category Market Share Chart
+new Chart(document.getElementById('categoryRoundChart'), {
     type: 'doughnut',
     data: {
         labels: {!! json_encode($topCategories->pluck('name')->toArray()) !!},
         datasets: [{
-            data: {!! json_encode($topCategories->pluck('total_revenue')->toArray()) !!},
-            // 5 distinct colors for 5 categories
+            data: {!! json_encode($topCategories->pluck('share_percentage')->toArray()) !!},
             backgroundColor: ['#f5a2a4', '#ebb1f2', '#aeb5f2', '#a7f2b4', '#fde68a'],
             borderWidth: 0,
-            cutout: '80%' // Maintains the "Donut" look for central text
+            cutout: '80%'
         }]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: {
-                display: false // Set to false because we are using the HTML legend above
-            },
+            legend: { display: false },
             tooltip: {
                 enabled: true,
                 callbacks: {
                     label: function(context) {
-                        return ' ' + context.label + ': Rs. ' + context.raw.toLocaleString();
+                        return ' ' + context.label + ': ' + context.raw.toFixed(1) + '%';
                     }
                 }
             }

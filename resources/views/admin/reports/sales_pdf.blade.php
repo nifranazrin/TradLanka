@@ -64,45 +64,52 @@
     </div>
 
     {{-- Financial Summary (Dynamic based on filters) --}}
-    <table class="summary-table">
-        <tr>
-            {{-- Show LKR Box only if LKR is selected OR no currency is selected --}}
-            @if(!isset($filterCurrency) || $filterCurrency == 'LKR' || $filterCurrency == '')
-                <td class="summary-box">
-                    <div style="font-size: 9px; color: #666;">SUCCESS LKR</div>
-                    <div style="font-size: 14px; font-weight: bold;">Rs. {{ number_format($successLKR, 2) }}</div>
-                    <small style="color: #28a745;">{{ $successLKRCount }} Orders</small>
-                </td>
-            @endif
+    {{-- sales_pdf.blade.php - Final Optimized Summary Logic --}}
+<table class="summary-table">
+    <tr>
+        {{-- 1. SUCCESS LKR: Hide if user is specifically looking at Failed or Pending --}}
+        @if((!isset($filterStatus) || $filterStatus == '5' || $filterStatus == '') && 
+            (!isset($filterCurrency) || $filterCurrency == 'LKR' || $filterCurrency == ''))
+            <td class="summary-box">
+                <div style="font-size: 9px; color: #666;">SUCCESS LKR</div>
+                <div style="font-size: 14px; font-weight: bold;">Rs. {{ number_format($successLKR, 2) }}</div>
+                <small style="color: #28a745;">{{ $successLKRCount }} Orders</small>
+            </td>
+        @endif
 
-            {{-- Show USD Box only if USD is selected OR no currency is selected --}}
-            @if(!isset($filterCurrency) || $filterCurrency == 'USD' || $filterCurrency == '')
-                <td class="summary-box">
-                    <div style="font-size: 9px; color: #666;">SUCCESS USD</div>
-                    <div style="font-size: 14px; font-weight: bold;">$ {{ number_format($successUSD, 2) }}</div>
-                    <small style="color: #28a745;">{{ $successUSDCount }} Orders</small>
-                </td>
-            @endif
+        {{-- 2. SUCCESS USD: Hide if status is Failed or Pending --}}
+        @if((!isset($filterStatus) || $filterStatus == '5' || $filterStatus == '') && 
+            (!isset($filterCurrency) || $filterCurrency == 'USD' || $filterCurrency == ''))
+            <td class="summary-box">
+                <div style="font-size: 9px; color: #666;">SUCCESS USD</div>
+                <div style="font-size: 14px; font-weight: bold;">$ {{ number_format($successUSD, 2) }}</div>
+                <small style="color: #28a745;">{{ $successUSDCount }} Orders</small>
+            </td>
+        @endif
 
-            {{-- Show Failed Box only if Status is NOT Success or Pending --}}
-            @if(!isset($filterStatus) || $filterStatus == '6' || $filterStatus == '')
-                <td class="summary-box">
-                    <div style="font-size: 9px; color: #666;">TOTAL FAILED</div>
-                    <div style="font-size: 14px; font-weight: bold; color: #dc3545;">{{ $failedCount }} Orders</div>
-                    <div style="font-size: 9px;">Loss: Rs. {{ number_format($totalRefundValueLKR, 2) }}</div>
-                </td>
-            @endif
+        {{-- 3. TOTAL FAILED: Only show if Status is Failed or All --}}
+        @if(!isset($filterStatus) || $filterStatus == '6' || $filterStatus == '')
+            <td class="summary-box">
+                <div style="font-size: 9px; color: #666;">TOTAL FAILED</div>
+                <div style="font-size: 14px; font-weight: bold; color: #dc3545;">{{ $failedCount }} Orders</div>
+                <div style="font-size: 8px; margin-top: 5px;">
+                    COD (LKR): <strong>{{ $failedCODLKR }}</strong> | STRIPE (LKR): <strong>{{ $failedStripeLKR }}</strong>
+                </div>
+                <div style="font-size: 8px;">TOTAL USD: <strong>{{ $failedUSD }}</strong></div>
+            </td>
+        @endif
 
-            {{-- Show Pending only if Status is NOT Success or Failed --}}
-            @if(!isset($filterStatus) || $filterStatus == 'pending' || $filterStatus == '')
-                <td class="summary-box">
-                    <div style="font-size: 9px; color: #666;">PENDING VALUE</div>
-                    <div style="font-size: 11px;">Rs. {{ number_format($pendingLKR, 2) }}</div>
-                    <div style="font-size: 11px;">$ {{ number_format($pendingUSD, 2) }}</div>
-                </td>
-            @endif
-        </tr>
-    </table>
+        {{-- 4. PENDING VALUE: Only show if Status is Pending or All --}}
+        @if(!isset($filterStatus) || $filterStatus == 'pending' || $filterStatus == '')
+            <td class="summary-box">
+                <div style="font-size: 9px; color: #666;">PENDING VALUE</div>
+                <div style="font-size: 11px;">Rs. {{ number_format($pendingLKR, 2) }}</div>
+                <div style="font-size: 11px;">$ {{ number_format($pendingUSD, 2) }}</div>
+                <small style="color: #d97706;">Awaiting Settlement</small>
+            </td>
+        @endif
+    </tr>
+</table>
 
     {{-- Transaction List --}}
     <table class="data-table">

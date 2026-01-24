@@ -495,19 +495,40 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {{-- Notifications Logic --}}
-@if (session('success'))
+{{-- Notifications Logic --}}
+
+{{-- 1. BRANDED WELL COME! ALERT (Maroon/Cream) --}}
+@if (session('welcome'))
 <script>
     Swal.fire({ 
         icon: 'success', 
         title: 'Well Come!', 
-        text: "{{ session('success') }}", 
+        text: "{{ session('welcome') }}", 
         timer: 2500, 
         showConfirmButton: false,
-        {{-- Custom Colors --}}
-        background: '#f5efe1',    /* Cream background to match your sidebar */
-        color: '#6e2727',         /* Maroon text color */
-        iconColor: '#6e2727',     /* Maroon icon color */
-        backdrop: `rgba(110, 39, 39, 0.2)` /* Subtle maroon dimming of the background */
+        background: '#f5efe1',    /* Cream background */
+        color: '#6e2727',         /* Maroon text */
+        iconColor: '#6e2727',     /* Maroon icon */
+        backdrop: `rgba(110, 39, 39, 0.2)`
+    });
+</script>
+@endif
+
+{{-- 2. OPERATIONAL UPDATES (Maroon Background, Yellow Text, Middle) --}}
+@if (session('success') && !session('welcome'))
+<script>
+    Swal.fire({ 
+        icon: 'success',
+        title: 'Action Successful',
+        text: "{{ session('success') }}",
+        position: 'center',        /* Middle of the screen */
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        background: '#6e2727',     /* Maroon Background */
+        color: '#facc15',          /* Yellow Text */
+        iconColor: '#facc15',      /* Yellow Icon */
+        backdrop: `rgba(0,0,0,0.4)` /* Standard dimming */
     });
 </script>
 @endif

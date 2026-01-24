@@ -73,16 +73,25 @@ class AdminDashController extends Controller
             ->get();
 
         // 5. Top Categories (Revenue Based)
-        $topCategories = Category::select('categories.id', 'categories.name')
-            ->join('products', 'categories.id', '=', 'products.category_id')
-            ->join('order_items', 'products.id', '=', 'order_items.product_id')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', $successStatus)
-            ->select('categories.name', DB::raw('SUM(order_items.price * order_items.qty) as total_revenue'))
-            ->groupBy('categories.id', 'categories.name')
-            ->orderBy('total_revenue', 'desc')
-            ->take(5)
-            ->get();
+         // 5. Top Categories (Percentage/Market Share Logic)
+$totalPlatformRevenue = Category::join('products', 'categories.id', '=', 'products.category_id')
+    ->join('order_items', 'products.id', '=', 'order_items.product_id')
+    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+    ->where('orders.status', $successStatus)
+    ->sum(DB::raw('order_items.price * order_items.qty'));
+
+$topCategories = Category::select('categories.id', 'categories.name')
+    ->join('products', 'categories.id', '=', 'products.category_id')
+    ->join('order_items', 'products.id', '=', 'order_items.product_id')
+    ->join('orders', 'order_items.order_id', '=', 'orders.id')
+    ->where('orders.status', $successStatus)
+    ->select('categories.name', DB::raw("
+        (SUM(order_items.price * order_items.qty) / $totalPlatformRevenue) * 100 as share_percentage
+    "))
+    ->groupBy('categories.id', 'categories.name')
+    ->orderBy('share_percentage', 'desc')
+    ->take(5)
+    ->get();
 
         // 6. Status Logic for Bar Chart
         $statusCounts = [
