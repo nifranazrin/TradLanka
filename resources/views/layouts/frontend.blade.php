@@ -53,7 +53,9 @@
     {{--      FLOATING ACTION BUTTONS (Global)      --}}
     {{-- ========================================== --}}
    {{-- Fixed Global Floating Buttons in frontend.blade.php --}}
-<div class="fixed bottom-24 right-6 flex flex-col items-center space-y-3 z-[9999] pointer-events-none">
+{{-- Fixed Global Floating Buttons - Added Transition for Chatbot --}}
+{{-- Change z-[9999] to z-[10] so Chatbot (usually z-50 or higher) covers it --}}
+<div id="whatsapp-floating-btn" class="fixed bottom-24 right-6 flex flex-col items-center space-y-3 z-[10] pointer-events-none">
     <a href="https://wa.me/94757679793" 
        target="_blank" 
        rel="noopener noreferrer"
@@ -61,8 +63,6 @@
         <i class="fab fa-whatsapp text-3xl"></i>
     </a>
 </div>
-
-
     {{-- ========================================== --}}
     {{--           AUTHENTICATION MODAL             --}}
     {{-- ========================================== --}}
@@ -257,7 +257,7 @@
         success: function(data) {
             closeModal();
             
-            // ✅ Welcome Message with Maroon Branding
+            //  Welcome Message with Maroon Branding
             Swal.fire({
                 icon: 'success',
                 title: 'Welcome Back!',
@@ -268,7 +268,7 @@
                 // This makes it Butter/Maroon instead of white
                 customClass: { popup: 'cart-alert-popup' } 
             }).then(() => {
-                // ✅ Trigger the bridge to add the item to the cart
+                //  Trigger the bridge to add the item to the cart
                 checkPendingCartItem(); 
             });
         },

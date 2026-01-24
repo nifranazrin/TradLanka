@@ -211,18 +211,17 @@
 @if (session('success'))
 <script>
     Swal.fire({ 
-        icon: 'success', 
-        title: 'Welcome!', 
-        text: "{{ session('success') }}", 
-        timer: 2500, 
-        timerProgressBar: true,    /* Smoothly shows time until close */
+        icon: 'success',
+        title: 'Update Successful',
+        text: "{{ session('success') }}",
+        position: 'center',        /* Positions the alert in the middle */
         showConfirmButton: false,
-        
-        // --- Brand Colors (Maroon & Cream) ---
-        background: '#f5efe1',     /* Cream matches your sidebar */
-        color: '#6e2727',          /* Maroon text color */
-        iconColor: '#6e2727',      /* Maroon icon color */
-        backdrop: `rgba(110, 39, 39, 0.2)` /* Subtle maroon dimming */
+        timer: 2000,
+        timerProgressBar: true,
+        background: '#6e2727',     /* Maroon Background */
+        color: '#facc15',          /* Yellow Text */
+        iconColor: '#facc15',      /* Yellow Icon matches text */
+        backdrop: `rgba(0,0,0,0.4)` /* Dims the dashboard background for focus */
     });
 </script>
 @endif

@@ -21,7 +21,7 @@ class CartController extends Controller
         $product_qty        = $request->input('product_qty');
         $product_variant_id = $request->input('product_variant_id'); 
 
-        // ✅ Check if customer is authenticated
+        //  Check if customer is authenticated
         if (Auth::check()) {
             $user_id = Auth::id();
             $prod_check = Product::where('id', $product_id)->first();
@@ -65,7 +65,7 @@ class CartController extends Controller
                 }
             }
         } else {
-            // ✅ Handle Guest status for the AJAX popup
+            //  Handle Guest status for the AJAX popup
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'status' => 'guest',
