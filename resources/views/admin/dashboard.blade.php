@@ -217,7 +217,7 @@
     <div class="card dashboard-card p-4" style="color: #000 !important;">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5 class="fw-bold text-dark mb-0">Recent Store Activity</h5>
-            <a href="{{ url('admin/orders') }}" class="btn-action shadow-sm">View Full History</a>
+            <a href="{{ route('admin.orders.review') }}" class="btn-action shadow-sm">View Full History</a>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle">

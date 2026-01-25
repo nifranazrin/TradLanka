@@ -90,6 +90,7 @@ if ($cartItems->isEmpty()) {
 
         foreach ($cartItems as $item) {
             $priceLKR = $item->variant ? $item->variant->price : $item->product->price;
+            $item->product->decrement('stock', $item->product_qty);
             $productTotalLKR += ($priceLKR * $item->product_qty);
 
             $imageUrl = $item->product->image ? url('storage/' . $item->product->image) : null;
@@ -196,8 +197,7 @@ if ($cartItems->isEmpty()) {
 
             Auth::user()->notify(new CustomerOrderNotification($order));
 
-           
-             // ✅ WRAP THIS IN A TRY-CATCH TO PREVENT CRASHES
+          
                 try {
                     // We load the relationships here to ensure data is ready
                     $orderData = $order->load(['items.product', 'items.variant']);
