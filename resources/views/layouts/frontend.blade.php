@@ -52,9 +52,7 @@
     {{-- ========================================== --}}
     {{--      FLOATING ACTION BUTTONS (Global)      --}}
     {{-- ========================================== --}}
-   {{-- Fixed Global Floating Buttons in frontend.blade.php --}}
-{{-- Fixed Global Floating Buttons - Added Transition for Chatbot --}}
-{{-- Change z-[9999] to z-[10] so Chatbot (usually z-50 or higher) covers it --}}
+   
 <div id="whatsapp-floating-btn" class="fixed bottom-24 right-6 flex flex-col items-center space-y-3 z-[10] pointer-events-none">
     <a href="https://wa.me/94757679793" 
        target="_blank" 

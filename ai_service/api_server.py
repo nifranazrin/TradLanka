@@ -16,7 +16,7 @@ import threading
 from create_text_index import generate_text_index
 from create_index import generate_visual_index
 
-# Database Imports (Optional - wrapped to prevent crash)
+
 try:
     from sqlalchemy import create_engine
     HAS_DB = True
@@ -143,7 +143,7 @@ def search():
 
 
 # --- ENDPOINT 3: TEXT RECOMMENDATION (Product History IDs) ---
-# This is what your new FrontendController uses!
+
 @app.route('/recommend-text', methods=['POST'])
 def recommend_text():
     if tfidf_matrix is None:
