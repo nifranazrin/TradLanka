@@ -61,7 +61,7 @@ class Order extends Model
     protected $casts = [
         'total_price' => 'decimal:2',
         'status'      => 'integer',
-        // ✅ ADDED: Ensure it handles as boolean
+        
         'rider_seen'  => 'boolean', 
         'latitude'    => 'float',
         'longitude'   => 'float',
@@ -86,7 +86,7 @@ class Order extends Model
     }
 
     /**
-     * ✅ ALIAS FOR SELLER CONTROLLER
+     *  ALIAS FOR SELLER CONTROLLER
      * This fixes: Call to undefined relationship [items]
      * NO logic change, NO refactor
      */
