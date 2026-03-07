@@ -38,26 +38,26 @@
 Here is a look at the TradLanka user interface and management portals.
 
 ### 📊 Dashboards & User Profiles
-* **Admin Dashboard**: `![Admin Dashboard](screenshots/admin-dashboard.png)`
-* **Seller Dashboard**: `![Seller Dashboard](screenshots/seller-dashboard.png)`
-* **Delivery Dashboard**: `![Delivery Dashboard](screenshots/delivery-dashboard.png)`
-* **Customer Profile**: `![Customer Profile](screenshots/customer-profile.png)`
+* **Admin Dashboard**: ![Admin Dashboard](screenshots/admin-dashboard.png)
+* **Seller Dashboard**: ![Seller Dashboard](screenshots/seller-dashboard.png)
+* **Delivery Dashboard**: ![Delivery Dashboard](screenshots/delivery-dashboard.png)
+* **Customer Profile**: ![Customer Profile](screenshots/customer-profile.PNG)
 
 ### 🛍️ Shopping & Core Features
-* **Image Search**: `![Image Search](screenshots/image-search.png)`
-* **Live Search**: `![Live Search](screenshots/live-search.png)`
-* **Product Details Page**: `![Product Details Page](screenshots/product-details.png)`
-* **Order Tracking**: `![Order Tracking](screenshots/order-tracking.png)`
-* **Login and Registration**: `![Login and Registration](screenshots/login-registration.png)`
+* **Image Search**: ![Image Search](screenshots/image-search.PNG)
+* **Live Search**: ![Live Search](screenshots/live-search.PNG)
+* **Product Details Page**: ![Product Details Page](screenshots/product-details.PNG)
+* **Order Tracking**: ![Order Tracking](screenshots/order-tracking.jpg)
+* **Login and Registration**: ![Login and Registration](screenshots/login-registration.jpg)
 
 ### ⚙️ Platform Management
-* **Order Management**: `![Order Management](screenshots/order-management.png)`
-* **Delivery Management**: `![Delivery Management](screenshots/delivery-management.png)`
-* **Add Category**: `![Add Category](screenshots/add-category.png)`
-* **Add Products**: `![Add Products](screenshots/add-products.png)`
-* **Product Inventory and Analytics**: `![Product Inventory](screenshots/inventory-analytics.png)`
-* **Sales Reports**: `![Sales Reports](screenshots/sales-reports.png)`
-* **Staff Chat**: `![Staff Chat](screenshots/staff-chat.png)`
+* **Order Management**: ![Order Management](screenshots/order-management.PNG)
+* **Delivery Management**: ![Delivery Management](screenshots/delivery-management.PNG)
+* **Add Category**: ![Add Category](screenshots/add-category.PNG)
+* **Add Products**: ![Add Products](screenshots/add-products.PNG)
+* **Product Inventory and Analytics**: ![Product Inventory](screenshots/inventory-analytics.PNG)
+* **Sales Reports**: ![Sales Reports](screenshots/sales-reports.PNG)
+* **Staff Chat**: ![Staff Chat](screenshots/staff-chat.PNG)
 
 ---
 
