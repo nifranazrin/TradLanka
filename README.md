@@ -46,7 +46,7 @@ Here is a look at the TradLanka user interface and management portals.
 ### 🛍️ Shopping & Core Features
 * **Image Search**: ![Image Search](screenshots/image-search.PNG)
 * **Live Search**: ![Live Search](screenshots/live-search.PNG)
-* **Product Recommendations**: ![Product Recommendations](screenshots/product-recommendation.png)
+* **Product Recommendations**: ![Product Recommendations](screenshots/product-recommendation.PNG)
 * **Product Details Page**: ![Product Details Page](screenshots/product-details.PNG)
 * **Order Tracking**: ![Order Tracking](screenshots/order-tracking.jpg)
 * **Login and Registration**: ![Login and Registration](screenshots/login-registration.jpg)
@@ -56,7 +56,7 @@ Here is a look at the TradLanka user interface and management portals.
 * **Delivery Management**: ![Delivery Management](screenshots/delivery-management.PNG)
 * **Add Category**: ![Add Category](screenshots/add-category.PNG)
 * **Add Products**: ![Add Products](screenshots/add-products.PNG)
-* **Email Notifications**: ![Email Notifications](screenshots/mail-image.png)
+* **Email Notifications**: ![Email Notifications](screenshots/mail-image.jpg)
 * **Product Inventory and Analytics**: ![Product Inventory](screenshots/inventory-analytics.PNG)
 * **Sales Reports**: ![Sales Reports](screenshots/sales-reports.PNG)
 * **Staff Chat**: ![Staff Chat](screenshots/staff-chat.PNG)
