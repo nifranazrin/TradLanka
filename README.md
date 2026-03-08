@@ -47,6 +47,7 @@ Here is a look at the TradLanka user interface and management portals.
 * **Image Search**: ![Image Search](screenshots/image-search.PNG)
 * **Live Search**: ![Live Search](screenshots/live-search.PNG)
 * **Product Recommendations**: ![Product Recommendations](screenshots/product-recommendation.PNG)
+* **Dialogflow Chatbot**: ![Dialogflow Chatbot](screenshots/Dialogflow-chatbot.jpg)
 * **Product Details Page**: ![Product Details Page](screenshots/product-details.PNG)
 * **Order Tracking**: ![Order Tracking](screenshots/order-tracking.jpg)
 * **Login and Registration**: ![Login and Registration](screenshots/login-registration.jpg)
